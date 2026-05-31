@@ -1,0 +1,158 @@
+"use client"
+
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Pagination } from "@/components/ui/pagination"
+import { useStockMovements, type StockMovementFilters } from "@/features/inventory/hooks/use-stock-movements"
+import { StockMovementForm } from "@/components/inventory/stock-movement-form"
+import { Plus, ArrowDownToLine, ArrowUpFromLine, Search } from "lucide-react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+
+export function StockMovementsTable() {
+  const [formOpen, setFormOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const [typeFilter, setTypeFilter] = useState("")
+  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState<StockMovementFilters>({ pageSize: 20 })
+
+  const { data, isLoading } = useStockMovements(filters)
+
+  function handleSearch() {
+    setPage(1)
+    setFilters((prev) => ({ ...prev, productId: search || undefined, page: 1 }))
+  }
+
+  function handleTypeFilter(v: string) {
+    setPage(1)
+    setTypeFilter(v)
+    setFilters((p) => ({ ...p, type: v === " " ? undefined : v, page: 1 }))
+  }
+
+  const movements = data?.movements ?? []
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por ID de producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="h-10 pl-10"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(v) => handleTypeFilter(v ?? " ")}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value=" ">Todos</SelectItem>
+              <SelectItem value="IN">Entradas</SelectItem>
+              <SelectItem value="OUT">Salidas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={() => setFormOpen(true)}>
+          <Plus className="mr-2 size-4" />
+          Registrar Movimiento
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : movements.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <ArrowDownToLine className="size-12 text-muted-foreground/40" />
+          <p className="mt-4 text-sm font-medium text-muted-foreground">Sin movimientos</p>
+          <p className="text-xs text-muted-foreground/60">Registra el primer movimiento de stock</p>
+        </div>
+      ) : (
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Fecha</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Producto</TableHead>
+                <TableHead className="text-right">Cantidad</TableHead>
+                <TableHead>Motivo</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {movements.map((m: any) => (
+                <TableRow key={m.id}>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {format(new Date(m.createdAt), "dd/MM/yy HH:mm", { locale: es })}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        m.type === "IN"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                          : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400"
+                      }
+                    >
+                      {m.type === "IN" ? (
+                        <ArrowDownToLine className="mr-1 size-3" />
+                      ) : (
+                        <ArrowUpFromLine className="mr-1 size-3" />
+                      )}
+                      {m.type === "IN" ? "Entrada" : "Salida"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-medium">{m.product.name}</TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">
+                    {m.type === "IN" ? "+" : "-"}
+                    {m.quantity}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {m.reason ?? "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Pagination
+        page={data?.page ?? 1}
+        pages={data?.pages ?? 1}
+        total={data?.total}
+        onPageChange={(p) => {
+          setPage(p)
+          setFilters((prev) => ({ ...prev, page: p }))
+        }}
+      />
+
+      <StockMovementForm open={formOpen} onOpenChange={setFormOpen} />
+    </div>
+  )
+}

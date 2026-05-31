@@ -1,0 +1,321 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GOD
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  CREDIT
+}
+
+enum SessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum MovementType {
+  IN
+  OUT
+}
+
+enum PurchaseOrderStatus {
+  PENDING
+  RECEIVED
+  CANCELLED
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  nit       String?
+  address   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  categories       Category[]
+  products         Product[]
+  customers        Customer[]
+  sales            Sale[]
+  stockMovements   StockMovement[]
+  cashRegisters    CashRegister[]
+  storeSettings    StoreSettings?
+  suppliers        Supplier[]
+  purchaseOrders   PurchaseOrder[]
+}
+
+model CompanyInvite {
+  id          String   @id @default(cuid())
+  token       String   @unique @default(cuid())
+  email       String?
+  companyName String
+  createdById String
+  used        Boolean  @default(false)
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  createdBy User @relation(fields: [createdById], references: [id])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String
+  name         String
+  passwordHash String
+  role         UserRole @default(CASHIER)
+  isActive     Boolean  @default(true)
+  companyId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company       Company?        @relation(fields: [companyId], references: [id])
+  sales         Sale[]
+  cashSessions  CashSession[]
+  invitesCreated CompanyInvite[]
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([email, companyId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  companyId   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  products Product[]
+
+  @@unique([name, companyId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  barcode     String?
+  description String?
+  purchasePrice Decimal  @db.Decimal(10, 2)
+  profitMargin Float    @default(0.30)
+  stock       Int      @default(0)
+  minStock    Int      @default(5)
+  isActive    Boolean  @default(true)
+  imageUrl    String?
+  categoryId  String
+  companyId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category           Category            @relation(fields: [categoryId], references: [id])
+  company            Company             @relation(fields: [companyId], references: [id])
+  saleItems          SaleItem[]
+  stockMovements     StockMovement[]
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@unique([barcode, companyId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  cedula    String?
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+  sales   Sale[]
+
+  @@unique([cedula, companyId])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  isActive  Boolean  @default(true)
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company       Company          @relation(fields: [companyId], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([name, companyId])
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  total         Decimal       @db.Decimal(10, 2)
+  subtotal      Decimal       @db.Decimal(10, 2)
+  tax           Decimal       @db.Decimal(10, 2) @default(0)
+  discount      Decimal       @db.Decimal(10, 2) @default(0)
+  paymentMethod PaymentMethod @default(CASH)
+  notes         String?
+  isReturn      Boolean       @default(false)
+  parentSaleId  String?
+  returnReason  String?
+  isSynced      Boolean       @default(true)
+  localId       String?
+  companyId     String
+  requestElectronicInvoice Boolean @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  userId     String
+  customerId String?
+  sessionId  String?
+
+  user       User         @relation(fields: [userId], references: [id])
+  company    Company      @relation(fields: [companyId], references: [id])
+  customer   Customer?    @relation(fields: [customerId], references: [id])
+  parentSale Sale?        @relation("SaleReturn", fields: [parentSaleId], references: [id])
+  returns    Sale[]       @relation("SaleReturn")
+  items      SaleItem[]
+  session    CashSession? @relation(fields: [sessionId], references: [id])
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  quantity  Int     @default(1)
+  unitPrice Decimal @db.Decimal(10, 2)
+  subtotal  Decimal @db.Decimal(10, 2)
+
+  saleId    String
+  productId String
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model PurchaseOrder {
+  id        String              @id @default(cuid())
+  total     Decimal             @db.Decimal(10, 2)
+  status    PurchaseOrderStatus @default(PENDING)
+  notes     String?
+  companyId String
+  supplierId String
+  userId    String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  supplier    Supplier           @relation(fields: [supplierId], references: [id])
+  company     Company            @relation(fields: [companyId], references: [id])
+  user        User               @relation(fields: [userId], references: [id])
+  items       PurchaseOrderItem[]
+  stockMovements StockMovement[]
+}
+
+model PurchaseOrderItem {
+  id             String  @id @default(cuid())
+  quantity       Int
+  purchasePrice  Decimal @db.Decimal(10, 2)
+  productId      String
+  purchaseOrderId String
+
+  product      Product       @relation(fields: [productId], references: [id])
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+}
+
+model StockMovement {
+  id        String   @id @default(cuid())
+  type      String
+  quantity  Int
+  reason    String?
+  isActive  Boolean  @default(true)
+  companyId String
+  createdAt DateTime @default(now())
+
+  productId       String?
+  purchaseOrderId String?
+  product         Product?        @relation(fields: [productId], references: [id])
+  purchaseOrder   PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  company         Company         @relation(fields: [companyId], references: [id])
+}
+
+model CashRegister {
+  id        String        @id @default(cuid())
+  name      String
+  isActive  Boolean       @default(true)
+  companyId String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  company  Company       @relation(fields: [companyId], references: [id])
+  sessions CashSession[]
+
+  @@unique([name, companyId])
+}
+
+model CashSession {
+  id              String        @id @default(cuid())
+  openingBalance  Decimal       @db.Decimal(10, 2)
+  closingBalance  Decimal?      @db.Decimal(10, 2)
+  expectedClosing Decimal?      @db.Decimal(10, 2)
+  difference      Decimal?      @db.Decimal(10, 2)
+  status          SessionStatus @default(OPEN)
+  openedAt        DateTime      @default(now())
+  closedAt        DateTime?
+  notes           String?
+
+  cashRegisterId String
+  userId         String
+
+  cashRegister CashRegister   @relation(fields: [cashRegisterId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
+  sales         Sale[]
+  cashMovements CashMovement[]
+}
+
+model CashMovement {
+  id        String       @id @default(cuid())
+  type      MovementType
+  amount    Decimal      @db.Decimal(10, 2)
+  reason    String
+  createdAt DateTime     @default(now())
+
+  sessionId String
+  session   CashSession @relation(fields: [sessionId], references: [id])
+}
+
+model StoreSettings {
+  id            String  @id @default(cuid())
+  storeName     String  @default("Mi Tienda")
+  address       String  @default("")
+  phone         String  @default("")
+  nit           String  @default("")
+  email         String  @default("")
+  currency      String  @default("COP")
+  receiptFooter String  @default("¡Gracias por su compra!")
+  taxRate       Decimal @default(0.19) @db.Decimal(3, 2)
+  logoUrl       String  @default("")
+  inviteExpiryHours Int  @default(168)
+  companyId     String @unique
+  updatedAt     DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+}

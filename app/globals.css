@@ -1,0 +1,186 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-mono);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(0.985 0.005 60);
+  --foreground: oklch(0.18 0.01 40);
+
+  --card: oklch(0.998 0.002 60);
+  --card-foreground: oklch(0.18 0.01 40);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.01 40);
+
+  --primary: oklch(0.48 0.15 30);
+  --primary-foreground: oklch(0.98 0 0);
+
+  --secondary: oklch(0.75 0.12 75);
+  --secondary-foreground: oklch(0.2 0 0);
+
+  --muted: oklch(0.96 0.008 60);
+  --muted-foreground: oklch(0.55 0.02 50);
+
+  --accent: oklch(0.75 0.12 75);
+  --accent-foreground: oklch(0.2 0 0);
+
+  --destructive: oklch(0.5 0.2 30);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(0.88 0.01 50);
+  --input: oklch(0.88 0.01 50);
+  --ring: oklch(0.48 0.15 30);
+
+  --sidebar: oklch(0.18 0.01 40);
+  --sidebar-foreground: oklch(0.985 0.005 60);
+  --sidebar-accent: oklch(0.48 0.15 30);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+    --background: oklch(0.15 0.01 40);
+    --foreground: oklch(0.985 0.005 60);
+
+    --card: oklch(0.18 0.01 40);
+    --card-foreground: oklch(0.985 0.005 60);
+
+    --popover: oklch(0.18 0.01 40);
+    --popover-foreground: oklch(0.985 0.005 60);
+
+    --primary: oklch(0.65 0.13 30);
+    --primary-foreground: oklch(0.98 0 0);
+
+    --secondary: oklch(0.35 0.06 75);
+    --secondary-foreground: oklch(0.985 0.005 60);
+
+    --muted: oklch(0.22 0.01 40);
+    --muted-foreground: oklch(0.7 0.01 50);
+
+    --accent: oklch(0.65 0.1 75);
+    --accent-foreground: oklch(0.985 0.005 60);
+
+    --destructive: oklch(0.55 0.2 30);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    --border: oklch(0.28 0.01 40);
+    --input: oklch(0.28 0.01 40);
+    --ring: oklch(0.65 0.13 30);
+
+    --sidebar: oklch(0.12 0.01 40);
+    --sidebar-foreground: oklch(0.985 0.005 60);
+    --sidebar-accent: oklch(0.65 0.13 30);
+    --sidebar-accent-foreground: oklch(0.98 0 0);
+  }
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans), system-ui, sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+  }
+
+  /* Hide number input spinners */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+  }
+}
+
+@media print {
+  @page {
+    size: 80mm 297mm;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: 80mm;
+    background: white;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .receipt {
+    width: 80mm;
+    font-size: 12px;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    padding: 5mm;
+    color: black;
+    background: white;
+  }
+
+  .receipt .border-dashed {
+    border-color: #9ca3af;
+  }
+}
