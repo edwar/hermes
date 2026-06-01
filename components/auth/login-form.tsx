@@ -49,10 +49,10 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Card className="border-[oklch(0.88_0.01_50)] shadow-xl shadow-[oklch(0.48_0.15_30/0.08)]">
+      <Card className="border-pos-border shadow-xl shadow-primary/8">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-[oklch(0.48_0.15_30/0.1)] to-[oklch(0.48_0.15_30/0.05)] ring-1 ring-[oklch(0.48_0.15_30/0.15)]">
-            <Store className="size-7 text-[oklch(0.48_0.15_30)]" />
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-primary/15">
+            <Store className="size-7 text-primary" />
           </div>
           <CardTitle className="font-sans text-2xl font-bold tracking-tight">
             {APP_NAME}
@@ -74,7 +74,7 @@ export function LoginForm() {
                 placeholder="admin@hermes.com"
                 autoComplete="email"
                 required
-                className="h-11 border-[oklch(0.88_0.01_50)] focus-visible:ring-[oklch(0.48_0.15_30)]"
+                className="h-11 border-pos-border focus-visible:ring-primary"
               />
             </div>
             <div className="space-y-2">
@@ -91,7 +91,7 @@ export function LoginForm() {
                   placeholder="Ingresa tu contraseña"
                   autoComplete="current-password"
                   required
-                  className="h-11 pr-10 border-[oklch(0.88_0.01_50)] focus-visible:ring-[oklch(0.48_0.15_30)]"
+                  className="h-11 pr-10 border-pos-border focus-visible:ring-primary"
                 />
                 <button
                   type="button"
@@ -112,7 +112,7 @@ export function LoginForm() {
             )}
             <Button
               type="submit"
-              className="w-full h-11 text-base bg-[oklch(0.48_0.15_30)] hover:bg-[oklch(0.42_0.14_30)] text-primary-foreground shadow-md shadow-[oklch(0.48_0.15_30/0.25)]"
+              className="w-full h-11 text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/25"
               disabled={loading}
             >
               {loading ? (

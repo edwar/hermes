@@ -75,7 +75,7 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-[oklch(0.88_0.01_50)] bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-10">
+      <header className="flex h-16 items-center justify-between border-b border-pos-border bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-10">
         <h1 className="font-sans text-xl font-bold tracking-tight">{title}</h1>
         <div className="flex items-center gap-4">
           <OnlineBadge />
