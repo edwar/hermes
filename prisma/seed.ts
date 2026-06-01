@@ -113,12 +113,42 @@ async function main() {
 
   const cajasCount = await prisma.cashRegister.count({ where: { companyId: "default-company" } })
 
+  const paymentMethods = [
+    { internalCode: 'CASH', name: 'Efectivo', factusPaymentForm: 1, factusPaymentMethodCode: '10' },
+    { internalCode: 'CARD', name: 'Tarjeta', factusPaymentForm: 1, factusPaymentMethodCode: '48' },
+    { internalCode: 'TRANSFER', name: 'Transferencia', factusPaymentForm: 1, factusPaymentMethodCode: '47' },
+    { internalCode: 'CREDIT', name: 'Crédito', factusPaymentForm: 2, factusPaymentMethodCode: '20' },
+  ]
+
+  for (const pm of paymentMethods) {
+    const existing = await prisma.paymentMethodConfig.findFirst({ where: { internalCode: pm.internalCode, companyId: "default-company" } })
+    if (!existing) {
+      await prisma.paymentMethodConfig.create({ data: { ...pm, companyId: "default-company" } })
+    }
+  }
+
+  const systemConfigs = [
+    { category: 'FACTUS', key: 'documentType', value: '01', label: 'Tipo de documento', description: 'Código del tipo de documento DIAN' },
+    { category: 'FACTUS', key: 'operationType', value: '10', label: 'Tipo de operación', description: 'Código del tipo de operación' },
+    { category: 'FACTUS', key: 'unitMeasureCode', value: '94', label: 'Código unidad de medida', description: 'Código de unidad de medida predeterminada' },
+    { category: 'FACTUS', key: 'identificationStandard', value: '999', label: 'Estándar de identificación', description: 'Código del estándar de identificación de productos' },
+  ]
+
+  for (const config of systemConfigs) {
+    const existing = await prisma.systemConfig.findFirst({ where: { category: config.category, key: config.key } })
+    if (!existing) {
+      await prisma.systemConfig.create({ data: config })
+    }
+  }
+
   console.log("Seed completado exitosamente")
   console.log(`  - Admin: admin@hermes.com / admin123`)
   console.log(`  - Gerente: gerente@hermes.com / gerente123`)
   console.log(`  - Cajero: cajero@hermes.com / cajero123`)
   console.log(`  - ${productos.length} productos creados`)
   console.log(`  - ${cajasCount} cajas registradoras creadas`)
+  console.log(`  - ${paymentMethods.length} métodos de pago configurados`)
+  console.log(`  - ${systemConfigs.length} configuraciones del sistema`)
 }
 
 main()

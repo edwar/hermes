@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { factusRequest } from "@/lib/factus/client"
+import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const body = await req.json()
-  const { saleId, items, reason, sessionId } = body
+  const { saleId, items, reason, sessionId, createCreditNote } = body
 
   if (!saleId || !items?.length) {
     return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 })
@@ -17,7 +19,11 @@ export async function POST(req: NextRequest) {
   const scope = companyScope(session)
   const originalSale = await prisma.sale.findFirst({
     where: { id: saleId, ...scope },
-    include: { items: true },
+    include: {
+      items: { include: { product: true } },
+      electronicInvoice: true,
+      company: true,
+    },
   })
 
   if (!originalSale) {
@@ -29,6 +35,10 @@ export async function POST(req: NextRequest) {
   }
 
   const companyId = session.user.companyId!
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { factusEnabled: true, factusNumberingRangeId: true },
+  })
 
   const returnSale = await prisma.$transaction(async (tx) => {
     for (const item of items) {
@@ -83,9 +93,54 @@ export async function POST(req: NextRequest) {
           })),
         },
       },
-      include: { items: { include: { product: true } }, user: true, customer: true },
+      include: { items: { include: { product: true } }, user: true, customer: true, company: true },
     })
   })
+
+  if (
+    createCreditNote &&
+    company?.factusEnabled &&
+    company?.factusNumberingRangeId &&
+    originalSale.electronicInvoice
+  ) {
+    try {
+      const originalInvoice = originalSale.electronicInvoice
+      const creditNotePayload = mapSaleToFactusCreditNote(
+        returnSale as any,
+        originalInvoice.consecutive || "",
+        company.factusNumberingRangeId,
+        `return-${returnSale.id.slice(0, 8)}-${Date.now()}`,
+        "1"
+      )
+
+      const factusResponse = await factusRequest<{
+        id: number
+        consecutive: string
+        cufe: string
+        status: string
+      }>(
+        "/v2/credit-notes/validate",
+        { method: "POST", body: JSON.stringify(creditNotePayload) },
+        companyId
+      )
+
+      await prisma.electronicInvoice.create({
+        data: {
+          companyId,
+          saleId: returnSale.id,
+          cufe: factusResponse.cufe,
+          consecutive: factusResponse.consecutive,
+          status: factusResponse.status === "accepted" ? "VALIDATED" : "PENDING",
+          factusBillId: String(factusResponse.id),
+          total: returnSale.total,
+          taxTotal: returnSale.tax,
+          validatedAt: new Date(),
+        },
+      })
+    } catch (error) {
+      console.error("Error creating credit note:", error)
+    }
+  }
 
   return NextResponse.json(returnSale, { status: 201 })
 }

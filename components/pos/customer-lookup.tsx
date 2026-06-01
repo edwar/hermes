@@ -172,7 +172,7 @@ export function CustomerLookup({
         </div>
       )}
 
-      {foundCustomer?.email && (
+      {foundCustomer && (
         <div className="flex items-center space-x-2 rounded-lg border p-3">
           <Checkbox
             id="electronicInvoice"
@@ -181,10 +181,10 @@ export function CustomerLookup({
           />
           <div className="space-y-0.5 leading-none">
             <Label htmlFor="electronicInvoice" className="text-sm font-medium cursor-pointer">
-              Factura electrónica
+              Factura electrónica DIAN
             </Label>
             <p className="text-xs text-muted-foreground">
-              Solicitar envío de factura por correo
+              {foundCustomer.email ? "Se enviará por correo electrónico" : "Requiere datos del cliente"}
             </p>
           </div>
         </div>

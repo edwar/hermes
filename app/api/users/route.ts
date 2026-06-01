@@ -17,6 +17,7 @@ export async function GET() {
 
   if (session.user.role === "GOD") {
     const users = await prisma.user.findMany({
+      where: { role: { not: "GOD" } },
       orderBy: { createdAt: "desc" },
       select: {
         id: true, name: true, email: true, role: true, isActive: true, createdAt: true,

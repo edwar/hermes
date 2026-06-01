@@ -22,6 +22,7 @@ import {
   Mail,
   Truck,
   PackageSearch,
+  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["GOD", "ADMIN", "MANAGER", "CASHIER"] },
   { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["GOD", "ADMIN", "CASHIER"] },
   { href: "/sales", label: "Ventas", icon: Receipt, roles: ["GOD", "ADMIN", "CASHIER"] },
+  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: ["GOD", "ADMIN", "MANAGER"] },
   { href: "/inventory", label: "Inventario", icon: Package, roles: ["GOD", "ADMIN", "MANAGER", "CASHIER"] },
   { href: "/categories", label: "Categorías", icon: Tags, roles: ["GOD", "ADMIN", "MANAGER"] },
   { href: "/reports", label: "Reportes", icon: BarChart3, roles: ["GOD", "ADMIN", "MANAGER"] },

@@ -4,13 +4,15 @@ import { prisma } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const { id } = await params
+  const { searchParams } = new URL(req.url)
+  const includeElectronicInvoice = searchParams.get("includeElectronicInvoice") === "true"
 
   const sale = await prisma.sale.findFirst({
     where: {
@@ -24,6 +26,7 @@ export async function GET(
       items: { include: { product: true } },
       user: true,
       customer: true,
+      electronicInvoice: includeElectronicInvoice || false,
     },
   })
 

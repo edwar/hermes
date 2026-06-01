@@ -8,12 +8,18 @@ export async function GET() {
 
   const companyId = session.user.companyId ?? "default"
 
+  if (session.user.role === "GOD") {
+    return NextResponse.json({ storeName: "Sistema", isGod: true })
+  }
+
   let settings = await prisma.storeSettings.findUnique({ where: { companyId } })
   if (!settings) {
     settings = await prisma.storeSettings.create({ data: { companyId } })
   }
 
-  return NextResponse.json(settings)
+  const company = await prisma.company.findUnique({ where: { id: companyId } })
+
+  return NextResponse.json({ ...settings, companyName: company?.name })
 }
 
 export async function PUT(req: NextRequest) {
@@ -41,5 +47,19 @@ export async function PUT(req: NextRequest) {
     create: { companyId, ...data },
   })
 
-  return NextResponse.json(settings)
+  const companyData: Record<string, unknown> = {}
+  if (body.companyName !== undefined) companyData.name = body.companyName
+  if (body.nit !== undefined) companyData.nit = body.nit
+  if (body.address !== undefined) companyData.address = body.address
+  if (body.phone !== undefined) companyData.phone = body.phone
+  if (body.email !== undefined) companyData.email = body.email
+
+  if (Object.keys(companyData).length > 0) {
+    await prisma.company.update({
+      where: { id: companyId },
+      data: companyData,
+    })
+  }
+
+  return NextResponse.json({ ...settings, ...companyData })
 }

@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatCOP } from "@/lib/utils"
-import { Search, RotateCcw, Minus, Plus, Loader2 } from "lucide-react"
+import { Search, RotateCcw, Minus, Plus, Loader2, Zap } from "lucide-react"
 import { sileo } from "sileo"
 
 interface ReturnItem {
@@ -26,6 +27,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
   const [reason, setReason] = useState("")
   const [selectedSale, setSelectedSale] = useState<any>(null)
   const [searchError, setSearchError] = useState("")
+  const [createCreditNote, setCreateCreditNote] = useState(false)
   const initialSearchDone = useRef(false)
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
 
   const searchMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/sales/${id}`)
+      const res = await fetch(`/api/sales/${id}?includeElectronicInvoice=true`)
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.error || "Venta no encontrada")
@@ -83,7 +85,12 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
       const res = await fetch("/api/sales/return", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ saleId: selectedSale.id, items, reason }),
+        body: JSON.stringify({
+          saleId: selectedSale.id,
+          items,
+          reason,
+          createCreditNote: selectedSale?.electronicInvoice ? createCreditNote : false,
+        }),
       })
       if (!res.ok) {
         const err = await res.json()
@@ -106,6 +113,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
     setReturnItems([])
     setReason("")
     setSearchError("")
+    setCreateCreditNote(false)
     initialSearchDone.current = false
     onOpenChange(false)
   }
@@ -227,6 +235,25 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
               <span>Total a devolver</span>
               <span className="font-mono tabular-nums">{formatCOP(totalReturn)}</span>
             </div>
+
+            {selectedSale?.electronicInvoice && (
+              <div className="flex items-center space-x-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <Checkbox
+                  id="createCreditNote"
+                  checked={createCreditNote}
+                  onCheckedChange={(checked) => setCreateCreditNote(checked === true)}
+                />
+                <div className="space-y-0.5 leading-none">
+                  <Label htmlFor="createCreditNote" className="text-sm font-medium cursor-pointer flex items-center gap-1">
+                    <Zap className="size-3.5 text-amber-600" />
+                    Nota crédito electrónica DIAN
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Generará una nota crédito por {formatCOP(totalReturn)}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="return-reason">Motivo (opcional)</Label>
