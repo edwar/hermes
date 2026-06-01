@@ -80,7 +80,6 @@ export async function GET(req: NextRequest) {
       select: {
         factusEnabled: true,
         factusTokenExpiresAt: true,
-        factusNumberingRangeId: true,
         factusEconomicActivity: true,
       },
     });
@@ -98,7 +97,7 @@ export async function GET(req: NextRequest) {
       enabled: company.factusEnabled,
       connected: isConnected && !isExpired,
       expired: isExpired,
-      numberingRangeId: company.factusNumberingRangeId,
+      numberingRangeId: null,
       economicActivity: company.factusEconomicActivity,
     });
   } catch (error) {

@@ -42,7 +42,7 @@ export function Cart({
         </div>
       </div>
 
-      <ScrollArea className="flex-1 px-4 py-2">
+      <ScrollArea className="flex-1 max-h-[65vh] px-4 py-2">
         {isEmpty ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">

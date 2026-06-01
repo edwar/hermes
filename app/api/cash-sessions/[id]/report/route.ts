@@ -9,8 +9,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
 
-  const cashSession = await prisma.cashSession.findUnique({
-    where: { id, ...companyScope(session) },
+  const scope = companyScope(session)
+  const cashSession = await prisma.cashSession.findFirst({
+    where: {
+      id,
+      ...(scope.companyId ? { cashRegister: { companyId: scope.companyId } } : {}),
+    },
     include: {
       cashRegister: true,
       user: { select: { id: true, name: true, email: true } },

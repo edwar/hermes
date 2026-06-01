@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { formatCOP } from "@/lib/utils"
 import { Search, RotateCcw, Minus, Plus, Loader2, Zap } from "lucide-react"
 import { sileo } from "sileo"
@@ -133,13 +132,13 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Devolución</DialogTitle>
         </DialogHeader>
 
         {!selectedSale ? (
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4">
             <div className="space-y-2">
               <Label htmlFor="sale-search">Buscar venta por ID</Label>
               <div className="flex gap-2">
@@ -174,8 +173,8 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="rounded-lg border p-3 text-sm">
+          <div className="flex flex-col min-h-0 flex-1">
+            <div className="flex-shrink-0 rounded-lg border p-3 text-sm mb-3">
               <p>
                 <span className="text-muted-foreground">Venta:</span>{" "}
                 <span className="font-medium">{selectedSale.id.slice(0, 8)}...</span>
@@ -192,10 +191,10 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
               </p>
             </div>
 
-            <ScrollArea className="max-h-64">
-              <div className="space-y-2">
+            <div className="flex-shrink-0 max-h-48 overflow-y-auto border rounded-lg">
+              <div className="p-2 space-y-2">
                 {returnItems.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-3 rounded-lg border p-3">
+                  <div key={item.productId} className="flex items-center gap-3 rounded-lg border p-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.productName}</p>
                       <p className="text-xs text-muted-foreground">
@@ -206,68 +205,69 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-7"
+                        className="size-6"
                         onClick={() => updateQuantity(item.productId, -1)}
                       >
-                        <Minus className="size-3" />
+                        <Minus className="size-2.5" />
                       </Button>
-                      <span className="flex h-7 w-8 items-center justify-center text-sm font-medium font-mono tabular-nums">
+                      <span className="flex h-6 w-7 items-center justify-center text-xs font-medium font-mono tabular-nums">
                         {item.quantity}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="size-7"
+                        className="size-6"
                         onClick={() => updateQuantity(item.productId, 1)}
                       >
-                        <Plus className="size-3" />
+                        <Plus className="size-2.5" />
                       </Button>
                     </div>
-                    <div className="w-20 text-right text-sm font-mono tabular-nums">
+                    <div className="w-16 text-right text-xs font-mono tabular-nums">
                       {formatCOP(item.subtotal)}
                     </div>
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
 
-            <div className="flex justify-between text-lg font-bold">
+            <div className="flex-shrink-0 flex justify-between text-base font-bold mt-3">
               <span>Total a devolver</span>
               <span className="font-mono tabular-nums">{formatCOP(totalReturn)}</span>
             </div>
 
             {selectedSale?.electronicInvoice && (
-              <div className="flex items-center space-x-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <div className="flex-shrink-0 flex items-center space-x-2 rounded-lg border border-amber-200 bg-amber-50 p-2 mt-3">
                 <Checkbox
                   id="createCreditNote"
                   checked={createCreditNote}
                   onCheckedChange={(checked) => setCreateCreditNote(checked === true)}
                 />
                 <div className="space-y-0.5 leading-none">
-                  <Label htmlFor="createCreditNote" className="text-sm font-medium cursor-pointer flex items-center gap-1">
-                    <Zap className="size-3.5 text-amber-600" />
-                    Nota crédito electrónica DIAN
+                  <Label htmlFor="createCreditNote" className="text-xs font-medium cursor-pointer flex items-center gap-1">
+                    <Zap className="size-3 text-amber-600" />
+                    Nota crédito DIAN
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Generará una nota crédito por {formatCOP(totalReturn)}
+                  <p className="text-[10px] text-muted-foreground">
+                    {formatCOP(totalReturn)}
                   </p>
                 </div>
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="return-reason">Motivo (opcional)</Label>
+            <div className="flex-shrink-0 space-y-1.5 mt-3">
+              <Label htmlFor="return-reason" className="text-xs">Motivo</Label>
               <Input
                 id="return-reason"
-                placeholder="Ej: Cliente insatisfecho, producto defectuoso"
+                placeholder="Opcional"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="mt-4">
           <Button variant="ghost" onClick={handleClose}>
             Cancelar
           </Button>

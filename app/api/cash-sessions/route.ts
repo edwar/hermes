@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to") ?? ""
 
   const scope = companyScope(session)
-  const where: Record<string, unknown> = { ...scope }
+  const where: Record<string, unknown> = {
+    ...(scope.companyId ? { cashRegister: { companyId: scope.companyId } } : {}),
+  }
   if (status) where.status = status
   if (from) where.openedAt = { ...(where.openedAt as Record<string, unknown> || {}), gte: new Date(from) }
   if (to) where.openedAt = { ...(where.openedAt as Record<string, unknown> || {}), lte: new Date(to + "T23:59:59.999Z") }
