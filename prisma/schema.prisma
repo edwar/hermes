@@ -342,6 +342,10 @@ model CashSession {
   cashRegisterId String
   userId         String
 
+  deviceId       String?   // Fingerprint del dispositivo que abrió la sesión
+  deviceName     String?   // Nombre del dispositivo (PC-EDWAR, etc)
+  lastHeartbeat  DateTime? // Última vez que el dispositivo envió heartbeat
+
   cashRegister CashRegister   @relation(fields: [cashRegisterId], references: [id])
   user          User           @relation(fields: [userId], references: [id])
   sales         Sale[]

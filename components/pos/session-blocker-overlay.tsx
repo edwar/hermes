@@ -1,16 +1,45 @@
 "use client"
 
 import { useState } from "react"
-import { Wallet } from "lucide-react"
+import { Wallet, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OpenSessionDialog } from "@/components/cajas/open-session-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+
+interface SessionConflictInfo {
+  sessionId: string
+  activeUser?: string
+  activeDevice?: string
+}
 
 interface SessionBlockerOverlayProps {
   onSessionOpened: () => void
+  onConflict?: (info: { sessionId: string; activeUser?: string; activeDevice?: string }) => void
 }
 
-export function SessionBlockerOverlay({ onSessionOpened }: SessionBlockerOverlayProps) {
+export function SessionBlockerOverlay({ onSessionOpened, onConflict }: SessionBlockerOverlayProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [conflictOpen, setConflictOpen] = useState(false)
+  const [conflictInfo, setConflictInfo] = useState<SessionConflictInfo | null>(null)
+
+  function handleConflict(info: SessionConflictInfo) {
+    setConflictInfo(info)
+    setDialogOpen(false) // Close the open session dialog
+    setConflictOpen(true) // Show conflict modal
+  }
+
+  function handleConflictClose() {
+    setConflictOpen(false)
+    setConflictInfo(null)
+    setDialogOpen(true) // Reopen the open session dialog
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-6">
@@ -28,7 +57,41 @@ export function SessionBlockerOverlay({ onSessionOpened }: SessionBlockerOverlay
         </Button>
       </div>
 
-      <OpenSessionDialog open={dialogOpen} onOpenChange={setDialogOpen} onSuccess={onSessionOpened} />
+      <OpenSessionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={onSessionOpened}
+        onConflict={handleConflict}
+      />
+
+      <Dialog open={conflictOpen} onOpenChange={setConflictOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="size-6 text-destructive" />
+            </div>
+            <DialogTitle className="text-center">Caja ya abierta</DialogTitle>
+            <DialogDescription className="text-center">
+              {conflictInfo?.activeUser
+                ? `Esta caja está siendo usada por ${conflictInfo.activeUser}`
+                : "Esta caja ya está abierta en otro dispositivo"}
+              {conflictInfo?.activeDevice && (
+                <span className="block mt-1 text-xs font-mono">
+                  Dispositivo: {conflictInfo.activeDevice}
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg bg-destructive/5 p-3 text-sm text-destructive">
+            Cierra la sesión en el otro dispositivo antes de abrir una nueva.
+          </div>
+          <DialogFooter>
+            <Button onClick={handleConflictClose} className="w-full">
+              Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,20 @@ interface OpenSessionDialogProps {
   open: boolean
   onOpenChange: (v: boolean) => void
   onSuccess: () => void
+  onConflict?: (info: { sessionId: string; activeUser?: string; activeDevice?: string }) => void
+}
+
+function generateDeviceId(): string {
+  const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`
+  const nav = `${navigator.userAgent.substring(0, 50)}`
+  const time = new Date().getTimezoneOffset()
+  return btoa(`${screen}|${nav}|${time}`).substring(0, 32)
+}
+
+function getDeviceName(): string {
+  const platform = navigator.platform || "Unknown"
+  const cpuCores = navigator.hardwareConcurrency || "? CPUs"
+  return `${platform} (${cpuCores} cores)`
 }
 
 async function fetchRegisters() {
@@ -23,7 +37,7 @@ async function fetchRegisters() {
   return res.json()
 }
 
-async function openSession(data: { cashRegisterId: string; openingBalance: number }) {
+async function openSession(data: { cashRegisterId: string; openingBalance: number; deviceId: string; deviceName: string }) {
   const res = await fetch("/api/cash-sessions", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -31,16 +45,21 @@ async function openSession(data: { cashRegisterId: string; openingBalance: numbe
   })
   if (!res.ok) {
     const err = await res.json()
-    throw new Error(err.error ?? "Error al abrir caja")
+    const error = new Error(err.error ?? "Error al abrir caja")
+    ;(error as any).activeUser = err.activeUser
+    ;(error as any).activeDevice = err.activeDevice
+    throw error
   }
   return res.json()
 }
 
-export function OpenSessionDialog({ open, onOpenChange, onSuccess }: OpenSessionDialogProps) {
+export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }: OpenSessionDialogProps) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [registerId, setRegisterId] = useState("")
   const [baseAmount, setBaseAmount] = useState("")
+  const [deviceId] = useState(() => generateDeviceId())
+  const [deviceName] = useState(() => getDeviceName())
 
   const { data: registers, isLoading } = useQuery({
     queryKey: ["cash-registers"],
@@ -60,6 +79,16 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess }: OpenSession
       onOpenChange(false)
     },
     onError: (err: Error) => {
+      const errorMsg = err.message
+      const activeUser = (err as any).activeUser
+      const activeDevice = (err as any).activeDevice
+      
+      if (errorMsg.includes("ya está abierta") || errorMsg.includes("dispositivo")) {
+        if (onConflict) {
+          onConflict({ sessionId: `conflict-${Date.now()}`, activeUser, activeDevice })
+          return
+        }
+      }
       toast.error(err.message)
     },
   })
@@ -74,7 +103,7 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess }: OpenSession
       toast.error("Ingresa un monto base válido")
       return
     }
-    mutation.mutate({ cashRegisterId: registerId, openingBalance: amount })
+    mutation.mutate({ cashRegisterId: registerId, openingBalance: amount, deviceId, deviceName })
   }
 
   const activeRegisters = Array.isArray(registers) ? registers.filter((r: { isActive: boolean }) => r.isActive) : []
