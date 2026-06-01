@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
+import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
+import { factusRequest } from "@/lib/factus/client"
+
+interface FactusResponse {
+  id?: number
+  consecutive: string
+  cufe: string
+  qr_code: string
+  status: string
+  validated_at?: boolean
+  is_validated?: boolean
+  errors?: string[]
+}
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -106,9 +119,68 @@ export async function POST(req: NextRequest) {
           })),
         },
       },
-      include: { items: { include: { product: true } }, user: true, customer: true },
+      include: { items: { include: { product: true } }, user: true, customer: true, company: true },
     })
   })
 
-  return NextResponse.json(sale, { status: 201 })
+  let electronicInvoiceResult = null
+
+  if (requestElectronicInvoice) {
+    try {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          factusEnabled: true,
+          factusNumberingRangeId: true,
+        },
+      })
+
+      if (!company?.factusEnabled) {
+        console.error("Factus not enabled for company")
+      } else {
+        const hasRangeId = company.factusNumberingRangeId && !isNaN(Number(company.factusNumberingRangeId))
+        const numberingRangeId = hasRangeId ? Number(company.factusNumberingRangeId) : undefined
+        const invoicePayload = await mapSaleToFactusInvoice(
+          sale as any,
+          numberingRangeId,
+          `sale-${sale.id.slice(0, 8)}-${Date.now()}`
+        )
+
+        let factusResponse: FactusResponse
+        try {
+          factusResponse = await factusRequest<FactusResponse>(
+            "/v2/bills/validate",
+            { method: "POST", body: invoicePayload as any },
+            companyId
+          )
+        } catch (error: any) {
+          console.error("Factus error:", error?.message || error)
+          throw error
+        }
+
+        const responseData = (factusResponse as any).data || factusResponse
+        const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
+        const factusBillId = responseData.number || responseData.consecutive || String(factusResponse.id || 'unknown')
+
+        await prisma.electronicInvoice.create({
+          data: {
+            companyId,
+            saleId: sale.id,
+            cufe: responseData.cufe || factusResponse.cufe,
+            consecutive: responseData.number || factusResponse.consecutive,
+            status: isValidated ? "VALIDATED" : "PENDING",
+            factusBillId: factusBillId,
+            total: sale.total,
+            taxTotal: sale.tax,
+          },
+        })
+
+        electronicInvoiceResult = factusResponse
+      }
+    } catch (error) {
+      console.error("Error creating electronic invoice:", error)
+    }
+  }
+
+  return NextResponse.json({ ...sale, electronicInvoice: electronicInvoiceResult }, { status: 201 })
 }

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { SessionProvider } from "@/providers/session-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SyncProvider } from "@/providers/sync-provider";
+import { Toaster } from "sileo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,6 +54,7 @@ export default function RootLayout({
           <SessionProvider>
             <QueryProvider>
               <SyncProvider>{children}</SyncProvider>
+              <Toaster position="top-right" />
             </QueryProvider>
           </SessionProvider>
         </ThemeProvider>
