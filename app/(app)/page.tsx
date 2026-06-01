@@ -33,7 +33,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 
-const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6"]
+const COLORS = ["#16A34A", "#2563EB", "#CABA04", "#DC2626"]
 
 const PAYMENT_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -85,7 +85,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border-[oklch(0.88_0.01_50)]">
+        <Card className="lg:col-span-2 border-pos-border">
           <CardHeader>
             <CardTitle className="font-sans">Ventas (30 días)</CardTitle>
             <CardDescription>Ingresos diarios del último mes</CardDescription>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
                     <Line
                       type="monotone"
                       dataKey="total"
-                      stroke="#22c55e"
+                      stroke="#004F6E"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -127,7 +127,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-[oklch(0.88_0.01_50)]">
+        <Card className="border-pos-border">
           <CardHeader>
             <CardTitle className="font-sans">Método de Pago</CardTitle>
             <CardDescription>Distribución del mes</CardDescription>
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-[oklch(0.88_0.01_50)]">
+      <Card className="border-pos-border">
         <CardHeader>
           <CardTitle className="font-sans">Productos Más Vendidos</CardTitle>
           <CardDescription>Top 10 del mes</CardDescription>
@@ -190,7 +190,7 @@ export default function DashboardPage() {
                     <Tooltip
                       formatter={(value) => formatCOP(typeof value === "number" ? value : 0)}
                     />
-                    <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total" fill="#2563EB" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (

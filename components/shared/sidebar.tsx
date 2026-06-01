@@ -63,10 +63,10 @@ export function Sidebar() {
   })
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-[oklch(0.28_0.01_40)] bg-sidebar">
-      <div className="flex items-center gap-3 border-b border-[oklch(0.28_0.01_40)] px-5 py-5">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-primary shadow-sm shadow-primary/30">
-          <Store className="size-5 text-primary-foreground" />
+    <aside className="flex h-screen w-64 flex-col border-r border-zinc-800 bg-sidebar">
+      <div className="flex items-center gap-3 border-b border-zinc-800 px-5 py-5">
+        <div className="flex size-9 items-center justify-center rounded-lg bg-pos-brand shadow-sm shadow-pos-brand/30">
+          <Store className="size-5 text-white" />
         </div>
         <div className="flex flex-col leading-tight">
           <span className="font-sans text-sm font-bold text-sidebar-foreground">Hermes POS</span>
@@ -84,18 +84,18 @@ export function Sidebar() {
               className={cn(
                 "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-sidebar-accent/20 text-sidebar-accent-foreground shadow-sm"
-                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent/10 hover:text-sidebar-foreground"
+                  ? "bg-pos-brand text-white shadow-sm"
+                  : "text-sidebar-foreground/60 hover:bg-pos-brand/10 hover:text-sidebar-foreground"
               )}
             >
-              <Icon className={cn("size-4 shrink-0", isActive && "text-primary")} />
+              <Icon className={cn("size-4 shrink-0", isActive ? "text-white" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")} />
               <span className="flex-1">{item.label}</span>
-              {isActive && <ChevronRight className="size-3.5 text-primary" />}
+              {isActive && <ChevronRight className="size-3.5 text-white/70" />}
             </Link>
           )
         })}
       </nav>
-      <div className="border-t border-[oklch(0.28_0.01_40)] p-4">
+      <div className="border-t border-zinc-800 p-4">
         <p className="text-xs text-muted-foreground/40 leading-relaxed">
           &copy; {new Date().getFullYear()} Hermes POS
         </p>

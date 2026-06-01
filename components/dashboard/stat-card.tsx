@@ -10,7 +10,7 @@ interface StatCardProps {
 
 export function StatCard({ title, value, subtitle, icon: Icon }: StatCardProps) {
   return (
-    <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 border-[oklch(0.88_0.01_50)]">
+    <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 border-pos-border">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="font-sans text-sm font-bold text-muted-foreground tracking-wide uppercase">
           {title}
