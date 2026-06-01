@@ -17,7 +17,9 @@ import { CustomerForm } from "@/components/inventory/customer-form"
 import { useCart } from "@/features/pos/hooks/use-cart"
 import { useCheckout } from "@/features/pos/hooks/use-checkout"
 import { PrinterSettings } from "@/components/settings/printer-settings"
-import { RotateCcw, Printer, Loader2, ArrowUpDown } from "lucide-react"
+import { useSessionHeartbeat } from "@/hooks/use-session-heartbeat"
+import { usePresenceMonitor } from "@/hooks/use-presence-monitor"
+import { RotateCcw, Printer, Loader2, ArrowUpDown, AlertTriangle } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
 
 async function fetchActiveSession() {
@@ -50,6 +52,13 @@ export default function POSPage() {
     queryKey: ["active-session", sessionKey],
     queryFn: fetchActiveSession,
   })
+
+  useSessionHeartbeat(activeSession?.id ?? null)
+
+  const { hasConflict } = usePresenceMonitor(
+    activeSession?.user?.id ?? null,
+    activeSession?.id ?? null
+  )
 
   useEffect(() => {
     const returnId = searchParams.get("return")
@@ -112,6 +121,11 @@ export default function POSPage() {
     setSessionKey((k) => k + 1)
   }
 
+  function handleSessionConflict(info: { sessionId: string; activeUser?: string; activeDevice?: string }) {
+    // Force refresh to see the conflict state
+    setSessionKey((k) => k + 1)
+  }
+
   function handleRequestCreateCustomer({ cedula }: { cedula: string }) {
     setPendingCustomerCedula(cedula)
     setEditingCustomer(null)
@@ -145,8 +159,41 @@ export default function POSPage() {
     )
   }
 
+  if (hasConflict) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-6">
+        <div className="mx-auto max-w-sm text-center">
+          <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-destructive/10">
+            <AlertTriangle className="size-10 text-destructive" />
+          </div>
+          <h2 className="mb-2 text-xl font-bold">Sesión activa en otro lugar</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Esta sesión está siendo usada en otra pestaña, navegador o dispositivo.
+          </p>
+          <p className="mb-8 text-sm text-muted-foreground">
+            La última sesión abierta tiene prioridad de acceso.
+          </p>
+          <Button
+            onClick={() => {
+              // Force reclaim the session by clearing localStorage and refreshing
+              const presenceKey = `pos_active_tab_${activeSession?.user?.id}_${activeSession?.id}`
+              localStorage.removeItem(presenceKey)
+              window.location.reload()
+            }}
+            className="w-full"
+          >
+            Tomar control de la sesión
+          </Button>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Esto removerá la sesión activa en el otro lugar.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (!activeSession) {
-    return <SessionBlockerOverlay onSessionOpened={handleSessionOpened} />
+    return <SessionBlockerOverlay onSessionOpened={handleSessionOpened} onConflict={handleSessionConflict} />
   }
 
   return (
