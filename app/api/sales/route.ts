@@ -3,10 +3,11 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
-import { factusRequest } from "@/lib/factus/client"
+import { factusRequest, getNumberingRangeByDocumentType } from "@/lib/factus/client"
 
 interface FactusResponse {
   id?: number
+  number?: string
   consecutive: string
   cufe: string
   qr_code: string
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get("from") ?? ""
   const to = searchParams.get("to") ?? ""
 
-  let where: Record<string, unknown> = {}
+  const where: Record<string, unknown> = {}
 
   if (session.user.role === "GOD") {
   } else if (session.user.companyId) {
@@ -37,8 +38,14 @@ export async function GET(req: NextRequest) {
 
   if (from || to) {
     where.createdAt = {}
-    if (from) (where.createdAt as Record<string, Date>).gte = new Date(from)
-    if (to) (where.createdAt as Record<string, Date>).lte = new Date(to + "T23:59:59.999Z")
+    if (from) {
+      const fromDate = new Date(from + "T00:00:00")
+      ;(where.createdAt as Record<string, Date>).gte = fromDate
+    }
+    if (to) {
+      const toDate = new Date(to + "T23:59:59.999")
+      ;(where.createdAt as Record<string, Date>).lte = toDate
+    }
   }
 
   const [sales, total] = await Promise.all([
@@ -131,15 +138,16 @@ export async function POST(req: NextRequest) {
         where: { id: companyId },
         select: {
           factusEnabled: true,
-          factusNumberingRangeId: true,
         },
       })
 
       if (!company?.factusEnabled) {
         console.error("Factus not enabled for company")
       } else {
-        const hasRangeId = company.factusNumberingRangeId && !isNaN(Number(company.factusNumberingRangeId))
-        const numberingRangeId = hasRangeId ? Number(company.factusNumberingRangeId) : undefined
+        // Get numbering range for invoices (document type "21")
+        const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
+        const numberingRangeId = rangeRecord?.factusRangeId
+
         const invoicePayload = await mapSaleToFactusInvoice(
           sale as any,
           numberingRangeId,
@@ -160,7 +168,8 @@ export async function POST(req: NextRequest) {
 
         const responseData = (factusResponse as any).data || factusResponse
         const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-        const factusBillId = responseData.number || responseData.consecutive || String(factusResponse.id || 'unknown')
+        // responseData.number is the consecutive like "SETP990004799", use it as factusBillId
+        const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
 
         await prisma.electronicInvoice.create({
           data: {

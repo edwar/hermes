@@ -19,7 +19,10 @@ interface SessionReportProps {
 
 async function fetchReport(id: string) {
   const res = await fetch(`/api/cash-sessions/${id}/report`)
-  if (!res.ok) throw new Error("Error al cargar reporte")
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: "Error al cargar reporte" }))
+    throw new Error(error.message || "Error al cargar reporte")
+  }
   return res.json()
 }
 
@@ -27,11 +30,17 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
   const [isPrinting, setIsPrinting] = useState(false)
   const hasPrintedRef = useRef(false)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["session-report", sessionId],
     queryFn: () => fetchReport(sessionId),
     enabled: open,
+    retry: 2,
+    refetchOnMount: true,
   })
+
+  useEffect(() => {
+    hasPrintedRef.current = false
+  }, [sessionId])
 
   useEffect(() => {
     if (data && data.session && !hasPrintedRef.current) {
@@ -49,6 +58,7 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
   const summary = data?.summary
   const salesByMethod = data?.salesByMethod
   const returns = data?.returns
+  const hasError = isError || data?.error || !session || !summary
 
   function handlePrint() {
     setIsPrinting(true)
@@ -60,6 +70,13 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
 
   const loadingContent = (
     <div className="flex justify-center py-12"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>
+  )
+
+  const errorContent = (
+    <div className="py-8 text-center">
+      <p className="text-sm text-muted-foreground">No se pudo cargar el reporte</p>
+      <p className="text-xs text-muted-foreground mt-1">Intenta cerrar el diálogo y abrirlo de nuevo</p>
+    </div>
   )
 
   const reportContent = session && summary ? (
@@ -159,13 +176,15 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Recibo de cierre de caja</DialogTitle>
-          <DialogDescription>
-            Entrega este recibo junto con el dinero al responsable
-          </DialogDescription>
+          {reportContent && (
+            <DialogDescription>
+              Entrega este recibo junto con el dinero al responsable
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto">
-          {isLoading ? loadingContent : reportContent}
+          {isLoading ? loadingContent : hasError ? errorContent : reportContent}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">

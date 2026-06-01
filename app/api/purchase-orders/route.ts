@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
-    return NextResponse.json({ error: "Solo administradores pueden crear pedidos" }, { status: 403 })
+  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "No autorizado para crear pedidos" }, { status: 403 })
   }
   if (!session.user.companyId) {
     return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
@@ -87,8 +87,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
-    return NextResponse.json({ error: "Solo administradores pueden actualizar pedidos" }, { status: 403 })
+  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "No autorizado para actualizar pedidos" }, { status: 403 })
   }
 
   const body = await req.json()

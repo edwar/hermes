@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { authenticate, FactusApiError } from '@/lib/factus/client';
+import { authenticate, FactusApiError, getNumberingRangeByDocumentType } from '@/lib/factus/client';
 
 export async function GET() {
   try {
@@ -23,7 +23,6 @@ export async function GET() {
       where: { id: companyId },
       select: {
         factusEnabled: true,
-        factusNumberingRangeId: true,
         factusEconomicActivity: true,
         factusTokenExpiresAt: true,
         name: true,
@@ -44,7 +43,7 @@ export async function GET() {
 
     return NextResponse.json({
       enabled: company.factusEnabled,
-      numberingRangeId: company.factusNumberingRangeId,
+      numberingRangeId: null,
       economicActivity: company.factusEconomicActivity,
       connected: hasValidToken,
       company: {
@@ -78,7 +77,66 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { enabled, numberingRangeId, economicActivity, testConnection } = body;
+    const { enabled, validateAndEnable, testConnection } = body;
+
+    if (validateAndEnable) {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        select: {
+          name: true,
+          nit: true,
+          address: true,
+          email: true,
+          phone: true,
+        },
+      });
+
+      if (!company) {
+        return NextResponse.json({ valid: false, error: 'Empresa no encontrada' }, { status: 404 });
+      }
+
+      const errors: string[] = [];
+
+      if (!company.name) errors.push('Nombre de empresa requerido');
+      if (!company.nit) errors.push('NIT requerido');
+      if (!company.address) errors.push('Dirección requerida');
+      if (!company.email) errors.push('Email requerido');
+      if (!company.phone) errors.push('Teléfono requerido');
+
+      if (errors.length > 0) {
+        return NextResponse.json({ valid: false, errors });
+      }
+
+      try {
+        await authenticate(companyId);
+      } catch (error) {
+        if (error instanceof FactusApiError) {
+          return NextResponse.json({ valid: false, error: `Error de Factus: ${error.message}` });
+        }
+        return NextResponse.json({ valid: false, error: 'Error al conectar con Factus' });
+      }
+
+      await prisma.company.update({
+        where: { id: companyId },
+        data: { factusEnabled: true },
+      });
+
+      return NextResponse.json({ valid: true, connected: true, enabled: true });
+    }
+
+    if (body.disconnect) {
+      await prisma.company.update({
+        where: { id: companyId },
+        data: {
+          factusEnabled: false,
+          factusAccessToken: null,
+          factusRefreshToken: null,
+          factusTokenExpiresAt: null,
+        },
+      });
+
+      return NextResponse.json({ success: true });
+    }
 
     if (testConnection) {
       try {
@@ -104,21 +162,11 @@ export async function PUT(req: NextRequest) {
       data.factusEnabled = enabled;
     }
 
-    if (numberingRangeId !== undefined) {
-      data.factusNumberingRangeId = numberingRangeId ? parseInt(numberingRangeId) : null;
-    }
-
-    if (economicActivity !== undefined) {
-      data.factusEconomicActivity = economicActivity || null;
-    }
-
     const company = await prisma.company.update({
       where: { id: companyId },
       data,
       select: {
         factusEnabled: true,
-        factusNumberingRangeId: true,
-        factusEconomicActivity: true,
       },
     });
 

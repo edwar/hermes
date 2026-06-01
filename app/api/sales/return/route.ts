@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
-import { factusRequest } from "@/lib/factus/client"
+import { factusRequest, getNumberingRangeByDocumentType } from "@/lib/factus/client"
 import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
 
 export async function POST(req: NextRequest) {
@@ -34,23 +34,45 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No se puede devolver una devolución" }, { status: 400 })
   }
 
+  const previousReturns = await prisma.sale.findMany({
+    where: {
+      parentSaleId: saleId,
+      isReturn: true,
+    },
+    include: { items: true },
+  })
+
+  const returnedQuantities: Record<string, number> = {}
+  for (const ret of previousReturns) {
+    for (const retItem of ret.items) {
+      returnedQuantities[retItem.productId] = (returnedQuantities[retItem.productId] || 0) + retItem.quantity
+    }
+  }
+
+  for (const item of items) {
+    const originalItem = originalSale.items.find((i) => i.productId === item.productId)
+    if (!originalItem) {
+      return NextResponse.json({ error: `Producto no encontrado en la venta original` }, { status: 400 })
+    }
+
+    const alreadyReturned = returnedQuantities[item.productId] || 0
+    const maxReturnable = originalItem.quantity - alreadyReturned
+
+    if (item.quantity > maxReturnable) {
+      return NextResponse.json({
+        error: `Cantidad a devolver excede la disponible. Vendidas: ${originalItem.quantity}, Ya devueltas: ${alreadyReturned}, Disponibles: ${maxReturnable}`
+      }, { status: 400 })
+    }
+  }
+
   const companyId = session.user.companyId!
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { factusEnabled: true, factusNumberingRangeId: true },
+    select: { factusEnabled: true },
   })
 
   const returnSale = await prisma.$transaction(async (tx) => {
     for (const item of items) {
-      const originalItem = originalSale.items.find((i) => i.productId === item.productId)
-      if (!originalItem) {
-        throw new Error(`Producto ${item.productId} no encontrado en la venta original`)
-      }
-
-      if (item.quantity > originalItem.quantity) {
-        throw new Error(`Cantidad a devolver excede la vendida para el producto`)
-      }
-
       await tx.product.update({
         where: { id: item.productId },
         data: { stock: { increment: item.quantity } },
@@ -100,17 +122,20 @@ export async function POST(req: NextRequest) {
   if (
     createCreditNote &&
     company?.factusEnabled &&
-    company?.factusNumberingRangeId &&
     originalSale.electronicInvoice
   ) {
     try {
+      // Get numbering range for credit notes (document type "22")
+      const rangeRecord = await getNumberingRangeByDocumentType(companyId, "22")
+      const rangeId = rangeRecord?.factusRangeId
+
       const originalInvoice = originalSale.electronicInvoice
-      const creditNotePayload = mapSaleToFactusCreditNote(
+      const creditNotePayload = await mapSaleToFactusCreditNote(
         returnSale as any,
         originalInvoice.consecutive || "",
-        company.factusNumberingRangeId,
+        rangeId,
         `return-${returnSale.id.slice(0, 8)}-${Date.now()}`,
-        "1"
+        1
       )
 
       const factusResponse = await factusRequest<{
@@ -120,25 +145,28 @@ export async function POST(req: NextRequest) {
         status: string
       }>(
         "/v2/credit-notes/validate",
-        { method: "POST", body: JSON.stringify(creditNotePayload) },
+        { method: "POST", body: creditNotePayload as any },
         companyId
       )
+
+      const responseData = (factusResponse as any).data || factusResponse
+      const isValidated = responseData.is_validated === true || factusResponse.status === "accepted" || responseData.status === "Created"
 
       await prisma.electronicInvoice.create({
         data: {
           companyId,
           saleId: returnSale.id,
-          cufe: factusResponse.cufe,
-          consecutive: factusResponse.consecutive,
-          status: factusResponse.status === "accepted" ? "VALIDATED" : "PENDING",
-          factusBillId: String(factusResponse.id),
+          cufe: responseData.cufe || "",
+          consecutive: responseData.consecutive || responseData.number || String(responseData.id),
+          status: isValidated ? "VALIDATED" : "PENDING",
+          factusBillId: String(responseData.id || factusResponse.id),
           total: returnSale.total,
           taxTotal: returnSale.tax,
-          validatedAt: new Date(),
+          validatedAt: isValidated ? new Date() : null,
         },
       })
-    } catch (error) {
-      console.error("Error creating credit note:", error)
+    } catch (error: any) {
+      console.error("Error creating credit note:", error?.message || error)
     }
   }
 

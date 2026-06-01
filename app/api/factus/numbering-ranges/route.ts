@@ -56,21 +56,27 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { document, prefix, current } = body;
+    const { document, prefix, from, to, current } = body;
 
     if (!document || !prefix) {
       return NextResponse.json({ error: 'document y prefix son requeridos' }, { status: 400 });
     }
 
     const range = await createNumberingRange(companyId, {
-      document: document || '01',
-      prefix: prefix || 'FD',
-      current: current || '1',
+      document,
+      prefix,
+      from: from || '1',
+      to: to || '999999',
+      current: current || from || '1',
     });
 
-    await prisma.company.update({
-      where: { id: companyId },
-      data: { factusNumberingRangeId: range.id },
+    await prisma.companyNumberingRange.create({
+      data: {
+        companyId,
+        documentType: document,
+        factusRangeId: range.id,
+        prefix,
+      },
     });
 
     return NextResponse.json(range, { status: 201 });

@@ -340,9 +340,26 @@ export async function getNumberingRange(companyId: string, id: number) {
   );
 }
 
+export async function getCompanyNumberingRanges(companyId: string) {
+  const { prisma } = await import('@/lib/prisma');
+  return prisma.companyNumberingRange.findMany({
+    where: { companyId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getNumberingRangeByDocumentType(companyId: string, documentType: string) {
+  const { prisma } = await import('@/lib/prisma');
+  return prisma.companyNumberingRange.findUnique({
+    where: {
+      companyId_documentType: { companyId, documentType },
+    },
+  });
+}
+
 export async function createNumberingRange(
   companyId: string,
-  data: { document: string; prefix: string; current: string }
+  data: { document: string; prefix: string; from: string; to: string; current: string }
 ) {
   return factusRequest<NumberingRange>(
     '/v2/numbering-ranges',

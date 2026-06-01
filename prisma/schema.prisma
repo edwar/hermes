@@ -72,9 +72,23 @@ model Company {
   factusAccessToken     String?
   factusRefreshToken    String?
   factusTokenExpiresAt  DateTime?
-  factusNumberingRangeId Int?
   factusEconomicActivity String?
   factusDv              String?
+
+  numberingRanges      CompanyNumberingRange[]
+}
+
+model CompanyNumberingRange {
+  id            String   @id @default(cuid())
+  companyId     String
+  documentType  String   // "21" = Factura, "22" = Nota Crédito, "24" = Doc. Soporte, etc.
+  factusRangeId Int
+  prefix        String
+  createdAt     DateTime @default(now())
+
+  company       Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, documentType])
 }
 
 model CompanyInvite {

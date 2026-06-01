@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { factusRequest, FactusApiError, listInvoices } from '@/lib/factus/client';
+import { factusRequest, FactusApiError, listInvoices, getNumberingRangeByDocumentType } from '@/lib/factus/client';
 import { mapSaleToFactusInvoice, mapSaleToFactusCreditNote } from '@/lib/factus/mappers';
 import type { InvoiceStatus } from '@prisma/client';
 
@@ -84,7 +84,6 @@ export async function POST(req: NextRequest) {
       where: { id: companyId },
       select: {
         factusEnabled: true,
-        factusNumberingRangeId: true,
       },
     });
 
@@ -96,8 +95,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Facturación electrónica no habilitada' }, { status: 400 });
     }
 
-    if (!company.factusNumberingRangeId) {
-      return NextResponse.json({ error: 'Rango de numeración no configurado' }, { status: 400 });
+    const documentType = isReturn ? '22' : '21';
+    const rangeRecord = await getNumberingRangeByDocumentType(companyId, documentType);
+
+    if (!rangeRecord) {
+      return NextResponse.json({ error: `Rango de numeración para ${isReturn ? 'nota crédito' : 'factura'} no configurado` }, { status: 400 });
     }
 
     const sale = await prisma.sale.findUnique({
@@ -144,14 +146,14 @@ export async function POST(req: NextRequest) {
       factusPayload = await mapSaleToFactusCreditNote(
         sale,
         originalInvoice.consecutive || '',
-        company.factusNumberingRangeId,
+        rangeRecord.factusRangeId,
         `return-${sale.id.slice(0, 8)}-${Date.now()}`,
         correctionConceptId || '1'
       );
       endpoint = '/v2/credit-notes/validate';
       invoiceType = 'credit-note';
     } else {
-      factusPayload = await mapSaleToFactusInvoice(sale, company.factusNumberingRangeId, `sale-${sale.id.slice(0, 8)}-${Date.now()}`);
+      factusPayload = await mapSaleToFactusInvoice(sale, rangeRecord.factusRangeId, `sale-${sale.id.slice(0, 8)}-${Date.now()}`);
       endpoint = '/v2/bills/validate';
     }
 

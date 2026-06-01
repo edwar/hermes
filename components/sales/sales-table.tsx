@@ -67,7 +67,7 @@ export function SalesTable() {
     if (initialized) {
       fetchSales(1)
     }
-  }, [initialized])
+  }, [initialized, from, to])
 
   async function fetchSales(p: number = 1) {
     setLoading(true)

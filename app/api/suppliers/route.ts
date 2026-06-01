@@ -7,8 +7,8 @@ import { companyScope } from "@/lib/company-scope"
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
-    return NextResponse.json({ error: "Solo administradores pueden ver proveedores" }, { status: 403 })
+  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "No autorizado para ver proveedores" }, { status: 403 })
   }
 
   const { searchParams } = new URL(req.url)
