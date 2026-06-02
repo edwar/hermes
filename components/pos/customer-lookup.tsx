@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,15 +54,27 @@ export function CustomerLookup({
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState("")
+  const lastSearchedCedulaRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (selectedCustomer) {
-      setFoundCustomer(selectedCustomer)
-      setCedula(selectedCustomer.cedula ?? "")
-      setNotFound(false)
+      if (selectedCustomer.cedula) {
+        if (lastSearchedCedulaRef.current !== selectedCustomer.cedula) {
+          lastSearchedCedulaRef.current = selectedCustomer.cedula
+          void runSearch(selectedCustomer.cedula)
+        } else {
+          setCedula(selectedCustomer.cedula)
+          setNotFound(false)
+        }
+      } else {
+        setFoundCustomer(selectedCustomer)
+        setCedula("")
+        setNotFound(false)
+      }
     } else {
       setFoundCustomer(null)
       setNotFound(false)
+      lastSearchedCedulaRef.current = null
     }
   }, [selectedCustomer])
 
@@ -74,18 +86,21 @@ export function CustomerLookup({
     }
   }, [cedula])
 
-  async function handleSearch() {
-    if (!cedula.trim()) return
+  async function runSearch(cedulaToSearch: string) {
+    const trimmed = cedulaToSearch.trim()
+    if (!trimmed) return
     setLoading(true)
     setError("")
     setFoundCustomer(null)
     setNotFound(false)
 
     try {
-      const customer = await searchCustomerByCedula(cedula.trim())
+      const customer = await searchCustomerByCedula(trimmed)
       if (customer) {
         setFoundCustomer(customer)
+        setCedula(customer.cedula ?? trimmed)
         onCustomerSelect({ id: customer.id, name: customer.name })
+        lastSearchedCedulaRef.current = customer.cedula ?? null
       } else {
         setNotFound(true)
       }
@@ -94,6 +109,10 @@ export function CustomerLookup({
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleSearch() {
+    await runSearch(cedula)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
