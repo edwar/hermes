@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { useDashboard } from "@/features/dashboard/hooks/use-dashboard"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,29 +19,20 @@ import {
   ShoppingCart,
   TrendingUp,
 } from "lucide-react"
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts"
+import { ChartSkeleton } from "@/components/dashboard/charts"
 
-const COLORS = ["#16A34A", "#2563EB", "#CABA04", "#DC2626"]
-
-const PAYMENT_LABELS: Record<string, string> = {
-  CASH: "Efectivo",
-  CARD: "Tarjeta",
-  TRANSFER: "Transferencia",
-  CREDIT: "Crédito",
-}
+const DailySalesChart = dynamic(
+  () => import("@/components/dashboard/charts").then((m) => m.DailySalesChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+)
+const PaymentMethodsChart = dynamic(
+  () => import("@/components/dashboard/charts").then((m) => m.PaymentMethodsChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+)
+const TopProductsChart = dynamic(
+  () => import("@/components/dashboard/charts").then((m) => m.TopProductsChart),
+  { ssr: false, loading: () => <ChartSkeleton /> }
+)
 
 export default function DashboardPage() {
   const { data, isLoading } = useDashboard()
@@ -92,37 +84,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {dailySales.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dailySales}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11 }}
-                      tickFormatter={(v) => {
-                        const d = new Date(v + "T00:00:00")
-                        return d.toLocaleDateString("es", { day: "2-digit", month: "2-digit" })
-                      }}
-                    />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip
-                      formatter={(value) => formatCOP(typeof value === "number" ? value : 0)}
-                      labelFormatter={(label) => new Date(label + "T00:00:00").toLocaleDateString("es")}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="total"
-                      stroke="#004F6E"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Sin ventas en los últimos 30 días
-                </div>
-              )}
+              <DailySalesChart data={dailySales} />
             </div>
           </CardContent>
         </Card>
@@ -134,32 +96,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {paymentMethods.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={paymentMethods}
-                      dataKey="total"
-                      nameKey="method"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={({ method, percent }: { method?: string; percent?: number }) =>
-                        `${PAYMENT_LABELS[method ?? ""] ?? method ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
-                      }
-                    >
-                      {paymentMethods.map((_: any, i: number) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => formatCOP(typeof value === "number" ? value : 0)} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Sin ventas este mes
-                </div>
-              )}
+              <PaymentMethodsChart data={paymentMethods} />
             </div>
           </CardContent>
         </Card>
@@ -170,36 +107,11 @@ export default function DashboardPage() {
           <CardTitle className="font-sans">Productos Más Vendidos</CardTitle>
           <CardDescription>Top 10 del mes</CardDescription>
         </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              {topProducts.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={topProducts}
-                    layout="vertical"
-                    margin={{ left: 120 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis type="number" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      tick={{ fontSize: 11 }}
-                      width={110}
-                    />
-                    <Tooltip
-                      formatter={(value) => formatCOP(typeof value === "number" ? value : 0)}
-                    />
-                    <Bar dataKey="total" fill="#2563EB" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                  Sin ventas este mes
-                </div>
-              )}
-            </div>
-          </CardContent>
+        <CardContent>
+          <div className="h-72">
+            <TopProductsChart data={topProducts} />
+          </div>
+        </CardContent>
       </Card>
     </div>
   )
