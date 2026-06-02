@@ -55,27 +55,27 @@ export function CustomerLookup({
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState("")
   const lastSearchedCedulaRef = useRef<string | null>(null)
+  const lastTypedCedulaRef = useRef<string>("")
 
   useEffect(() => {
     if (selectedCustomer) {
+      // Show the pre-selected customer immediately so the cashier never sees
+      // a transient empty state.
+      setFoundCustomer(selectedCustomer as Customer)
+      setNotFound(false)
+      // If the customer has a cedula, sync the input. Otherwise keep what
+      // the cashier already typed (the search uses the typed value as a
+      // fallback so it still runs and can verify the customer).
       if (selectedCustomer.cedula) {
-        // Show the pre-selected customer immediately (cedula in input, green
-        // panel) so the cashier never sees a transient empty state.
         setCedula(selectedCustomer.cedula)
-        setFoundCustomer(selectedCustomer as Customer)
-        setNotFound(false)
-        // Background-refresh from the API to pull any server-side fields the
-        // prop may be missing (needed for electronic invoicing). Don't block
-        // the UI on it; runSearch will overwrite the display if it gets
-        // fresh data.
-        if (lastSearchedCedulaRef.current !== selectedCustomer.cedula) {
-          lastSearchedCedulaRef.current = selectedCustomer.cedula
-          void runSearch(selectedCustomer.cedula)
-        }
-      } else {
-        setFoundCustomer(selectedCustomer)
-        setCedula("")
-        setNotFound(false)
+        lastTypedCedulaRef.current = selectedCustomer.cedula
+      }
+      // Run the search to refresh data from the server. Use the customer's
+      // cedula if present, otherwise the cashier's typed cedula.
+      const cedulaToSearch = selectedCustomer.cedula ?? lastTypedCedulaRef.current
+      if (cedulaToSearch && lastSearchedCedulaRef.current !== cedulaToSearch) {
+        lastSearchedCedulaRef.current = cedulaToSearch
+        void runSearch(cedulaToSearch)
       }
     } else {
       setFoundCustomer(null)
@@ -103,6 +103,7 @@ export function CustomerLookup({
       if (customer) {
         setFoundCustomer(customer)
         setCedula(customer.cedula ?? trimmed)
+        lastTypedCedulaRef.current = customer.cedula ?? trimmed
         onCustomerSelect({ id: customer.id, name: customer.name })
         lastSearchedCedulaRef.current = customer.cedula ?? null
       }
@@ -122,7 +123,7 @@ export function CustomerLookup({
   async function handleSearch() {
     // User-triggered search: clear previous result first so the green panel
     // disappears while loading and reappears only if the new lookup hits.
-    const trimmed = cedula.trim()
+    const trimmed = (cedula || lastTypedCedulaRef.current).trim()
     if (!trimmed) return
     setFoundCustomer(null)
     setNotFound(false)
@@ -133,6 +134,7 @@ export function CustomerLookup({
       if (customer) {
         setFoundCustomer(customer)
         setCedula(customer.cedula ?? trimmed)
+        lastTypedCedulaRef.current = customer.cedula ?? trimmed
         onCustomerSelect({ id: customer.id, name: customer.name })
         lastSearchedCedulaRef.current = customer.cedula ?? null
       } else {
@@ -171,7 +173,10 @@ export function CustomerLookup({
             <Input
               id="cedula"
               value={cedula}
-              onChange={(e) => setCedula(e.target.value)}
+              onChange={(e) => {
+                setCedula(e.target.value)
+                lastTypedCedulaRef.current = e.target.value
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Ingrese cédula o NIT"
               className="pl-9"
