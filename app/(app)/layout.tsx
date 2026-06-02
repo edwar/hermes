@@ -17,7 +17,7 @@ export default async function DashboardLayout({
       <Sidebar />
       <div className="flex flex-1 flex-col min-w-0">
         <Header />
-        <main className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-background via-background to-[oklch(0.96_0.008_60)]">
+        <main className="flex-1 overflow-y-auto p-6 bg-background">
           {children}
         </main>
       </div>
