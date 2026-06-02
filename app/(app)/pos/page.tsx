@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
@@ -47,7 +47,7 @@ export default function POSPage() {
   const [editingCustomer, setEditingCustomer] = useState<any>(null)
   const [pendingCustomerCedula, setPendingCustomerCedula] = useState<string | null>(null)
   const [justEditedCustomer, setJustEditedCustomer] = useState<any>(null)
-  const [newlyCreatedCustomer, setNewlyCreatedCustomer] = useState<any>(null)
+  const newlyCreatedCustomerRef = useRef<any>(null)
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery({
     queryKey: ["active-session", sessionKey],
@@ -142,16 +142,16 @@ export default function POSPage() {
   }
 
   function handleCustomerCreated(customer: any) {
-    setNewlyCreatedCustomer(customer)
+    newlyCreatedCustomerRef.current = customer
   }
 
   function handleCustomerFormClose() {
     setCustomerFormOpen(false)
-    const customer = newlyCreatedCustomer ?? editingCustomer
+    const customer = newlyCreatedCustomerRef.current ?? editingCustomer
+    newlyCreatedCustomerRef.current = null
     setEditingCustomer(null)
-    setNewlyCreatedCustomer(null)
     setPendingCustomerCedula(null)
-    if (customer) {
+    if (customer || pendingCustomerCedula) {
       setJustEditedCustomer(customer)
       setPaymentOpen(true)
     }
