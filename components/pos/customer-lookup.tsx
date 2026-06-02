@@ -197,14 +197,14 @@ export function CustomerLookup({
       </div>
 
       {foundCustomer && (
-        <div className="rounded-lg border bg-green-50 border-green-200 p-3 space-y-2">
+        <div className="rounded-lg border p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Check className="size-4 text-green-600" />
-              <span className="text-sm font-medium text-green-800">Cliente encontrado</span>
+              <Check className="size-4" />
+              <span className="text-sm font-medium">Cliente encontrado</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs">
+              <Badge variant="outline" className="text-xs">
                 {foundCustomer.cedula || cedula || "Sin cédula"}
               </Badge>
               <Button variant="ghost" size="icon" className="size-7" onClick={() => onRequestEditCustomer(foundCustomer)}>
@@ -225,10 +225,10 @@ export function CustomerLookup({
       )}
 
       {notFound && !foundCustomer && (
-        <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50/50 p-3 space-y-3">
+        <div className="rounded-lg border border-dashed p-3 space-y-3">
           <div className="flex items-center gap-2">
-            <UserPlus className="size-4 text-amber-600" />
-            <span className="text-sm font-medium text-amber-800">Cliente no encontrado</span>
+            <UserPlus className="size-4" />
+            <span className="text-sm font-medium">Cliente no encontrado</span>
           </div>
           <p className="text-xs text-muted-foreground pl-6">
             ¿Deseas registrarlo?
