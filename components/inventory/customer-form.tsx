@@ -27,9 +27,17 @@ interface CustomerFormProps {
     cedula: string | null
   } | null
   defaultCedula?: string
+  onCreated?: (customer: {
+    id: string
+    name: string
+    email: string | null
+    phone: string | null
+    address: string | null
+    cedula: string | null
+  }) => void
 }
 
-export function CustomerForm({ open, onOpenChange, customer, defaultCedula }: CustomerFormProps) {
+export function CustomerForm({ open, onOpenChange, customer, defaultCedula, onCreated }: CustomerFormProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
@@ -55,7 +63,8 @@ export function CustomerForm({ open, onOpenChange, customer, defaultCedula }: Cu
     if (isEditing) {
       await updateCustomer.mutateAsync({ id: customer!.id, name, email, phone, address, cedula })
     } else {
-      await createCustomer.mutateAsync({ name, email, phone, address, cedula })
+      const created = await createCustomer.mutateAsync({ name, email, phone, address, cedula })
+      onCreated?.(created)
     }
     onOpenChange(false)
   }

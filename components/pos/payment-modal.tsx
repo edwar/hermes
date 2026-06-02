@@ -33,6 +33,9 @@ interface CustomerInfo {
   id: string
   name: string
   email?: string | null
+  phone?: string | null
+  address?: string | null
+  cedula?: string | null
 }
 
 interface PaymentModalProps {
@@ -188,6 +191,7 @@ export function PaymentModal({
 
         <div className="space-y-4 py-2">
           <CustomerLookup
+            selectedCustomer={selectedCustomer}
             onCustomerSelect={setSelectedCustomer}
             onRequestElectronicInvoiceChange={setRequestElectronicInvoice}
             requestElectronicInvoice={requestElectronicInvoice}
