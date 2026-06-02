@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -168,13 +169,10 @@ export function ProductForm({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="purchasePrice">Precio de compra (referencia)</Label>
-                <Input
+                <CurrencyInput
                   id="purchasePrice"
-                  type="number"
-                  min="0"
-                  step="100"
                   value={purchasePrice}
-                  onChange={(e) => setPurchasePrice(e.target.value)}
+                  onChange={setPurchasePrice}
                   placeholder="Último precio de compra (opcional)"
                 />
               </div>

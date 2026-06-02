@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
@@ -297,15 +297,13 @@ useEffect(() => {
 
             <div className="space-y-2">
               <Label htmlFor="closing">Efectivo contado en caja</Label>
-              <Input
+              <CurrencyInput
                 id="closing"
-                type="number"
-                min="0"
                 value={closingBalance}
-                onChange={(e) => setClosingBalance(e.target.value)}
+                onChange={setClosingBalance}
                 placeholder="$ 0"
                 disabled={mutation.isPending}
-                className="h-12 text-lg font-mono"
+                className="h-12 text-lg"
               />
                   {closingBalance && (() => {
                     const diff = Number(closingBalance) - summary.summary.expectedCash
