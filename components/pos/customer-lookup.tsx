@@ -59,12 +59,18 @@ export function CustomerLookup({
   useEffect(() => {
     if (selectedCustomer) {
       if (selectedCustomer.cedula) {
+        // Show the pre-selected customer immediately (cedula in input, green
+        // panel) so the cashier never sees a transient empty state.
+        setCedula(selectedCustomer.cedula)
+        setFoundCustomer(selectedCustomer as Customer)
+        setNotFound(false)
+        // Background-refresh from the API to pull any server-side fields the
+        // prop may be missing (needed for electronic invoicing). Don't block
+        // the UI on it; runSearch will overwrite the display if it gets
+        // fresh data.
         if (lastSearchedCedulaRef.current !== selectedCustomer.cedula) {
           lastSearchedCedulaRef.current = selectedCustomer.cedula
           void runSearch(selectedCustomer.cedula)
-        } else {
-          setCedula(selectedCustomer.cedula)
-          setNotFound(false)
         }
       } else {
         setFoundCustomer(selectedCustomer)
@@ -91,9 +97,37 @@ export function CustomerLookup({
     if (!trimmed) return
     setLoading(true)
     setError("")
+
+    try {
+      const customer = await searchCustomerByCedula(trimmed)
+      if (customer) {
+        setFoundCustomer(customer)
+        setCedula(customer.cedula ?? trimmed)
+        onCustomerSelect({ id: customer.id, name: customer.name })
+        lastSearchedCedulaRef.current = customer.cedula ?? null
+      }
+      // When pre-selected, we trust the prop: don't flip to "not found"
+      // just because the search hasn't returned a row yet (race during
+      // background refresh right after create). The user-driven handleSearch
+      // path goes through this same function but the prop is null at that
+      // point, so the explicit handleSearch flow is handled by setting
+      // notFound=true at the call site below.
+    } catch {
+      setError("Error al buscar cliente")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleSearch() {
+    // User-triggered search: clear previous result first so the green panel
+    // disappears while loading and reappears only if the new lookup hits.
+    const trimmed = cedula.trim()
+    if (!trimmed) return
     setFoundCustomer(null)
     setNotFound(false)
-
+    setLoading(true)
+    setError("")
     try {
       const customer = await searchCustomerByCedula(trimmed)
       if (customer) {
@@ -109,10 +143,6 @@ export function CustomerLookup({
     } finally {
       setLoading(false)
     }
-  }
-
-  async function handleSearch() {
-    await runSearch(cedula)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
