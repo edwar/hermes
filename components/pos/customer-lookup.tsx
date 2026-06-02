@@ -205,7 +205,7 @@ export function CustomerLookup({
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 text-xs">
-                {foundCustomer.cedula || "Sin cédula"}
+                {foundCustomer.cedula || cedula || "Sin cédula"}
               </Badge>
               <Button variant="ghost" size="icon" className="size-7" onClick={() => onRequestEditCustomer(foundCustomer)}>
                 <Pencil className="size-3 text-green-700" />
