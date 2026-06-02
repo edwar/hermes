@@ -47,6 +47,7 @@ export default function POSPage() {
   const [editingCustomer, setEditingCustomer] = useState<any>(null)
   const [pendingCustomerCedula, setPendingCustomerCedula] = useState<string | null>(null)
   const [justEditedCustomer, setJustEditedCustomer] = useState<any>(null)
+  const [newlyCreatedCustomer, setNewlyCreatedCustomer] = useState<any>(null)
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery({
     queryKey: ["active-session", sessionKey],
@@ -140,12 +141,17 @@ export default function POSPage() {
     setCustomerFormOpen(true)
   }
 
+  function handleCustomerCreated(customer: any) {
+    setNewlyCreatedCustomer(customer)
+  }
+
   function handleCustomerFormClose() {
     setCustomerFormOpen(false)
-    const customer = editingCustomer
+    const customer = newlyCreatedCustomer ?? editingCustomer
     setEditingCustomer(null)
+    setNewlyCreatedCustomer(null)
     setPendingCustomerCedula(null)
-    if (customer || pendingCustomerCedula) {
+    if (customer) {
       setJustEditedCustomer(customer)
       setPaymentOpen(true)
     }
@@ -269,6 +275,7 @@ export default function POSPage() {
         }}
         customer={editingCustomer}
         defaultCedula={pendingCustomerCedula || undefined}
+        onCreated={handleCustomerCreated}
       />
     </div>
   )

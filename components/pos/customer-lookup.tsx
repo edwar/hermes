@@ -11,10 +11,10 @@ import { Loader2, Search, Check, X, UserPlus, Pencil } from "lucide-react"
 interface Customer {
   id: string
   name: string
-  email: string | null
-  phone: string | null
-  address: string | null
-  cedula: string | null
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+  cedula?: string | null
 }
 
 interface CustomerLookupProps {
@@ -23,6 +23,14 @@ interface CustomerLookupProps {
   requestElectronicInvoice: boolean
   onRequestCreateCustomer: (data: { cedula: string }) => void
   onRequestEditCustomer: (customer: Customer) => void
+  selectedCustomer?: {
+    id: string
+    name: string
+    email?: string | null
+    phone?: string | null
+    address?: string | null
+    cedula?: string | null
+  } | null
 }
 
 async function searchCustomerByCedula(cedula: string): Promise<Customer | null> {
@@ -39,12 +47,24 @@ export function CustomerLookup({
   requestElectronicInvoice,
   onRequestCreateCustomer,
   onRequestEditCustomer,
+  selectedCustomer,
 }: CustomerLookupProps) {
   const [cedula, setCedula] = useState("")
   const [loading, setLoading] = useState(false)
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setFoundCustomer(selectedCustomer)
+      setCedula(selectedCustomer.cedula ?? "")
+      setNotFound(false)
+    } else {
+      setFoundCustomer(null)
+      setNotFound(false)
+    }
+  }, [selectedCustomer])
 
   useEffect(() => {
     if (!cedula) {
