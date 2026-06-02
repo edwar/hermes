@@ -1,8 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { Sidebar } from "@/components/shared/sidebar"
-import { Header } from "@/components/shared/header"
-import { Toaster } from "sileo"
+import { DashboardShell } from "@/components/shared/dashboard-shell"
 
 export default async function DashboardLayout({
   children,
@@ -12,20 +10,5 @@ export default async function DashboardLayout({
   const session = await auth()
   if (!session?.user) redirect("/login")
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
-      <div className="flex flex-1 flex-col min-w-0">
-        <Header />
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="flex-1 overflow-y-auto p-6 bg-background focus:outline-none"
-        >
-          {children}
-        </main>
-      </div>
-      <Toaster position="top-right" />
-    </div>
-  )
+  return <DashboardShell>{children}</DashboardShell>
 }

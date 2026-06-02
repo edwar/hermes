@@ -26,7 +26,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { OnlineBadge } from "@/components/shared/online-badge"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
-import { LogOut, User, AlertTriangle } from "lucide-react"
+import { LogOut, User, AlertTriangle, Menu } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
@@ -50,7 +50,7 @@ async function fetchActiveSession() {
   return res.json()
 }
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session } = useSession()
@@ -75,9 +75,19 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-pos-border bg-background/95 backdrop-blur-sm px-6 sticky top-0 z-10">
-        <h1 className="font-sans text-xl font-bold tracking-tight">{title}</h1>
-        <div className="flex items-center gap-4">
+      <header className="flex h-16 items-center justify-between border-b border-pos-border bg-background/95 backdrop-blur-sm px-4 sm:px-6 sticky top-0 z-10">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="flex size-9 shrink-0 items-center justify-center rounded-md text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:hidden"
+            aria-label="Abrir menú de navegación"
+          >
+            <Menu className="size-5" />
+          </button>
+          <h1 className="font-sans text-xl font-bold tracking-tight truncate">{title}</h1>
+        </div>
+        <div className="flex items-center gap-2 sm:gap-4">
           <OnlineBadge />
           <ThemeToggle />
           <DropdownMenu>
