@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Card,
@@ -76,18 +76,18 @@ export default function ReportsPage() {
           <div className="flex items-end gap-3">
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Desde</span>
-              <Input
-                type="date"
+              <DatePicker
                 value={from}
-                onChange={(e) => { setFrom(e.target.value); setPage(1) }}
+                onChange={(v) => { setFrom(v); setPage(1) }}
+                placeholder="Desde"
               />
             </div>
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Hasta</span>
-              <Input
-                type="date"
+              <DatePicker
                 value={to}
-                onChange={(e) => { setTo(e.target.value); setPage(1) }}
+                onChange={(v) => { setTo(v); setPage(1) }}
+                placeholder="Hasta"
               />
             </div>
           </div>

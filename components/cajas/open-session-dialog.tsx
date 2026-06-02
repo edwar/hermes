@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 
@@ -135,12 +135,10 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }:
 
           <div className="space-y-2">
             <Label htmlFor="base">Base inicial (efectivo en caja)</Label>
-            <Input
+            <CurrencyInput
               id="base"
-              type="number"
-              min="0"
               value={baseAmount}
-              onChange={(e) => setBaseAmount(e.target.value)}
+              onChange={setBaseAmount}
               placeholder="$ 0"
               disabled={mutation.isPending}
             />

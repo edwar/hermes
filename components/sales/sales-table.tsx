@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Select,
@@ -114,11 +114,11 @@ export function SalesTable() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Desde</label>
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-10" />
+          <DatePicker value={from} onChange={setFrom} placeholder="Desde" />
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Hasta</label>
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-10" />
+          <DatePicker value={to} onChange={setTo} placeholder="Hasta" />
         </div>
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Método</label>

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, ShieldCheck } from "lucide-react"
@@ -136,20 +137,18 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="OUT">Retiro (gasto)</SelectItem>
-                    <SelectItem value="IN">Ingreso extra</SelectItem>
+                    <SelectItem value="OUT">Retiro</SelectItem>
+                    <SelectItem value="IN">Ingreso</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="amount">Monto</Label>
-                <Input
+                <CurrencyInput
                   id="amount"
-                  type="number"
-                  min="1"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={setAmount}
                   placeholder="$ 0"
                   disabled={mutation.isPending}
                 />

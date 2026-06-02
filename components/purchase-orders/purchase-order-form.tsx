@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/ui/currency-input"
 import { Label } from "@/components/ui/label"
 import {
   Dialog,
@@ -189,11 +190,9 @@ export function PurchaseOrderForm({ open, onOpenChange, onSuccess }: PurchaseOrd
                 className="w-20"
                 placeholder="Cant"
               />
-              <Input
-                type="number"
-                min="0"
+              <CurrencyInput
                 value={purchasePrice}
-                onChange={(e) => setPurchasePrice(e.target.value)}
+                onChange={setPurchasePrice}
                 className="w-28"
                 placeholder="P. Compra"
               />
