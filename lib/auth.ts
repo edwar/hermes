@@ -1,6 +1,19 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 
+function resolveSiteUrl(): string | null {
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL
+  }
+  if (process.env.AUTH_URL) {
+    return process.env.AUTH_URL
+  }
+  return null
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
@@ -21,7 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = await prisma.user.findFirst({ where: { email } })
         if (!user || !user.isActive) return null
 
-        const isValid = await bcrypt.compare(password, user.passwordHash)
+        const isValid = await bcrypt.compare(password, credentials.password as string)
         if (!isValid) return null
 
         return {
@@ -50,6 +63,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.companyId = token.companyId as string | undefined
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      const siteUrl = resolveSiteUrl()
+      const target = siteUrl ?? baseUrl
+      try {
+        const parsed = new URL(url, baseUrl)
+        const targetOrigin = new URL(target).origin
+        if (parsed.origin === targetOrigin) return parsed.toString()
+        return new URL(
+          parsed.pathname + parsed.search + parsed.hash,
+          target
+        ).toString()
+      } catch {
+        return target
+      }
     },
   },
   pages: {
