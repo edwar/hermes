@@ -196,30 +196,33 @@ function DatePicker({
 
   return (
     <Popover.Root open={open} onOpenChange={handleOpenChange}>
-      <Popover.Trigger
-        id={id}
-        disabled={disabled}
-        className={cn(
-          "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-3 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
-          !selected && "text-muted-foreground",
-          className
-        )}
-      >
-        <span className="flex min-w-0 items-center gap-2">
-          <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
-          <span className="truncate capitalize">{displayText}</span>
-        </span>
+      <div className="relative w-full">
+        <Popover.Trigger
+          id={id}
+          disabled={disabled}
+          className={cn(
+            "flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-3 py-1 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20",
+            !selected && "text-muted-foreground",
+            className
+          )}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
+            <span className="truncate capitalize">{displayText}</span>
+          </span>
+          {selected && !disabled && <span aria-hidden className="size-5 shrink-0" />}
+        </Popover.Trigger>
         {selected && !disabled && (
           <button
             type="button"
             onClick={handleClear}
             aria-label="Limpiar fecha"
-            className="inline-flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="absolute right-2 top-1/2 z-10 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <XIcon className="size-3.5" />
           </button>
         )}
-      </Popover.Trigger>
+      </div>
 
       <Popover.Portal>
         <Popover.Positioner
