@@ -99,9 +99,9 @@ export function CustomerForm({ open, onOpenChange, customer, defaultCedula, onCr
             <Label htmlFor="address">Dirección</Label>
             <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Dirección" />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={isPending || !name}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
+            <Button type="submit" disabled={isPending || !name} className="w-full sm:w-auto">
               {isPending ? (
                 <><Loader2 className="mr-2 size-4 animate-spin" />{isEditing ? "Actualizando..." : "Guardando..."}</>
               ) : (

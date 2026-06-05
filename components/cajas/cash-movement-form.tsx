@@ -177,13 +177,14 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={handleClose} disabled={mutation.isPending}>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+          <Button variant="ghost" onClick={handleClose} disabled={mutation.isPending} className="w-full sm:w-auto">
             {showAdminAuth ? "Cancelar" : "Cerrar"}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={mutation.isPending || !amount || !reason.trim() || (showAdminAuth && !adminPassword)}
+            className="w-full sm:w-auto"
           >
             {mutation.isPending ? (
               <><Loader2 className="mr-2 size-4 animate-spin" /> Registrando...</>

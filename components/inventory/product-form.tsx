@@ -123,7 +123,7 @@ export function ProductForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? "Editar Producto" : "Agregar Producto"}
@@ -136,7 +136,7 @@ export function ProductForm({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 py-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
                 <Input
@@ -166,7 +166,7 @@ export function ProductForm({
                 placeholder="Descripción del producto"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="purchasePrice">Precio de compra (referencia)</Label>
                 <CurrencyInput
@@ -200,7 +200,7 @@ export function ProductForm({
                 Basado en precio de compra + % ganancia. Se actualiza con cada compra.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="stock">Stock actual</Label>
                 <Input
@@ -240,15 +240,16 @@ export function ProductForm({
               </Select>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
               {loading ? "Guardando..." : product ? "Guardar cambios" : "Guardar"}
             </Button>
           </DialogFooter>
