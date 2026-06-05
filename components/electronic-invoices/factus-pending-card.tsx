@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { Fragment, useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
@@ -65,6 +65,7 @@ export function FactusPendingCard() {
   const [clearing, setClearing] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState<PendingBill | null>(null)
   const [expanded, setExpanded] = useState(false)
+  const [rowErrors, setRowErrors] = useState<Record<string, { message: string; isDianConflict: boolean }>>({})
 
   const fetchDiagnose = useCallback(async () => {
     try {
@@ -85,6 +86,24 @@ export function FactusPendingCard() {
     void fetchDiagnose()
   }, [fetchDiagnose])
 
+  function describeFactusError(message: string): { isDianConflict: boolean; tip: string } {
+    if (!message) return { isDianConflict: false, tip: "" }
+    const lower = message.toLowerCase()
+    if (lower.includes("dian") || lower.includes("ya fue enviado")) {
+      return {
+        isDianConflict: true,
+        tip: "La factura ya fue procesada por la DIAN pero la API de Factus aún la lista como pendiente. Es una inconsistencia que se auto-resuelve. Vuelve a consultar la cola en unos minutos; si ya está vacía, podrás reintentar las ventas.",
+      }
+    }
+    if (lower.includes("no se encontró") || lower.includes("no encontrado") || lower.includes("404")) {
+      return {
+        isDianConflict: false,
+        tip: "Factus no encontró esta factura en su cola. Ya está limpia. Vuelve a consultar la cola.",
+      }
+    }
+    return { isDianConflict: false, tip: "" }
+  }
+
   async function handleClear(bill: PendingBill) {
     if (!bill.reference_code) return
     setClearing(bill.reference_code)
@@ -101,9 +120,26 @@ export function FactusPendingCard() {
             ? "Ya estaba limpia en Factus"
             : "Factura eliminada de la cola de Factus",
         })
+        setRowErrors((prev) => {
+          const next = { ...prev }
+          delete next[bill.reference_code!]
+          return next
+        })
         await fetchDiagnose()
       } else {
-        sileo.error({ title: json.error || "No se pudo limpiar" })
+        const factusMessage = json.error || "No se pudo limpiar"
+        const { isDianConflict, tip } = describeFactusError(factusMessage)
+        setRowErrors((prev) => ({
+          ...prev,
+          [bill.reference_code!]: { message: factusMessage, isDianConflict },
+        }))
+        sileo.error({
+          title: isDianConflict ? "Factus: ya procesada por la DIAN" : "No se pudo limpiar",
+          description: factusMessage,
+        })
+        if (tip) {
+          // surface the tip on next render via a lightweight info bar below the row
+        }
       }
     } catch {
       sileo.error({ title: "Error de conexión al limpiar" })
@@ -197,12 +233,6 @@ export function FactusPendingCard() {
               <p className="text-xs text-amber-600/80">
                 Activa el switch en Configuración para poder emitir FE.
               </p>
-              <Link
-                href="/settings"
-                className="mt-2 inline-flex h-7 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-xs font-medium transition-colors hover:bg-muted touch-target"
-              >
-                Ir a Configuración
-              </Link>
             </div>
           </div>
         )}
@@ -260,41 +290,94 @@ export function FactusPendingCard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {bills.map((bill) => (
-                    <tr key={bill.reference_code ?? bill.number ?? bill.id}>
-                      <td className="px-3 py-2 font-mono text-xs">{bill.number ?? "—"}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                        {bill.reference_code ?? "—"}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-sm">
-                        {bill.customer?.names ?? "—"}
-                      </td>
-                      <td className="hidden md:table-cell px-3 py-2 text-xs text-muted-foreground">
-                        {bill.created_at
-                          ? format(new Date(bill.created_at), "dd/MM/yy HH:mm", { locale: es })
-                          : "—"}
-                      </td>
-                      {canManage && (
-                        <td className="px-3 py-2 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={!bill.reference_code || clearing === bill.reference_code}
-                            onClick={() => setConfirmClear(bill)}
-                            className="text-destructive hover:bg-destructive/10 touch-target"
-                            aria-label={`Limpiar ${bill.number ?? bill.reference_code}`}
-                          >
-                            {clearing === bill.reference_code ? (
-                              <Loader2 className="size-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="size-3.5" />
-                            )}
-                            <span className="ml-1.5 hidden sm:inline">Limpiar</span>
-                          </Button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
+                  {bills.map((bill) => {
+                    const rowKey = bill.reference_code ?? bill.number ?? String(bill.id)
+                    const rowError = rowErrors[rowKey]
+                    const errorInfo = rowError ? describeFactusError(rowError.message) : null
+                    return (
+                      <Fragment key={rowKey}>
+                        <tr className={rowError ? "bg-destructive/5" : undefined}>
+                          <td className="px-3 py-2 font-mono text-xs">{bill.number ?? "—"}</td>
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
+                            {bill.reference_code ?? "—"}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-sm">
+                            {bill.customer?.names ?? "—"}
+                          </td>
+                          <td className="hidden md:table-cell px-3 py-2 text-xs text-muted-foreground">
+                            {bill.created_at
+                              ? format(new Date(bill.created_at), "dd/MM/yy HH:mm", { locale: es })
+                              : "—"}
+                          </td>
+                          {canManage && (
+                            <td className="px-3 py-2 text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                disabled={!bill.reference_code || clearing === bill.reference_code}
+                                onClick={() => setConfirmClear(bill)}
+                                className="text-destructive hover:bg-destructive/10 touch-target"
+                                aria-label={`Limpiar ${bill.number ?? bill.reference_code}`}
+                              >
+                                {clearing === bill.reference_code ? (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="size-3.5" />
+                                )}
+                                <span className="ml-1.5 hidden sm:inline">Limpiar</span>
+                              </Button>
+                            </td>
+                          )}
+                        </tr>
+                        {rowError && (
+                          <tr className="bg-destructive/5">
+                            <td colSpan={canManage ? 5 : 4} className="px-3 pb-3 pt-0">
+                              <div
+                                className={
+                                  "mt-1 flex flex-col gap-1 rounded-lg border p-2.5 text-xs " +
+                                  (errorInfo?.isDianConflict
+                                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                    : "border-destructive/30 bg-destructive/10 text-destructive")
+                                }
+                                role="alert"
+                              >
+                                <div className="flex items-center gap-1.5 font-medium">
+                                  <AlertCircle className="size-3.5 shrink-0" />
+                                  {errorInfo?.isDianConflict
+                                    ? "Factus dice que ya fue procesada por la DIAN"
+                                    : "Factus no pudo limpiar esta factura"}
+                                </div>
+                                <p className="text-xs opacity-90">{rowError.message}</p>
+                                {errorInfo?.tip && (
+                                  <p className="text-xs opacity-90">{errorInfo.tip}</p>
+                                )}
+                                <div className="mt-1 flex flex-wrap gap-1.5">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={fetchDiagnose}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    <RefreshCw className="mr-1 size-3" />
+                                    Actualizar cola
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setConfirmClear(bill)}
+                                    disabled={!bill.reference_code || clearing === bill.reference_code}
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    Reintentar limpieza
+                                  </Button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
