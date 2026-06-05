@@ -9,6 +9,7 @@ import { es } from "date-fns/locale"
 
 interface ActiveSessionBadgeProps {
   onClose: () => void
+  compact?: boolean
 }
 
 async function fetchActiveSession() {
@@ -17,7 +18,7 @@ async function fetchActiveSession() {
   return res.json()
 }
 
-export function ActiveSessionBadge({ onClose }: ActiveSessionBadgeProps) {
+export function ActiveSessionBadge({ onClose, compact = false }: ActiveSessionBadgeProps) {
   const { data: session, isLoading } = useQuery({
     queryKey: ["active-session"],
     queryFn: fetchActiveSession,
@@ -34,6 +35,22 @@ export function ActiveSessionBadge({ onClose }: ActiveSessionBadgeProps) {
   }
 
   if (!session) return null
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 shadow-sm touch-target"
+        aria-label="Cerrar sesión de caja"
+      >
+        <Wallet className="size-3.5 text-primary" />
+        <span className="text-xs font-medium font-mono tabular-nums">
+          {formatCOP(Number(session.openingBalance))}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-1.5 shadow-sm">

@@ -169,9 +169,9 @@ export function PurchaseOrderForm({ open, onOpenChange, onSuccess }: PurchaseOrd
 
           <div className="space-y-2">
             <Label>Agregar productos</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Select value={selectedProductId} onValueChange={handleProductSelect}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="w-full sm:flex-1">
                   <SelectValue placeholder="Seleccionar producto" />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,23 +182,25 @@ export function PurchaseOrderForm({ open, onOpenChange, onSuccess }: PurchaseOrd
                   ))}
                 </SelectContent>
               </Select>
-              <Input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className="w-20"
-                placeholder="Cant"
-              />
-              <CurrencyInput
-                value={purchasePrice}
-                onChange={setPurchasePrice}
-                className="w-28"
-                placeholder="P. Compra"
-              />
-              <Button type="button" variant="outline" onClick={addItem} disabled={!selectedProductId || !quantity || !purchasePrice}>
-                <Plus className="size-4" />
-              </Button>
+              <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-2">
+                <Input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  className="w-full sm:w-20"
+                  placeholder="Cant"
+                />
+                <CurrencyInput
+                  value={purchasePrice}
+                  onChange={setPurchasePrice}
+                  className="w-full sm:w-28"
+                  placeholder="P. Compra"
+                />
+                <Button type="button" variant="outline" onClick={addItem} disabled={!selectedProductId || !quantity || !purchasePrice} className="touch-target">
+                  <Plus className="size-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -240,11 +242,11 @@ export function PurchaseOrderForm({ open, onOpenChange, onSuccess }: PurchaseOrd
             </div>
           </div>
 
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !supplierId || items.length === 0}>
+            <Button type="submit" disabled={loading || !supplierId || items.length === 0} className="w-full sm:w-auto">
               {loading ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
               Crear Pedido
             </Button>

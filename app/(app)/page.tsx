@@ -83,7 +83,7 @@ export default function DashboardPage() {
             <CardDescription>Ingresos diarios del último mes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-64 md:h-80">
               <DailySalesChart data={dailySales} />
             </div>
           </CardContent>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
             <CardDescription>Distribución del mes</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-64 md:h-80">
               <PaymentMethodsChart data={paymentMethods} />
             </div>
           </CardContent>
@@ -108,7 +108,7 @@ export default function DashboardPage() {
           <CardDescription>Top 10 del mes</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-72">
+          <div className="h-64 md:h-72">
             <TopProductsChart data={topProducts} />
           </div>
         </CardContent>

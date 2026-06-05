@@ -131,15 +131,16 @@ export function SupplierForm({ open, onOpenChange, supplier }: SupplierFormProps
               placeholder="Dirección del proveedor"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !name}>
+            <Button type="submit" disabled={loading || !name} className="w-full sm:w-auto">
               {loading ? "Guardando..." : supplier ? "Guardar cambios" : "Guardar"}
             </Button>
           </DialogFooter>

@@ -167,11 +167,11 @@ export function ElectronicInvoicesTable() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-end gap-3">
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Estado</label>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v === "all" ? "" : (v ?? ""))}>
-            <SelectTrigger className="w-40 h-10">
+            <SelectTrigger className="w-full sm:w-40 h-10">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -183,7 +183,7 @@ export function ElectronicInvoicesTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => fetchInvoices(1)} className="h-10">
+        <Button onClick={() => fetchInvoices(1)} className="h-10 w-full md:w-auto">
           <RefreshCw className="mr-2 size-4" />
           Actualizar
         </Button>
@@ -207,12 +207,12 @@ export function ElectronicInvoicesTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Consecutivo</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>CUFE</TableHead>
+                <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                <TableHead className="hidden md:table-cell">Cliente</TableHead>
+                <TableHead className="hidden lg:table-cell">CUFE</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead className="text-center">Estado</TableHead>
-                <TableHead className="w-48 text-center">Acciones</TableHead>
+                <TableHead className="hidden sm:table-cell text-center">Estado</TableHead>
+                <TableHead className="w-32 sm:w-48 text-center">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -223,19 +223,19 @@ export function ElectronicInvoicesTable() {
                     <TableCell className="font-mono text-sm">
                       {inv.consecutive ?? inv.id.slice(0, 8)}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden md:table-cell text-sm">
                       {format(new Date(inv.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden md:table-cell text-sm">
                       {inv.sale?.customer?.name ?? <span className="text-muted-foreground/50">—</span>}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground max-w-[180px] truncate">
+                    <TableCell className="hidden lg:table-cell font-mono text-xs text-muted-foreground max-w-[180px] truncate">
                       {inv.cufe ?? <span className="text-muted-foreground/30">Sin CUFE</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums font-medium">
                       {formatCOP(inv.total)}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="hidden sm:table-cell text-center">
                       <Badge variant={status.variant} className="text-xs font-normal">
                         {status.label}
                       </Badge>
@@ -245,8 +245,9 @@ export function ElectronicInvoicesTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          className="size-9 md:size-8 touch-target"
                           title="Descargar PDF"
+                          aria-label="Descargar PDF"
                           disabled={!inv.factusBillId || downloadingId === inv.id}
                           onClick={() => handleDownloadPdf(inv.id)}
                         >
@@ -259,8 +260,9 @@ export function ElectronicInvoicesTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          className="size-9 md:size-8 touch-target"
                           title="Descargar XML"
+                          aria-label="Descargar XML"
                           disabled={!inv.factusBillId || downloadingId === inv.id}
                           onClick={() => handleDownloadXml(inv.id)}
                         >
@@ -269,8 +271,9 @@ export function ElectronicInvoicesTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          className="size-9 md:size-8 touch-target"
                           title="Enviar por email"
+                          aria-label="Enviar por email"
                           disabled={!inv.factusBillId || sendingId === inv.id}
                           onClick={() => handleSendEmail(inv.id)}
                         >
@@ -283,8 +286,9 @@ export function ElectronicInvoicesTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          className="size-9 md:size-8 touch-target"
                           title="Actualizar estado"
+                          aria-label="Actualizar estado"
                           onClick={() => handleRefreshStatus(inv.id)}
                         >
                           <RefreshCw className="size-3.5" />

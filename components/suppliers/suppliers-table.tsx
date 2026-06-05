@@ -51,8 +51,8 @@ export function SuppliersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 sm:max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o teléfono..."
@@ -61,7 +61,7 @@ export function SuppliersTable() {
             className="h-10 pl-10"
           />
         </div>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
           <Plus className="mr-2 size-4" />
           Nuevo Proveedor
         </Button>
@@ -85,8 +85,8 @@ export function SuppliersTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Contacto</TableHead>
-                <TableHead>Dirección</TableHead>
+                <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                <TableHead className="hidden lg:table-cell">Dirección</TableHead>
                 <TableHead className="w-24 text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -94,7 +94,7 @@ export function SuppliersTable() {
               {suppliers.map((s: any) => (
                 <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="space-y-0.5">
                       {s.email && (
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -109,7 +109,7 @@ export function SuppliersTable() {
                       {!s.email && !s.phone && <span className="text-sm text-muted-foreground/50">—</span>}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {s.address ? (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <MapPin className="size-3 shrink-0" /> {s.address}
@@ -120,10 +120,10 @@ export function SuppliersTable() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="size-8" onClick={() => handleEdit(s)}>
+                      <Button variant="ghost" size="icon" className="size-9 md:size-8 touch-target" onClick={() => handleEdit(s)} aria-label="Editar">
                         <Pencil className="size-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(s.id)}>
+                      <Button variant="ghost" size="icon" className="size-9 md:size-8 text-destructive touch-target" onClick={() => setDeleteId(s.id)} aria-label="Eliminar">
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>

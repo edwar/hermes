@@ -4,6 +4,18 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { ProductGrid } from "@/components/pos/product-grid"
 import { BarcodeScanner } from "@/components/pos/barcode-scanner"
 import { Cart } from "@/components/pos/cart"
@@ -19,7 +31,8 @@ import { useCheckout } from "@/features/pos/hooks/use-checkout"
 import { PrinterSettings } from "@/components/settings/printer-settings"
 import { useSessionHeartbeat } from "@/hooks/use-session-heartbeat"
 import { usePresenceMonitor } from "@/hooks/use-presence-monitor"
-import { RotateCcw, Printer, Loader2, ArrowUpDown, AlertTriangle } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-is-mobile"
+import { RotateCcw, Printer, Loader2, ArrowUpDown, AlertTriangle, ShoppingCart, MoreVertical } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
 
 async function fetchActiveSession() {
@@ -47,7 +60,9 @@ export default function POSPage() {
   const [editingCustomer, setEditingCustomer] = useState<any>(null)
   const [pendingCustomerCedula, setPendingCustomerCedula] = useState<string | null>(null)
   const [justEditedCustomer, setJustEditedCustomer] = useState<any>(null)
+  const [cartSheetOpen, setCartSheetOpen] = useState(false)
   const newlyCreatedCustomerRef = useRef<any>(null)
+  const isMobile = useIsMobile()
 
   const { data: activeSession, isLoading: sessionLoading } = useQuery({
     queryKey: ["active-session", sessionKey],
@@ -159,7 +174,7 @@ export default function POSPage() {
 
   if (sessionLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-6">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-4 md:-m-6">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -167,7 +182,7 @@ export default function POSPage() {
 
   if (hasConflict) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-6">
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-4 md:-m-6">
         <div className="mx-auto max-w-sm text-center">
           <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="size-10 text-destructive" />
@@ -203,11 +218,11 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] -m-6 overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] -m-4 md:-m-6 overflow-hidden">
       <BarcodeScanner onProductFound={handleAddProduct} />
-      <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-between px-6 pt-6 pb-0">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-6 pb-2 gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPrinterOpen(true)}>
               <Printer className="mr-2 size-4" />
               Impresora
@@ -221,7 +236,32 @@ export default function POSPage() {
               Movimiento
             </Button>
           </div>
-          <ActiveSessionBadge onClose={() => setCloseSessionOpen(true)} />
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex size-9 items-center justify-center rounded-md text-foreground/70 transition-colors hover:bg-muted hover:text-foreground touch-target">
+                <MoreVertical className="size-5" />
+                <span className="sr-only">Más acciones</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuItem onClick={() => setPrinterOpen(true)} className="py-2.5">
+                  <Printer className="mr-2 size-4" />
+                  Impresora
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setReturnOpen(true)} className="py-2.5">
+                  <RotateCcw className="mr-2 size-4" />
+                  Devolución
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setMovementOpen(true)} className="py-2.5">
+                  <ArrowUpDown className="mr-2 size-4" />
+                  Movimiento
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <ActiveSessionBadge
+            onClose={() => setCloseSessionOpen(true)}
+            compact={isMobile}
+          />
         </div>
         <ProductGrid onAddProduct={handleAddProduct} />
       </div>
@@ -236,6 +276,52 @@ export default function POSPage() {
         onRemoveItem={cart.removeItem}
         onCheckout={handleCheckout}
       />
+
+      {/* Mobile FAB to open cart in a Sheet */}
+      <div className="md:hidden fixed right-4 bottom-24 z-20 safe-bottom">
+        <Button
+          onClick={() => setCartSheetOpen(true)}
+          className="size-14 rounded-full shadow-lg touch-target"
+          size="icon"
+          aria-label={`Ver carrito (${cart.itemCount} ${cart.itemCount === 1 ? "item" : "items"})`}
+        >
+          <ShoppingCart className="size-6" />
+          {cart.itemCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground font-mono">
+              {cart.itemCount}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      <Sheet open={cartSheetOpen} onOpenChange={setCartSheetOpen}>
+        <SheetContent
+          side="bottom"
+          className="h-[85vh] max-h-[85vh] p-0 rounded-t-lg flex flex-col"
+          showCloseButton={false}
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Carrito de compras</SheetTitle>
+          </SheetHeader>
+          <Cart
+            items={cart.items}
+            subtotal={cart.subtotal}
+            tax={cart.tax}
+            total={cart.total}
+            isEmpty={cart.isEmpty}
+            itemCount={cart.itemCount}
+            onUpdateQuantity={cart.updateQuantity}
+            onRemoveItem={cart.removeItem}
+            onCheckout={() => {
+              setCartSheetOpen(false)
+              handleCheckout()
+            }}
+            variant="sheet"
+            onClose={() => setCartSheetOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
       <PrinterSettings open={printerOpen} onOpenChange={setPrinterOpen} />
       <ReturnDialog open={returnOpen} onOpenChange={(v) => { setReturnOpen(v); if (!v) setReturnSaleId(undefined) }} initialSaleId={returnSaleId} />
       <PaymentModal

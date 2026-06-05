@@ -97,9 +97,9 @@ export function CashRegisterForm({ open, onOpenChange, edit }: CashRegisterFormP
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending}>Cancelar</Button>
-          <Button onClick={handleSubmit} disabled={isPending || !name.trim()}>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isPending} className="w-full sm:w-auto">Cancelar</Button>
+          <Button onClick={handleSubmit} disabled={isPending || !name.trim()} className="w-full sm:w-auto">
             {isPending ? <><Loader2 className="mr-2 size-4 animate-spin" /> Guardando...</> : (edit ? "Guardar" : "Crear")}
           </Button>
         </DialogFooter>

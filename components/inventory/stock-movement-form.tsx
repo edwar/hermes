@@ -111,11 +111,11 @@ export function StockMovementForm({ open, onOpenChange }: StockMovementFormProps
               placeholder="Ej: Ajuste de inventario"
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button type="submit" disabled={createMovement.isPending || !productId || !quantity}>
+            <Button type="submit" disabled={createMovement.isPending || !productId || !quantity} className="w-full sm:w-auto">
               {createMovement.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
