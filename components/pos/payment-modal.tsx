@@ -263,19 +263,21 @@ export function PaymentModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isProcessing}
+            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={isProcessing || (paymentMethod === "CASH" && parseFloat(amountReceived || "0") < total)}
+            className="w-full sm:w-auto"
           >
-            {isProcessing ? "Procesando..." : <>Confirmar <span className="font-mono">{formatCOP(total)}</span></>}
+            {isProcessing ? "Procesando..." : <>Confirmar <span className="font-mono ml-1">{formatCOP(total)}</span></>}
           </Button>
         </DialogFooter>
       </DialogContent>
