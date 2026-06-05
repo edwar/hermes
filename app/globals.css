@@ -264,3 +264,30 @@ a:focus-visible,
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+/* Mobile safe-area insets (iOS notch / home indicator) */
+@supports (padding: max(0px)) {
+  .safe-bottom {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+}
+
+/* Touch device tap target boost — Apple HIG 44x44, Material 48 */
+@media (hover: none) and (pointer: coarse) {
+  .touch-target {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+/* Avoid iOS Safari auto-zoom on input focus by enforcing 16px+ font-size */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Sidebar } from "@/components/shared/sidebar"
 import { Header } from "@/components/shared/header"
+import { BottomNav } from "@/components/shared/bottom-nav"
 import { Toaster } from "sileo"
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -31,11 +32,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto p-4 sm:p-6 bg-background focus:outline-none"
+          className="flex-1 overflow-y-auto p-4 pb-20 sm:p-6 sm:pb-6 bg-background focus:outline-none"
         >
           {children}
         </main>
       </div>
+      <BottomNav onMoreClick={() => setSidebarOpen(true)} />
       <Toaster position="top-right" />
     </div>
   )
