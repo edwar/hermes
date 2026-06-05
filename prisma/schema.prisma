@@ -297,6 +297,7 @@ model ElectronicInvoice {
   consecutive     String?
   status          InvoiceStatus @default(PENDING)
   factusBillId    String?
+  referenceCode   String?
   pdfUrl          String?
   xmlUrl          String?
   total           Decimal       @db.Decimal(10, 2)

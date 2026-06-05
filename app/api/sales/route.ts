@@ -130,45 +130,38 @@ export async function POST(req: NextRequest) {
     })
   })
 
-  let electronicInvoiceResult = null
+  let electronicInvoiceResult: { ok: boolean; status: string; error?: string } | null = null
 
   if (requestElectronicInvoice) {
-    try {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId },
-        select: {
-          factusEnabled: true,
-        },
-      })
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        factusEnabled: true,
+      },
+    })
 
-      if (!company?.factusEnabled) {
-        console.error("Factus not enabled for company")
-      } else {
-        // Get numbering range for invoices (document type "21")
-        const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
-        const numberingRangeId = rangeRecord?.factusRangeId
+    if (!company?.factusEnabled) {
+      console.error("Factus not enabled for company")
+    } else {
+      const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
+      const numberingRangeId = rangeRecord?.factusRangeId
+      const referenceCode = `sale-${sale.id.slice(0, 8)}-${Date.now()}`
 
-        const invoicePayload = await mapSaleToFactusInvoice(
-          sale as any,
-          numberingRangeId,
-          `sale-${sale.id.slice(0, 8)}-${Date.now()}`
+      const invoicePayload = await mapSaleToFactusInvoice(
+        sale as any,
+        numberingRangeId,
+        referenceCode
+      )
+
+      try {
+        const factusResponse = await factusRequest<FactusResponse>(
+          "/v2/bills/validate",
+          { method: "POST", body: invoicePayload as any },
+          companyId
         )
-
-        let factusResponse: FactusResponse
-        try {
-          factusResponse = await factusRequest<FactusResponse>(
-            "/v2/bills/validate",
-            { method: "POST", body: invoicePayload as any },
-            companyId
-          )
-        } catch (error: any) {
-          console.error("Factus error:", error?.message || error)
-          throw error
-        }
 
         const responseData = (factusResponse as any).data || factusResponse
         const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-        // responseData.number is the consecutive like "SETP990004799", use it as factusBillId
         const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
 
         await prisma.electronicInvoice.create({
@@ -178,16 +171,36 @@ export async function POST(req: NextRequest) {
             cufe: responseData.cufe || factusResponse.cufe,
             consecutive: responseData.number || factusResponse.consecutive,
             status: isValidated ? "VALIDATED" : "PENDING",
-            factusBillId: factusBillId,
+            factusBillId,
+            referenceCode,
             total: sale.total,
             taxTotal: sale.tax,
           },
         })
 
-        electronicInvoiceResult = factusResponse
+        electronicInvoiceResult = { ok: true, status: isValidated ? "VALIDATED" : "PENDING" }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error("Error creating electronic invoice:", errorMessage)
+
+        try {
+          await prisma.electronicInvoice.create({
+            data: {
+              companyId,
+              saleId: sale.id,
+              status: "PENDING",
+              referenceCode,
+              total: sale.total,
+              taxTotal: sale.tax,
+              errorMessage,
+            },
+          })
+        } catch (persistError) {
+          console.error("Failed to persist pending electronic invoice:", persistError)
+        }
+
+        electronicInvoiceResult = { ok: false, status: "PENDING", error: errorMessage }
       }
-    } catch (error) {
-      console.error("Error creating electronic invoice:", error)
     }
   }
 

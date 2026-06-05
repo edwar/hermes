@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,7 +34,7 @@ import {
 import { Pagination } from "@/components/ui/pagination"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Zap, Download, Mail, RefreshCw, FileText, Loader2 } from "lucide-react"
+import { Zap, Download, Mail, RefreshCw, FileText, Loader2, RotateCw, Trash2 } from "lucide-react"
 import { sileo } from "sileo"
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -43,6 +54,10 @@ function formatCOP(value: number | string) {
 }
 
 export function ElectronicInvoicesTable() {
+  const { data: session } = useSession()
+  const role = session?.user?.role
+  const canManage = role === "GOD" || role === "ADMIN"
+
   const [invoices, setInvoices] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(1)
@@ -51,6 +66,9 @@ export function ElectronicInvoicesTable() {
   const [statusFilter, setStatusFilter] = useState("")
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [sendingId, setSendingId] = useState<string | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
+  const [pendingResendId, setPendingResendId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchInvoices(1)
@@ -158,6 +176,52 @@ export function ElectronicInvoicesTable() {
     }
   }
 
+  async function handleResend(id: string) {
+    setActionId(id)
+    try {
+      const res = await fetch(`/api/factus/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resend" }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sileo.success({ title: "Factura re-enviada", description: `Estado: ${data.status}` })
+        fetchInvoices(page)
+      } else {
+        sileo.error({ title: data.error || "No se pudo reenviar" })
+      }
+    } catch (e) {
+      sileo.error({ title: "Error de conexión al reenviar" })
+    } finally {
+      setActionId(null)
+      setPendingResendId(null)
+    }
+  }
+
+  async function handleDeletePending(id: string) {
+    setActionId(id)
+    try {
+      const res = await fetch(`/api/factus/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete-pending" }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sileo.success({ title: "Factura pendiente eliminada de Factus" })
+        fetchInvoices(page)
+      } else {
+        sileo.error({ title: data.error || "No se pudo limpiar" })
+      }
+    } catch (e) {
+      sileo.error({ title: "Error de conexión al limpiar" })
+    } finally {
+      setActionId(null)
+      setPendingDeleteId(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -236,9 +300,16 @@ export function ElectronicInvoicesTable() {
                       {formatCOP(inv.total)}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-center">
-                      <Badge variant={status.variant} className="text-xs font-normal">
-                        {status.label}
-                      </Badge>
+                      <div className="flex flex-col items-center gap-1">
+                        <Badge variant={status.variant} className="text-xs font-normal">
+                          {status.label}
+                        </Badge>
+                        {inv.status === "PENDING" && inv.errorMessage && (
+                          <span className="line-clamp-2 max-w-[220px] text-[10px] text-amber-600" title={inv.errorMessage}>
+                            {inv.errorMessage}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
@@ -293,6 +364,38 @@ export function ElectronicInvoicesTable() {
                         >
                           <RefreshCw className="size-3.5" />
                         </Button>
+                        {canManage && inv.status === "PENDING" && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 md:size-8 touch-target text-primary"
+                              title="Reintentar envío a Factus"
+                              aria-label="Reintentar envío a Factus"
+                              disabled={actionId === inv.id}
+                              onClick={() => setPendingResendId(inv.id)}
+                            >
+                              {actionId === inv.id ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <RotateCw className="size-3.5" />
+                              )}
+                            </Button>
+                            {inv.referenceCode && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-9 md:size-8 touch-target text-destructive"
+                                title="Limpiar de la cola pendiente en Factus"
+                                aria-label="Limpiar de la cola pendiente en Factus"
+                                disabled={actionId === inv.id}
+                                onClick={() => setPendingDeleteId(inv.id)}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -309,6 +412,46 @@ export function ElectronicInvoicesTable() {
         total={total}
         onPageChange={fetchInvoices}
       />
+
+      <AlertDialog open={!!pendingResendId} onOpenChange={(v) => { if (!v) setPendingResendId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reintentar envío a Factus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se intentará limpiar la factura pendiente en Factus y re-enviarla con un nuevo código de referencia.
+              Si la cola de pendientes en Factus sigue bloqueada, el re-envío fallará y deberás limpiar las facturas pendientes desde Factus.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingResendId && handleResend(pendingResendId)}>
+              Reintentar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(v) => { if (!v) setPendingDeleteId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpiar factura pendiente de Factus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción llama a <code className="rounded bg-muted px-1 py-0.5 text-xs">DELETE /v2/bills/destroy/reference/...</code> en Factus
+              y marca la factura local como cancelada. Si la factura ya fue validada por la DIAN, la operación fallará y verás el error de Factus.
+              Úsala solo cuando la factura esté atascada en estado pendiente y no se pueda reenviar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
+              onClick={() => pendingDeleteId && handleDeletePending(pendingDeleteId)}
+            >
+              Limpiar de Factus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getInvoicePdf, getInvoiceXml, factusRequest, FactusApiError, getInvoice } from '@/lib/factus/client';
+import { mapSaleToFactusInvoice } from '@/lib/factus/mappers';
+import { getNumberingRangeByDocumentType } from '@/lib/factus/client';
 import type { InvoiceStatus } from '@prisma/client';
 
 export async function GET(
@@ -158,6 +160,115 @@ export async function PATCH(
       });
 
       return NextResponse.json({ success: true, status: newStatus, errors: factusData.errors });
+    }
+
+    if (action === 'delete-pending') {
+      if (!invoice.referenceCode) {
+        return NextResponse.json(
+          { error: 'La factura no tiene referenceCode; no se puede limpiar en Factus' },
+          { status: 400 }
+        );
+      }
+
+      try {
+        await factusRequest(
+          `/v2/bills/destroy/reference/${encodeURIComponent(invoice.referenceCode)}`,
+          { method: 'DELETE' },
+          companyId
+        );
+      } catch (error) {
+        if (error instanceof FactusApiError && error.statusCode === 404) {
+          // Already cleared in Factus, treat as success
+        } else {
+          throw error;
+        }
+      }
+
+      await prisma.electronicInvoice.update({
+        where: { id },
+        data: {
+          status: 'CANCELLED',
+          errorMessage: 'Limpiada de la cola pendiente de Factus',
+        },
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === 'resend') {
+      const sale = await prisma.sale.findUnique({
+        where: { id: invoice.saleId! },
+        include: {
+          items: { include: { product: true } },
+          customer: true,
+          company: true,
+        },
+      });
+
+      if (!sale) {
+        return NextResponse.json({ error: 'Venta asociada no encontrada' }, { status: 404 });
+      }
+
+      if (invoice.referenceCode) {
+        try {
+          await factusRequest(
+            `/v2/bills/destroy/reference/${encodeURIComponent(invoice.referenceCode)}`,
+            { method: 'DELETE' },
+            companyId
+          );
+        } catch (error) {
+          if (!(error instanceof FactusApiError && error.statusCode === 404)) {
+            throw error;
+          }
+        }
+      }
+
+      const rangeRecord = await getNumberingRangeByDocumentType(companyId, '21');
+      const numberingRangeId = rangeRecord?.factusRangeId;
+      const newReferenceCode = `sale-${sale.id.slice(0, 8)}-${Date.now()}`;
+
+      const payload = await mapSaleToFactusInvoice(
+        sale as any,
+        numberingRangeId,
+        newReferenceCode
+      );
+
+      const factusResponse = await factusRequest<{
+        id: number;
+        consecutive: string;
+        cufe: string;
+        status: string;
+      }>(
+        '/v2/bills/validate',
+        { method: 'POST', body: JSON.stringify(payload) },
+        companyId
+      );
+
+      const responseData: { data?: { is_validated?: boolean; number?: string; cufe?: string; consecutive?: string; id?: number }; is_validated?: boolean; number?: string; cufe?: string; consecutive?: string; id?: number } = factusResponse;
+      const inner = responseData.data ?? responseData;
+      const isValidated = inner.is_validated === true || factusResponse.status === 'Created' || factusResponse.status === 'accepted';
+      const factusBillId = inner.number || factusResponse.consecutive || String(inner.id || invoice.factusBillId || 'unknown');
+
+      const newStatus: InvoiceStatus = isValidated ? 'VALIDATED' : 'PENDING';
+
+      await prisma.electronicInvoice.update({
+        where: { id },
+        data: {
+          cufe: responseData.cufe || factusResponse.cufe,
+          consecutive: responseData.number || factusResponse.consecutive,
+          status: newStatus,
+          factusBillId,
+          referenceCode: newReferenceCode,
+          validatedAt: newStatus === 'VALIDATED' ? new Date() : null,
+          errorMessage: null,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        status: newStatus,
+        consecutive: responseData.number || factusResponse.consecutive,
+      });
     }
 
     return NextResponse.json({ error: 'Acción no válida' }, { status: 400 });
