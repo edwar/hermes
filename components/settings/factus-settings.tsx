@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, CheckCircle2, XCircle, Zap, AlertCircle, Plus, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Zap, AlertCircle, Plus, RefreshCw } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { sileo } from "sileo"
@@ -53,10 +53,17 @@ export function FactusSettings() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [rangeModal, setRangeModal] = useState<{ open: boolean; documentType: string; label: string } | null>(null)
   const [rangeForm, setRangeForm] = useState({ from: "", to: "" })
+  const [rangesExpanded, setRangesExpanded] = useState(false)
 
   useEffect(() => {
     fetchSettings()
   }, [])
+
+  useEffect(() => {
+    if (settings?.connected) {
+      void fetchRanges()
+    }
+  }, [settings?.connected])
 
   async function fetchSettings() {
     try {
@@ -309,69 +316,90 @@ export function FactusSettings() {
             </div>
           )}
 
-          {settings?.connected && !settings?.enabled && (
+          {settings?.connected && (
             <div className="space-y-2">
-              <Label>Rangos de numeración</Label>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCreateRange("21", "Factura electrónica")}
-                  disabled={creatingRange}
-                >
-                  {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                  Factura (21)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCreateRange("22", "Nota crédito")}
-                  disabled={creatingRange}
-                >
-                  {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                  Nota crédito (22)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleCreateRange("24", "Documento soporte")}
-                  disabled={creatingRange}
-                >
-                  {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                  Doc. soporte (24)
-                </Button>
-              </div>
-
-              <div className="rounded-lg border border-border">
-                <div className="flex items-center justify-between p-3 border-b">
-                  <span className="text-xs font-medium">Rangos disponibles</span>
-                  <Button variant="ghost" size="sm" onClick={fetchRanges} disabled={loadingRanges}>
-                    {loadingRanges ? <Loader2 className="size-4 animate-spin" /> : "Actualizar"}
-                  </Button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Rangos de numeración</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {ranges.length === 0
+                      ? "No hay rangos configurados. Crea al menos uno para poder facturar."
+                      : `${ranges.length} ${ranges.length === 1 ? "rango configurado" : "rangos configurados"}`}
+                  </p>
                 </div>
-                {ranges.length === 0 ? (
-                  <div className="p-3 text-xs text-muted-foreground text-center">No hay rangos configurados</div>
-                ) : (
-                  <div className="divide-y">
-                    {ranges.map((range) => (
-                      <div key={range.id} className="flex items-center justify-between p-3">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-sm">{range.prefix}</span>
-                            <Badge variant="outline" className="text-xs">{range.documentType}</Badge>
-                            {range.isActive && <Badge variant="default" className="text-xs bg-green-600">Activo</Badge>}
-                            {range.isExpired && <Badge variant="destructive" className="text-xs">Vencido</Badge>}
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            {range.from} - {range.to} · Actual: {range.current}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRangesExpanded((e) => !e)}
+                >
+                  {rangesExpanded ? "Ocultar" : "Gestionar"}
+                </Button>
               </div>
+
+              {rangesExpanded && (
+                <>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateRange("21", "Factura electrónica")}
+                      disabled={creatingRange}
+                    >
+                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
+                      Factura (21)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateRange("22", "Nota crédito")}
+                      disabled={creatingRange}
+                    >
+                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
+                      Nota crédito (22)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleCreateRange("24", "Documento soporte")}
+                      disabled={creatingRange}
+                    >
+                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
+                      Doc. soporte (24)
+                    </Button>
+                  </div>
+
+                  <div className="rounded-lg border border-border">
+                    <div className="flex items-center justify-between p-3 border-b">
+                      <span className="text-xs font-medium">Rangos disponibles</span>
+                      <Button variant="ghost" size="sm" onClick={fetchRanges} disabled={loadingRanges}>
+                        {loadingRanges ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                        <span className="ml-1.5">Actualizar</span>
+                      </Button>
+                    </div>
+                    {ranges.length === 0 ? (
+                      <div className="p-3 text-xs text-muted-foreground text-center">No hay rangos configurados</div>
+                    ) : (
+                      <div className="divide-y">
+                        {ranges.map((range) => (
+                          <div key={range.id} className="flex items-center justify-between p-3">
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm">{range.prefix}</span>
+                                <Badge variant="outline" className="text-xs">{range.documentType}</Badge>
+                                {range.isActive && <Badge variant="default" className="text-xs bg-green-600">Activo</Badge>}
+                                {range.isExpired && <Badge variant="destructive" className="text-xs">Vencido</Badge>}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {range.from} - {range.to} · Actual: {range.current}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -438,11 +466,11 @@ export function FactusSettings() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRangeModal(null)}>
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="ghost" onClick={() => setRangeModal(null)} className="w-full sm:w-auto">
               Cancelar
             </Button>
-            <Button onClick={submitRange} disabled={creatingRange || !rangeForm.from || !rangeForm.to}>
+            <Button onClick={submitRange} disabled={creatingRange || !rangeForm.from || !rangeForm.to} className="w-full sm:w-auto">
               {creatingRange ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="size-4 animate-spin" />
