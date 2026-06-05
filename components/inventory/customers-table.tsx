@@ -51,8 +51,8 @@ export function CustomersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1 sm:max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar por nombre, email o teléfono..."
@@ -61,7 +61,7 @@ export function CustomersTable() {
             className="h-10 pl-10"
           />
         </div>
-        <Button onClick={handleCreate}>
+        <Button onClick={handleCreate} className="w-full sm:w-auto">
           <Plus className="mr-2 size-4" />
           Nuevo Cliente
         </Button>
@@ -83,9 +83,9 @@ export function CustomersTable() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Contacto</TableHead>
-                <TableHead>Dirección</TableHead>
-                <TableHead>Registro</TableHead>
+                <TableHead className="hidden md:table-cell">Contacto</TableHead>
+                <TableHead className="hidden lg:table-cell">Dirección</TableHead>
+                <TableHead className="hidden md:table-cell">Registro</TableHead>
                 <TableHead className="w-24 text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -93,7 +93,7 @@ export function CustomersTable() {
               {customers.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="space-y-0.5">
                       {c.email && (
                         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -108,7 +108,7 @@ export function CustomersTable() {
                       {!c.email && !c.phone && <span className="text-sm text-muted-foreground/50">—</span>}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden lg:table-cell">
                     {c.address ? (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <MapPin className="size-3 shrink-0" /> {c.address}
@@ -117,15 +117,15 @@ export function CustomersTable() {
                       <span className="text-sm text-muted-foreground/50">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                     {new Date(c.createdAt).toLocaleDateString("es")}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="size-8" onClick={() => handleEdit(c)}>
+                      <Button variant="ghost" size="icon" className="size-9 md:size-8 touch-target" onClick={() => handleEdit(c)} aria-label="Editar">
                         <Pencil className="size-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="size-8 text-destructive" onClick={() => setDeleteId(c.id)}>
+                      <Button variant="ghost" size="icon" className="size-9 md:size-8 text-destructive touch-target" onClick={() => setDeleteId(c.id)} aria-label="Eliminar">
                         <Trash2 className="size-3.5" />
                       </Button>
                     </div>

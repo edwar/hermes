@@ -51,9 +51,9 @@ export function StockMovementsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 sm:max-w-sm w-full">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por ID de producto..."
@@ -64,7 +64,7 @@ export function StockMovementsTable() {
             />
           </div>
           <Select value={typeFilter} onValueChange={(v) => handleTypeFilter(v ?? " ")}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-full sm:w-36">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -74,7 +74,7 @@ export function StockMovementsTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 size-4" />
           Registrar Movimiento
         </Button>
@@ -97,17 +97,17 @@ export function StockMovementsTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Fecha</TableHead>
+                <TableHead className="hidden md:table-cell">Fecha</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Producto</TableHead>
                 <TableHead className="text-right">Cantidad</TableHead>
-                <TableHead>Motivo</TableHead>
+                <TableHead className="hidden md:table-cell">Motivo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {movements.map((m: any) => (
                 <TableRow key={m.id}>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                     {format(new Date(m.createdAt), "dd/MM/yy HH:mm", { locale: es })}
                   </TableCell>
                   <TableCell>
@@ -132,7 +132,7 @@ export function StockMovementsTable() {
                     {m.type === "IN" ? "+" : "-"}
                     {m.quantity}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                     {m.reason ?? "—"}
                   </TableCell>
                 </TableRow>

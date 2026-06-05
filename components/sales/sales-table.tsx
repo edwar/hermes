@@ -111,7 +111,7 @@ export function SalesTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-end gap-3">
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Desde</label>
           <DatePicker value={from} onChange={setFrom} placeholder="Desde" />
@@ -123,7 +123,7 @@ export function SalesTable() {
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Método</label>
           <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v ?? " ")}>
-            <SelectTrigger className="w-40 h-10">
+            <SelectTrigger className="w-full sm:w-40 h-10">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -134,7 +134,7 @@ export function SalesTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => fetchSales(1)} className="h-10">
+        <Button onClick={() => fetchSales(1)} className="h-10 w-full md:w-auto">
           <Search className="mr-2 size-4" />
           Buscar
         </Button>
@@ -158,12 +158,12 @@ export function SalesTable() {
             <TableHeader>
               <TableRow>
                   <TableHead>#</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Método</TableHead>
-                <TableHead>Items</TableHead>
+                <TableHead className="hidden md:table-cell">Fecha</TableHead>
+                <TableHead className="hidden md:table-cell">Cliente</TableHead>
+                <TableHead className="hidden md:table-cell">Método</TableHead>
+                <TableHead className="hidden md:table-cell">Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead className="w-20 text-center">Tipo</TableHead>
+                <TableHead className="hidden md:table-cell w-20 text-center">Tipo</TableHead>
                 <TableHead className="w-16"></TableHead>
               </TableRow>
             </TableHeader>
@@ -178,22 +178,22 @@ export function SalesTable() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="hidden md:table-cell text-sm">
                     {format(new Date(s.createdAt), "dd/MM/yy HH:mm", { locale: es })}
                   </TableCell>
-                  <TableCell className="text-sm">
+                  <TableCell className="hidden md:table-cell text-sm">
                     {s.customer?.name ?? <span className="text-muted-foreground/50">—</span>}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge variant="outline" className="text-xs font-normal">
                       {PAYMENT_LABELS[s.paymentMethod] ?? s.paymentMethod}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm font-mono tabular-nums">{s.items?.length ?? 0}</TableCell>
+                  <TableCell className="hidden md:table-cell text-sm font-mono tabular-nums">{s.items?.length ?? 0}</TableCell>
                   <TableCell className="text-right font-mono tabular-nums font-medium">
                     {formatCOP(s.total)}
                   </TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="hidden md:table-cell text-center">
                     {s.isReturn ? (
                       <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs font-normal">
                         Devolución
@@ -205,7 +205,7 @@ export function SalesTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" className="size-8" onClick={() => openDetail(s)}>
+                    <Button variant="ghost" size="icon" className="size-9 md:size-8 touch-target" onClick={() => openDetail(s)}>
                       <Receipt className="size-3.5" />
                     </Button>
                   </TableCell>

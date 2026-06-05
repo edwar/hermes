@@ -45,15 +45,15 @@ export function SessionsList({ refreshKey }: SessionsListProps) {
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="px-4 py-2.5 text-left font-medium">Caja</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Cajero</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Apertura</th>
-                  <th className="px-4 py-2.5 text-left font-medium">Cierre</th>
+                  <th className="hidden md:table-cell px-4 py-2.5 text-left font-medium">Cajero</th>
+                  <th className="hidden md:table-cell px-4 py-2.5 text-left font-medium">Apertura</th>
+                  <th className="hidden lg:table-cell px-4 py-2.5 text-left font-medium">Cierre</th>
                   <th className="px-4 py-2.5 text-right font-medium">Base</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Esperado</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Contado</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Diferencia</th>
+                  <th className="hidden lg:table-cell px-4 py-2.5 text-right font-medium">Esperado</th>
+                  <th className="hidden md:table-cell px-4 py-2.5 text-right font-medium">Contado</th>
+                  <th className="hidden md:table-cell px-4 py-2.5 text-right font-medium">Diferencia</th>
                   <th className="px-4 py-2.5 text-center font-medium">Estado</th>
-                  <th className="px-4 py-2.5 text-center font-medium">Ventas</th>
+                  <th className="hidden sm:table-cell px-4 py-2.5 text-center font-medium">Ventas</th>
                   <th className="px-4 py-2.5 text-center font-medium"></th>
                 </tr>
               </thead>
@@ -73,21 +73,21 @@ export function SessionsList({ refreshKey }: SessionsListProps) {
                 }) => (
                   <tr key={s.id} className="hover:bg-muted/30">
                     <td className="px-4 py-2.5">{s.cashRegister.name}</td>
-                    <td className="px-4 py-2.5">{s.user.name}</td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
+                    <td className="hidden md:table-cell px-4 py-2.5">{s.user.name}</td>
+                    <td className="hidden md:table-cell px-4 py-2.5 text-muted-foreground">
                       {format(new Date(s.openedAt), "dd/MM HH:mm", { locale: es })}
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">
+                    <td className="hidden lg:table-cell px-4 py-2.5 text-muted-foreground">
                       {s.closedAt ? format(new Date(s.closedAt), "dd/MM HH:mm", { locale: es }) : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono tabular-nums">{formatCOP(Number(s.openingBalance))}</td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+                    <td className="hidden lg:table-cell px-4 py-2.5 text-right font-mono tabular-nums">
                       {s.expectedClosing !== null ? formatCOP(Number(s.expectedClosing)) : "-"}
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono tabular-nums">
+                    <td className="hidden md:table-cell px-4 py-2.5 text-right font-mono tabular-nums">
                       {s.closingBalance !== null ? formatCOP(Number(s.closingBalance)) : "-"}
                     </td>
-                    <td className={`px-4 py-2.5 text-right font-mono tabular-nums ${
+                    <td className={`hidden md:table-cell px-4 py-2.5 text-right font-mono tabular-nums ${
                       s.difference !== null
                         ? Number(s.difference) === 0
                           ? "text-green-600"
@@ -103,9 +103,9 @@ export function SessionsList({ refreshKey }: SessionsListProps) {
                         {s.status === "OPEN" ? "Abierta" : "Cerrada"}
                       </Badge>
                     </td>
-                    <td className="px-4 py-2.5 text-center font-mono tabular-nums">{s._count.sales}</td>
+                    <td className="hidden sm:table-cell px-4 py-2.5 text-center font-mono tabular-nums">{s._count.sales}</td>
                     <td className="px-4 py-2.5 text-center">
-                      <Button variant="ghost" size="icon" className="size-7" onClick={() => setReportSessionId(s.id)}>
+                      <Button variant="ghost" size="icon" className="size-9 md:size-7 touch-target" onClick={() => setReportSessionId(s.id)} aria-label="Ver reporte">
                         <FileText className="size-3.5" />
                       </Button>
                     </td>

@@ -83,15 +83,15 @@ export function ProductTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-semibold tracking-tight">Inventario</h2>
-        <Button onClick={handleAdd}>
+        <Button onClick={handleAdd} className="w-full sm:w-auto">
           <Plus className="mr-2 size-4" />
           Agregar Producto
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
@@ -111,7 +111,7 @@ export function ProductTable() {
             setPage(1)
           }}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
@@ -129,6 +129,7 @@ export function ProductTable() {
             setOnlyLowStock(!onlyLowStock)
             setPage(1)
           }}
+          className="w-full sm:w-auto"
         >
           <AlertTriangle className="mr-2 size-4" />
           Stock bajo
@@ -140,10 +141,10 @@ export function ProductTable() {
           <TableHeader>
             <TableRow>
               <TableHead>Producto</TableHead>
-              <TableHead>Código</TableHead>
-              <TableHead>Categoría</TableHead>
-              <TableHead className="text-right">Ref. Compra</TableHead>
-              <TableHead className="text-right">Ganancia %</TableHead>
+              <TableHead className="hidden md:table-cell">Código</TableHead>
+              <TableHead className="hidden md:table-cell">Categoría</TableHead>
+              <TableHead className="hidden lg:table-cell text-right">Ref. Compra</TableHead>
+              <TableHead className="hidden lg:table-cell text-right">Ganancia %</TableHead>
               <TableHead className="text-right">P. Venta</TableHead>
               <TableHead className="text-center">Stock</TableHead>
               <TableHead className="w-24 text-right">Acciones</TableHead>
@@ -175,14 +176,14 @@ export function ProductTable() {
                 return (
                 <TableRow key={product.id}>
                   <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="hidden md:table-cell font-mono text-xs text-muted-foreground">
                     {product.barcode ?? "—"}
                   </TableCell>
-                  <TableCell>{product.category?.name}</TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
+                  <TableCell className="hidden md:table-cell">{product.category?.name}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-right font-mono text-muted-foreground">
                     {product.purchasePrice > 0 ? formatCOP(product.purchasePrice) : "--"}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-muted-foreground">
+                  <TableCell className="hidden lg:table-cell text-right font-mono text-muted-foreground">
                     {(product.profitMargin * 100).toFixed(0)}%
                   </TableCell>
                   <TableCell className="text-right font-mono font-medium">
@@ -199,14 +200,18 @@ export function ProductTable() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="size-9 md:size-8 touch-target"
                         onClick={() => handleEdit(product)}
+                        aria-label="Editar"
                       >
                         <Pencil className="size-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="size-9 md:size-8 touch-target"
                         onClick={() => setDeleteDialog(product.id)}
+                        aria-label="Eliminar"
                       >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>

@@ -82,10 +82,10 @@ export function PurchaseOrdersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={(v) => { setPage(1); setStatusFilter(v === "all" ? "" : (v || "")) }}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
@@ -96,7 +96,7 @@ export function PurchaseOrdersTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 size-4" />
           Nuevo Pedido
         </Button>
@@ -119,10 +119,10 @@ export function PurchaseOrdersTable() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Fecha</TableHead>
+                <TableHead className="hidden md:table-cell">Fecha</TableHead>
                 <TableHead>Proveedor</TableHead>
                 <TableHead className="text-right">Total</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead className="hidden sm:table-cell">Estado</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -131,12 +131,12 @@ export function PurchaseOrdersTable() {
                 const status = STATUS_LABELS[order.status] ?? { label: order.status, variant: "outline" as const }
                 return (
                   <TableRow key={order.id}>
-                    <TableCell className="text-sm">
+                    <TableCell className="hidden md:table-cell text-sm">
                       {format(new Date(order.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
                     </TableCell>
                     <TableCell className="font-medium">{order.supplier.name}</TableCell>
                     <TableCell className="text-right font-mono">{formatCOP(Number(order.total))}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -144,8 +144,9 @@ export function PurchaseOrdersTable() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="size-8"
+                          className="size-9 md:size-8 touch-target"
                           onClick={() => setDetailOrder(order)}
+                          aria-label="Ver detalle"
                         >
                           <Eye className="size-3.5" />
                         </Button>
@@ -153,8 +154,9 @@ export function PurchaseOrdersTable() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-8 text-green-600"
+                            className="size-9 md:size-8 text-green-600 touch-target"
                             onClick={() => handleReceive(order)}
+                            aria-label="Recibir pedido"
                           >
                             <Check className="size-3.5" />
                           </Button>
