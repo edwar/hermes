@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
-import { factusRequest, getNumberingRangeByDocumentType, FactusApiError } from "@/lib/factus/client"
+import { factusRequest, getNumberingRangeByDocumentType, FactusApiError, listPendingBills } from "@/lib/factus/client"
 import * as readline from "readline/promises"
 import { stdin as input, stdout as output } from "process"
 
@@ -74,6 +74,27 @@ async function retrySaleFactus(companyId: string, saleId: string): Promise<{ ok:
 
   const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
   if (!rangeRecord) return { ok: false, detail: "No hay rango de numeración para facturas (21) configurado" }
+
+  // Best-effort: clear any pendings in Factus before retrying. If they
+  // can't be cleared (e.g. 'ya enviado a la DIAN'), the validate below
+  // will still fail with 409 and surface the real blocker to the user.
+  try {
+    const pendings = await listPendingBills(companyId)
+    for (const p of pendings) {
+      if (!p.reference_code) continue
+      try {
+        await factusRequest(
+          `/v2/bills/destroy/reference/${encodeURIComponent(p.reference_code)}`,
+          { method: "DELETE" },
+          companyId
+        )
+      } catch {
+        // best effort, ignore
+      }
+    }
+  } catch {
+    // best effort
+  }
 
   const referenceCode = `recovery-${sale.id.slice(0, 8)}-${Date.now()}`
 
