@@ -59,19 +59,19 @@ export function CustomerLookup({
 
   useEffect(() => {
     if (selectedCustomer) {
-      // Show the pre-selected customer immediately so the cashier never sees
-      // a transient empty state.
+      // Mostrar el cliente preseleccionado de inmediato para que el cajero
+      // nunca vea un estado vacío transitorio.
       setFoundCustomer(selectedCustomer as Customer)
       setNotFound(false)
-      // If the customer has a cedula, sync the input. Otherwise keep what
-      // the cashier already typed (the search uses the typed value as a
-      // fallback so it still runs and can verify the customer).
+      // Si el cliente tiene cédula, sincronizar el input. Si no, conservar
+      // lo que el cajero ya escribió (la búsqueda usa el valor tipeado como
+      // fallback para correr y poder verificar el cliente).
       if (selectedCustomer.cedula) {
         setCedula(selectedCustomer.cedula)
         lastTypedCedulaRef.current = selectedCustomer.cedula
       }
-      // Run the search to refresh data from the server. Use the customer's
-      // cedula if present, otherwise the cashier's typed cedula.
+      // Ejecutar la búsqueda para refrescar los datos del servidor. Usar
+      // la cédula del cliente si existe; de lo contrario, la que tipeó el cajero.
       const cedulaToSearch = selectedCustomer.cedula ?? lastTypedCedulaRef.current
       if (cedulaToSearch && lastSearchedCedulaRef.current !== cedulaToSearch) {
         lastSearchedCedulaRef.current = cedulaToSearch
@@ -107,12 +107,13 @@ export function CustomerLookup({
         onCustomerSelect({ id: customer.id, name: customer.name })
         lastSearchedCedulaRef.current = customer.cedula ?? null
       }
-      // When pre-selected, we trust the prop: don't flip to "not found"
-      // just because the search hasn't returned a row yet (race during
-      // background refresh right after create). The user-driven handleSearch
-      // path goes through this same function but the prop is null at that
-      // point, so the explicit handleSearch flow is handled by setting
-      // notFound=true at the call site below.
+      // Cuando hay cliente preseleccionado, confiamos en el prop: no se
+      // pasa a "no encontrado" solo porque la búsqueda aún no devolvió
+      // un resultado (carrera durante el refresco en segundo plano justo
+      // después de crear). El flujo de handleSearch disparado por el
+      // usuario pasa por la misma función pero con el prop en null, así
+      // que el flujo explícito se maneja seteando notFound=true en el
+      // call site de más abajo.
     } catch {
       setError("Error al buscar cliente")
     } finally {
@@ -121,8 +122,9 @@ export function CustomerLookup({
   }
 
   async function handleSearch() {
-    // User-triggered search: clear previous result first so the green panel
-    // disappears while loading and reappears only if the new lookup hits.
+    // Búsqueda disparada por el usuario: limpiar el resultado anterior
+    // primero para que el panel verde desaparezca mientras carga y vuelva
+    // a aparecer solo si la nueva búsqueda encuentra algo.
     const trimmed = (cedula || lastTypedCedulaRef.current).trim()
     if (!trimmed) return
     setFoundCustomer(null)

@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
     originalSale.electronicInvoice
   ) {
     try {
-      // Get numbering range for credit notes (document type "22")
+      // Obtener el rango de numeración para notas crédito (tipo de documento "22")
       const rangeRecord = await getNumberingRangeByDocumentType(companyId, "22")
       const rangeId = rangeRecord?.factusRangeId
 

@@ -104,7 +104,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
       try {
         el.setSelectionRange(pos, pos)
       } catch {
-        // ignore (e.g. element not focusable)
+        // Ignorar (p. ej. elemento no enfocable)
       }
     }
 

@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       if (!company?.factusEnabled) {
         console.error("Factus not enabled for company")
       } else {
-        // Get numbering range for invoices (document type "21")
+        // Obtener el rango de numeración para facturas (tipo de documento "21")
         const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
         const numberingRangeId = rangeRecord?.factusRangeId
 
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
 
         const responseData = (factusResponse as any).data || factusResponse
         const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-        // responseData.number is the consecutive like "SETP990004799", use it as factusBillId
+        // responseData.number es el consecutivo, ej. "SETP990004799"; se usa como factusBillId
         const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
 
         await prisma.electronicInvoice.create({

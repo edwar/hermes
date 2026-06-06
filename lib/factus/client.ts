@@ -73,7 +73,7 @@ export async function authenticate(companyId: string): Promise<string> {
         const refreshed = await refreshAccessToken(stored.factusRefreshToken);
         return refreshed;
       } catch {
-        // Token refresh failed, fall through to password grant
+        // Falló la renovación del token, continuar con el grant por contraseña
       }
     }
   }
@@ -180,7 +180,7 @@ export async function factusRequest<T = unknown>(
     try {
       errorData = JSON.parse(responseText);
     } catch {
-      // ignore parse errors
+      // Ignorar errores de parseo
     }
 
     throw new FactusApiError(
@@ -306,6 +306,63 @@ export async function listInvoices(
     { method: 'GET' },
     companyId
   );
+}
+
+export interface FactusListResponse<T = Record<string, unknown>> {
+  data: T[];
+  meta?: { total?: number; page?: number; per_page?: number };
+}
+
+interface FactusEnvelope<T> {
+  status?: string;
+  message?: string;
+  data?: T;
+}
+
+interface PendingBill {
+  id?: number;
+  number?: string;
+  reference_code?: string;
+  status?: string;
+  is_validated?: boolean;
+  created_at?: string;
+  customer?: { names?: string; identification?: string };
+  total?: string;
+  errors?: Record<string, string>;
+}
+
+async function unwrapList<T>(raw: FactusEnvelope<FactusListResponse<T>> | T[]): Promise<T[]> {
+  if (Array.isArray(raw)) return raw
+  const inner = raw?.data
+  if (Array.isArray(inner)) return inner as T[]
+  if (inner && typeof inner === 'object' && Array.isArray((inner as FactusListResponse<T>).data)) {
+    return (inner as FactusListResponse<T>).data
+  }
+  return []
+}
+
+export async function listPendingBills(companyId: string): Promise<PendingBill[]> {
+  const query = new URLSearchParams();
+  query.set('filter[status]', '0');
+  query.set('per_page', '50');
+  const raw = await factusRequest<FactusEnvelope<FactusListResponse<PendingBill>> | PendingBill[]>(
+    `/v2/bills?${query.toString()}`,
+    { method: 'GET' },
+    companyId
+  );
+  return unwrapList<PendingBill>(raw)
+}
+
+export async function listPendingCreditNotes(companyId: string): Promise<PendingBill[]> {
+  const query = new URLSearchParams();
+  query.set('filter[status]', '0');
+  query.set('per_page', '50');
+  const raw = await factusRequest<FactusEnvelope<FactusListResponse<PendingBill>> | PendingBill[]>(
+    `/v2/credit-notes?${query.toString()}`,
+    { method: 'GET' },
+    companyId
+  );
+  return unwrapList<PendingBill>(raw)
 }
 
 interface NumberingRange {

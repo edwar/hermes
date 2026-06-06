@@ -19,22 +19,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Usuario sin empresa' }, { status: 400 });
     }
 
-    // Get company's saved ranges from our database
+    // Obtener los rangos guardados de la empresa en nuestra base de datos
     const savedRanges = await prisma.companyNumberingRange.findMany({
       where: { companyId },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Get current status from Factus API
+    // Obtener el estado actual desde la API de Factus
     let factusRanges: any[] = [];
     try {
       const response = await listNumberingRanges(companyId);
       factusRanges = (response as any)?.data || [];
     } catch {
-      // Ignore Factus API errors here
+      // Ignorar errores de la API de Factus aquí
     }
 
-    // Merge saved ranges with current Factus data
+    // Combinar los rangos guardados con los datos actuales de Factus
     const rangesWithStatus = savedRanges.map((sr) => {
       const fr = factusRanges.find((fr: any) => fr.id === sr.factusRangeId);
       return {

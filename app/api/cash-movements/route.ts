@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (session.user.role === "GOD") {
-    // GOD can do anything
+    // GOD puede hacer cualquier cosa
   } else if (session.user.role === "ADMIN") {
-    // ADMIN can only do movements in their company
+    // ADMIN solo puede hacer movimientos en su empresa
     if (cashSession.cashRegister.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
   } else {
-    // CASHIER needs admin authorization
+    // CASHIER requiere autorización de admin
     if (cashSession.cashRegister.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }

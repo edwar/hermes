@@ -138,7 +138,7 @@ export default function POSPage() {
   }
 
   function handleSessionConflict(info: { sessionId: string; activeUser?: string; activeDevice?: string }) {
-    // Force refresh to see the conflict state
+    // Forzar refresco para ver el estado de conflicto
     setSessionKey((k) => k + 1)
   }
 
@@ -196,7 +196,7 @@ export default function POSPage() {
           </p>
           <Button
             onClick={() => {
-              // Force reclaim the session by clearing localStorage and refreshing
+              // Forzar la recuperación de la sesión limpiando localStorage y refrescando
               const presenceKey = `pos_active_tab_${activeSession?.user?.id}_${activeSession?.id}`
               localStorage.removeItem(presenceKey)
               window.location.reload()
@@ -277,7 +277,7 @@ export default function POSPage() {
         onCheckout={handleCheckout}
       />
 
-      {/* Mobile FAB to open cart in a Sheet */}
+      {/* FAB móvil para abrir el cart en un Sheet */}
       <div className="md:hidden fixed right-4 bottom-24 z-20 safe-bottom">
         <Button
           onClick={() => setCartSheetOpen(true)}
