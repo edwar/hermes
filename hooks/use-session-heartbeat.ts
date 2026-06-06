@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
-const HEARTBEAT_INTERVAL_MS = 30 * 1000 // 30 seconds
+const HEARTBEAT_INTERVAL_MS = 30 * 1000 // 30 segundos
 
 export function useSessionHeartbeat(sessionId: string | null) {
   const queryClient = useQueryClient()
@@ -12,7 +12,7 @@ export function useSessionHeartbeat(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return
 
-    // Generate device ID once
+    // Generar el ID del dispositivo una sola vez
     if (!deviceIdRef.current) {
       const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`
       const nav = `${navigator.userAgent.substring(0, 50)}`
@@ -32,10 +32,10 @@ export function useSessionHeartbeat(sessionId: string | null) {
       }
     }
 
-    // Send immediately
+    // Enviar de inmediato
     sendHeartbeat()
 
-    // Send every 30 seconds
+    // Enviar cada 30 segundos
     const interval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS)
 
     return () => clearInterval(interval)

@@ -80,7 +80,7 @@ export function SalesTable() {
     try {
       const res = await fetch(`/api/sales?${params}`)
       const data = await res.json()
-      // filter by payment method client-side
+      // Filtrar por método de pago en el cliente
       let filtered = data.sales ?? []
       if (paymentFilter) {
         filtered = filtered.filter((s: any) => s.paymentMethod === paymentFilter)

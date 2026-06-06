@@ -34,7 +34,7 @@ export function BarcodeScanner({ onProductFound }: BarcodeScannerProps) {
         sileo.success({ title: `${product.name} agregado`, duration: 1500 })
       }
     } catch {
-      // silent
+      // Silenciar errores de búsqueda
     } finally {
       processingRef.current = false
     }

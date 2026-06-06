@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
-const HEARTBEAT_TIMEOUT_MS = 60 * 1000 // 60 seconds without heartbeat = session dead
+const HEARTBEAT_TIMEOUT_MS = 60 * 1000 // 60 segundos sin heartbeat = sesión muerta
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -64,26 +64,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Caja no encontrada o inactiva" }, { status: 400 })
   }
 
-  // Check if user already has an open session (maybe on another device)
+  // Verificar si el usuario ya tiene una sesión abierta (quizás en otro dispositivo)
   const userActiveSession = await prisma.cashSession.findFirst({
     where: { userId: session.user.id, status: "OPEN" },
   })
-  
+
   if (userActiveSession) {
-    // Check if the session has a heartbeat timeout (device dead)
-    const hasTimedOut = userActiveSession.lastHeartbeat && 
+    // Verificar si la sesión excedió el timeout de heartbeat (dispositivo muerto)
+    const hasTimedOut = userActiveSession.lastHeartbeat &&
       (Date.now() - new Date(userActiveSession.lastHeartbeat).getTime()) > HEARTBEAT_TIMEOUT_MS
 
     if (!hasTimedOut && userActiveSession.deviceId !== deviceId) {
-      // Same user, different device - check if the device is different
-      return NextResponse.json({ 
+      // Mismo usuario, distinto dispositivo: bloquear apertura
+      return NextResponse.json({
         error: "Ya tienes una sesión abierta en otro dispositivo. Ciérrala antes de abrir otra.",
         activeSessionId: userActiveSession.id,
         activeDevice: userActiveSession.deviceName
       }, { status: 409 })
     }
-    
-    // Session is stale (no heartbeat), close it
+
+    // La sesión es obsoleta (sin heartbeat): cerrarla automáticamente
     if (hasTimedOut) {
       await prisma.cashSession.update({
         where: { id: userActiveSession.id },
@@ -92,33 +92,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Check if cash register already has an open session
+  // Verificar si la caja ya tiene una sesión abierta
   const registerActiveSession = await prisma.cashSession.findFirst({
     where: { cashRegisterId, status: "OPEN" },
     include: { user: { select: { name: true, email: true } } }
   })
 
   if (registerActiveSession) {
-    // Check if the session is stale (no heartbeat from that device)
-    const hasTimedOut = registerActiveSession.lastHeartbeat && 
+    // Verificar si la sesión es obsoleta (sin heartbeat de ese dispositivo)
+    const hasTimedOut = registerActiveSession.lastHeartbeat &&
       (Date.now() - new Date(registerActiveSession.lastHeartbeat).getTime()) > HEARTBEAT_TIMEOUT_MS
 
     if (hasTimedOut) {
-      // Close stale session
+      // Cerrar la sesión obsoleta
       await prisma.cashSession.update({
         where: { id: registerActiveSession.id },
         data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
       })
     } else if (registerActiveSession.userId !== session.user.id) {
-      // Someone else has this register open
-      return NextResponse.json({ 
+      // Otro usuario tiene esta caja abierta
+      return NextResponse.json({
         error: `Esta caja ya está abierta por ${registerActiveSession.user.name}`,
         activeSessionId: registerActiveSession.id,
         activeUser: registerActiveSession.user.name
       }, { status: 409 })
     } else if (registerActiveSession.deviceId !== deviceId) {
-      // Same user but different device trying to open the same register
-      return NextResponse.json({ 
+      // Mismo usuario pero distinto dispositivo intentando abrir la misma caja
+      return NextResponse.json({
         error: "Ya tienes esta caja abierta en otro dispositivo",
         activeSessionId: registerActiveSession.id,
         activeDevice: registerActiveSession.deviceName

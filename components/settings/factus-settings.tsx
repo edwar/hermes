@@ -49,10 +49,10 @@ const DOCUMENT_PREFIX_MAP: Record<string, string> = {
   "30": "FP", // Factura de Papel / Talonario
 }
 
-// Document types offered as quick-create buttons in the UI. For now
-// only Notas crédito is exposed; the rest of the prefix map above
-// stays available for code paths that need to label other document
-// types created via the API directly.
+// Tipos de documento ofrecidos como botones de creación rápida en la UI.
+// Por ahora solo se expone Notas crédito; el resto del mapa de prefijos
+// queda disponible para rutas de código que necesiten etiquetar otros
+// tipos de documento creados directamente vía la API.
 const CREATE_RANGE_BUTTONS: Array<{ code: string; label: string }> = [
   { code: "22", label: "Nota crédito" },
 ]

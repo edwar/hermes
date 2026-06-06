@@ -32,12 +32,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "La sesión ya está cerrada" }, { status: 400 })
   }
 
-  // Update heartbeat
+  // Actualizar el heartbeat
   const updated = await prisma.cashSession.update({
     where: { id: sessionId },
-    data: { 
+    data: {
       lastHeartbeat: new Date(),
-      deviceId: deviceId // Update deviceId in case it changed
+      deviceId: deviceId // Actualizar deviceId en caso de que haya cambiado
     },
   })
 

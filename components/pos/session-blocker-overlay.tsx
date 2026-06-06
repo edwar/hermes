@@ -31,14 +31,14 @@ export function SessionBlockerOverlay({ onSessionOpened, onConflict }: SessionBl
 
   function handleConflict(info: SessionConflictInfo) {
     setConflictInfo(info)
-    setDialogOpen(false) // Close the open session dialog
-    setConflictOpen(true) // Show conflict modal
+    setDialogOpen(false) // Cerrar el diálogo de abrir caja
+    setConflictOpen(true) // Mostrar el modal de conflicto
   }
 
   function handleConflictClose() {
     setConflictOpen(false)
     setConflictInfo(null)
-    setDialogOpen(true) // Reopen the open session dialog
+    setDialogOpen(true) // Reabrir el diálogo de abrir caja
   }
 
   return (

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 
 const PRESENCE_KEY_PREFIX = "pos_active_tab_"
-const PRESENCE_TIMEOUT_MS = 30 * 1000 // 30 seconds - if no heartbeat, tab is dead
+const PRESENCE_TIMEOUT_MS = 30 * 1000 // 30 segundos: sin heartbeat, la pestaña se considera muerta
 
 interface PresenceData {
   userId: string
@@ -36,7 +36,7 @@ export function usePresenceMonitor(userId: string | null, sessionId: string | nu
     try {
       localStorage.setItem(presenceKey, JSON.stringify(data))
     } catch (e) {
-      // localStorage might be full or disabled
+      // localStorage puede estar lleno o deshabilitado
     }
   }, [userId, sessionId, tabId])
 
@@ -53,7 +53,7 @@ export function usePresenceMonitor(userId: string | null, sessionId: string | nu
         }
       }
     } catch (e) {
-      // ignore
+      // Ignorar
     }
   }, [userId, sessionId, tabId])
 
@@ -63,7 +63,7 @@ export function usePresenceMonitor(userId: string | null, sessionId: string | nu
 
     const presenceKey = getPresenceKey(userId, sessionId)
 
-    // Register immediately
+    // Registrar de inmediato
     registerPresence()
 
     const checkAndMaintainPresence = () => {
@@ -73,7 +73,7 @@ export function usePresenceMonitor(userId: string | null, sessionId: string | nu
         const isStale = existing && (now - JSON.parse(existing).lastHeartbeat) > PRESENCE_TIMEOUT_MS
 
         if (!existing || isStale) {
-          // No presence registered or stale, we can claim it
+          // No hay presencia registrada o está obsoleta: podemos reclamarla
           registerPresence()
           setHasConflict(false)
           setWinningTabId(null)
@@ -83,53 +83,53 @@ export function usePresenceMonitor(userId: string | null, sessionId: string | nu
         const parsed: PresenceData = JSON.parse(existing)
 
         if (parsed.tabId === tabId) {
-          // It's our own presence, update heartbeat
+          // Es nuestra propia presencia, actualizar heartbeat
           registerPresence()
           setHasConflict(false)
           setWinningTabId(null)
           return
         }
 
-        // There's another active tab
-        // The one with the LATEST heartbeat wins
+        // Hay otra pestaña activa
+        // Gana la que tenga el heartbeat MÁS RECIENTE
         if (parsed.lastHeartbeat > now - 20000) {
-          // Other tab is still sending heartbeats (within 20 seconds)
-          // We lose - someone else has the active session
+          // La otra pestaña sigue enviando heartbeats (en los últimos 20 segundos)
+          // Perdemos: otra pestaña tiene la sesión activa
           setHasConflict(true)
           setWinningTabId(parsed.tabId)
           return
         }
 
-        // Other tab exists but hasn't sent heartbeat recently
-        // Claim the session
+        // La otra pestaña existe pero no ha enviado heartbeat recientemente
+        // Reclamar la sesión
         registerPresence()
         setHasConflict(false)
         setWinningTabId(null)
       } catch (e) {
-        // On error, try to claim the session
+        // Ante un error, intentar reclamar la sesión
         registerPresence()
         setHasConflict(false)
         setWinningTabId(null)
       }
     }
 
-    // Initial check
+    // Chequeo inicial
     checkAndMaintainPresence()
 
-    // Check and maintain presence every 5 seconds
+    // Chequear y mantener la presencia cada 5 segundos
     const interval = setInterval(checkAndMaintainPresence, 5000)
 
-    // Also listen for storage changes from other tabs
+    // Escuchar también cambios de storage desde otras pestañas
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key && e.key.startsWith(PRESENCE_KEY_PREFIX)) {
-        // Something changed, re-check
+        // Algo cambió, re-chequear
         checkAndMaintainPresence()
       }
     }
 
     window.addEventListener("storage", handleStorageChange)
 
-    // Cleanup
+    // Limpieza al desmontar
     return () => {
       clearInterval(interval)
       window.removeEventListener("storage", handleStorageChange)

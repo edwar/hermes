@@ -69,7 +69,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
 
   return (
     <>
-      {/* Backdrop: only on mobile, only when the drawer is open */}
+      {/* Fondo oscuro: solo en móvil y solo cuando el drawer está abierto */}
       <div
         aria-hidden="true"
         onClick={() => onOpenChange(false)}
@@ -83,10 +83,10 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         aria-label="Navegación principal"
         className={cn(
           "flex w-64 flex-col border-r border-zinc-800 bg-sidebar transition-transform duration-200 ease-out",
-          // Mobile: fixed drawer that slides in from the left
+          // Móvil: drawer fijo que se desliza desde la izquierda
           "fixed inset-y-0 left-0 z-50",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: always visible, no fixed positioning, no transform
+          // Escritorio: siempre visible, sin posicionamiento fijo ni transformaciones
           "md:relative md:inset-auto md:translate-x-0 md:h-screen md:transition-none"
         )}
       >
@@ -100,7 +100,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
               <span className="text-[11px] text-muted-foreground">Sistema de gestión</span>
             </div>
           </div>
-          {/* Close button: only on mobile */}
+          {/* Botón de cerrar: solo en móvil */}
           <button
             type="button"
             onClick={() => onOpenChange(false)}

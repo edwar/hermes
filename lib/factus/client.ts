@@ -73,7 +73,7 @@ export async function authenticate(companyId: string): Promise<string> {
         const refreshed = await refreshAccessToken(stored.factusRefreshToken);
         return refreshed;
       } catch {
-        // Token refresh failed, fall through to password grant
+        // Falló la renovación del token, continuar con el grant por contraseña
       }
     }
   }
@@ -180,7 +180,7 @@ export async function factusRequest<T = unknown>(
     try {
       errorData = JSON.parse(responseText);
     } catch {
-      // ignore parse errors
+      // Ignorar errores de parseo
     }
 
     throw new FactusApiError(
