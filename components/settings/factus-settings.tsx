@@ -37,6 +37,26 @@ interface FactusSettingsResponse extends FactusSettings {
   message?: string
 }
 
+const DOCUMENT_PREFIX_MAP: Record<string, string> = {
+  "21": "FE", // Factura Electrónica de Venta
+  "22": "NC", // Nota de Crédito
+  "23": "ND", // Nota de Débito
+  "24": "DS", // Documento Soporte
+  "25": "NS", // Nota de Ajuste de Documento Soporte
+  "26": "NE", // Nómina Electrónica
+  "27": "NA", // Nota de Ajuste de Nómina
+  "28": "EN", // Nota de Eliminación de Nómina
+  "30": "FP", // Factura de Papel / Talonario
+}
+
+// Document types offered as quick-create buttons in the UI. For now
+// only Notas crédito is exposed; the rest of the prefix map above
+// stays available for code paths that need to label other document
+// types created via the API directly.
+const CREATE_RANGE_BUTTONS: Array<{ code: string; label: string }> = [
+  { code: "22", label: "Nota crédito" },
+]
+
 export function FactusSettings() {
   const [settings, setSettings] = useState<FactusSettings | null>(null)
   const [loading, setLoading] = useState(true)
@@ -126,7 +146,7 @@ export function FactusSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           document: documentType,
-          prefix: documentType === "22" ? "NC" : documentType === "21" ? "FE" : "DS",
+          prefix: DOCUMENT_PREFIX_MAP[documentType] || "DS",
           from,
           to,
           current: from,
@@ -339,33 +359,18 @@ export function FactusSettings() {
               {rangesExpanded && (
                 <>
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCreateRange("21", "Factura electrónica")}
-                      disabled={creatingRange}
-                    >
-                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                      Factura (21)
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCreateRange("22", "Nota crédito")}
-                      disabled={creatingRange}
-                    >
-                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                      Nota crédito (22)
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCreateRange("24", "Documento soporte")}
-                      disabled={creatingRange}
-                    >
-                      {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
-                      Doc. soporte (24)
-                    </Button>
+                    {CREATE_RANGE_BUTTONS.map(({ code, label }) => (
+                      <Button
+                        key={code}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCreateRange(code, label)}
+                        disabled={creatingRange}
+                      >
+                        {creatingRange ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Plus className="mr-1 size-4" />}
+                        {label} ({code})
+                      </Button>
+                    ))}
                   </div>
 
                   <div className="rounded-lg border border-border">
