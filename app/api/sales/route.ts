@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
-import { factusRequest, getNumberingRangeByDocumentType } from "@/lib/factus/client"
+import { factusRequest, getNumberingRangeByDocumentType, listPendingBills, sendRadianEvent } from "@/lib/factus/client"
 
 interface FactusResponse {
   id?: number
@@ -154,37 +154,102 @@ export async function POST(req: NextRequest) {
           `sale-${sale.id.slice(0, 8)}-${Date.now()}`
         )
 
-        let factusResponse: FactusResponse
+        // Limpiar pendientes de Factus antes de crear la factura
+        let blockedByDian = false
         try {
-          factusResponse = await factusRequest<FactusResponse>(
-            "/v2/bills/validate",
-            { method: "POST", body: invoicePayload as any },
-            companyId
-          )
-        } catch (error: any) {
-          console.error("Factus error:", error?.message || error)
-          throw error
+          const pending = await listPendingBills(companyId)
+          console.log(`Factus pending bills found: ${pending.length}`)
+          for (const bill of pending) {
+            console.log(`  Bill: id=${bill.id}, num=${bill.number}, ref=${bill.reference_code}, status=${bill.status}`)
+            if (bill.reference_code) {
+              try {
+                await factusRequest(
+                  `/v2/bills/destroy/reference/${encodeURIComponent(bill.reference_code)}`,
+                  { method: "DELETE" },
+                  companyId
+                )
+                console.log(`  ✅ Destroyed by reference: ${bill.reference_code}`)
+              } catch (destroyErr: any) {
+                const msg = destroyErr?.message?.toLowerCase() ?? ""
+                if (msg.includes("dian") || msg.includes("enviado")) {
+                  console.warn(`  ⛔ Bill ${bill.number} already sent to DIAN, cannot destroy. Trying express acceptance...`)
+                  // En sandbox, forzamos aceptación expresa para liberar la cola
+                  if (bill.number) {
+                    try {
+                      await sendRadianEvent(bill.number, "033", companyId, {
+                        identification_document_code: sale.customer?.documentType ?? "13",
+                        identification: sale.customer?.cedula ?? "00000000",
+                        dv: sale.customer?.dv ?? "",
+                        first_name: sale.customer?.name ?? "Cliente",
+                        last_name: "",
+                        job_title: "",
+                        organization_department: "",
+                      })
+                      console.log(`  ✅ Express acceptance sent for ${bill.number}, retrying destroy...`)
+                      // Reintentar destrucción después de aceptar
+                      try {
+                        await factusRequest(
+                          `/v2/bills/destroy/reference/${encodeURIComponent(bill.reference_code)}`,
+                          { method: "DELETE" },
+                          companyId
+                        )
+                        console.log(`  ✅ Destroyed after acceptance: ${bill.reference_code}`)
+                      } catch {
+                        console.warn(`  ⛔ Still could not destroy ${bill.number} after acceptance. It should clear soon.`)
+                        blockedByDian = true
+                      }
+                    } catch (acceptErr: any) {
+                      console.error(`  ❌ Express acceptance failed for ${bill.number}:`, acceptErr?.message)
+                      blockedByDian = true
+                    }
+                  } else {
+                    blockedByDian = true
+                  }
+                } else {
+                  console.error(`  ❌ Failed to destroy ${bill.reference_code}:`, destroyErr?.message)
+                }
+              }
+            }
+          }
+        } catch (cleanupErr) {
+          console.error("Factus cleanup error:", cleanupErr)
         }
 
-        const responseData = (factusResponse as any).data || factusResponse
-        const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-        // responseData.number es el consecutivo, ej. "SETP990004799"; se usa como factusBillId
-        const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
+        if (blockedByDian) {
+          console.warn("Factus: no se pudieron limpiar todas las facturas pendientes. " +
+            "La venta se creó sin FE.")
+        } else {
+          let factusResponse: FactusResponse
+          try {
+            factusResponse = await factusRequest<FactusResponse>(
+              "/v2/bills/validate",
+              { method: "POST", body: invoicePayload as any },
+              companyId
+            )
+          } catch (error: any) {
+            console.error("Factus error:", error?.message || error)
+            throw error
+          }
 
-        await prisma.electronicInvoice.create({
-          data: {
-            companyId,
-            saleId: sale.id,
-            cufe: responseData.cufe || factusResponse.cufe,
-            consecutive: responseData.number || factusResponse.consecutive,
-            status: isValidated ? "VALIDATED" : "PENDING",
-            factusBillId: factusBillId,
-            total: sale.total,
-            taxTotal: sale.tax,
-          },
-        })
+          const responseData = (factusResponse as any).data || factusResponse
+          const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
+          const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
 
-        electronicInvoiceResult = factusResponse
+          await prisma.electronicInvoice.create({
+            data: {
+              companyId,
+              saleId: sale.id,
+              cufe: responseData.cufe || factusResponse.cufe,
+              consecutive: responseData.number || factusResponse.consecutive,
+              status: isValidated ? "VALIDATED" : "PENDING",
+              factusBillId: factusBillId,
+              total: sale.total,
+              taxTotal: sale.tax,
+            },
+          })
+
+          electronicInvoiceResult = factusResponse
+        }
       }
     } catch (error) {
       console.error("Error creating electronic invoice:", error)

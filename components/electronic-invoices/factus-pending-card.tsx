@@ -53,6 +53,7 @@ interface DiagnoseResponse {
   pendingBillsError: string | null
   pendingCreditNotes: PendingBill[]
   pendingCreditNotesError: string | null
+  pendingBillsRestricted?: boolean
 }
 
 export function FactusPendingCard() {
@@ -155,6 +156,7 @@ export function FactusPendingCard() {
   const creditNotesError = data?.pendingCreditNotesError
   const tokenValid = data?.company?.tokenValid ?? false
   const factusEnabled = data?.company?.factusEnabled ?? false
+  const pendingBillsRestricted = data?.pendingBillsRestricted ?? false
 
   const totalPending = bills.length + creditNotes.length
   const hasError = !!billsError || !!creditNotesError
@@ -182,7 +184,7 @@ export function FactusPendingCard() {
                 {totalPending}
               </Badge>
             )}
-            {!loading && totalPending === 0 && !hasError && factusEnabled && tokenValid && (
+            {!loading && totalPending === 0 && !hasError && factusEnabled && tokenValid && !pendingBillsRestricted && (
               <Badge variant="default" className="ml-1 bg-green-600">
                 Limpia
               </Badge>
@@ -225,13 +227,25 @@ export function FactusPendingCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {!factusEnabled && (
+        {!factusEnabled && !pendingBillsRestricted && (
           <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="font-medium">Facturación electrónica no habilitada</p>
               <p className="text-xs text-amber-600/80">
                 Activa el switch en Configuración para poder emitir FE.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {pendingBillsRestricted && factusEnabled && (
+          <div className="flex items-start gap-2 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3 text-sm text-blue-600">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
+            <div>
+              <p className="font-medium">Facturación electrónica habilitada</p>
+              <p className="text-xs text-blue-600/80">
+                Solo administradores pueden ver la cola de pendientes de Factus. Si hay problemas al emitir FE, contacta al administrador.
               </p>
             </div>
           </div>
@@ -267,7 +281,7 @@ export function FactusPendingCard() {
           </div>
         )}
 
-        {!hasError && totalPending === 0 && factusEnabled && tokenValid && (
+        {!hasError && totalPending === 0 && factusEnabled && tokenValid && !pendingBillsRestricted && (
           <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-600">
             <CheckCircle2 className="size-4" />
             Sin facturas pendientes en Factus. Las nuevas ventas deberían validarse correctamente.

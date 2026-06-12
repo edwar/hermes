@@ -18,6 +18,7 @@ interface CloseSessionDialogProps {
   open: boolean
   onOpenChange: (v: boolean) => void
   refreshKey?: number
+  onSessionClosed?: () => void
 }
 
 async function fetchActiveSession() {
@@ -53,7 +54,7 @@ async function closeSessionApi({ id, closingBalance }: { id: string; closingBala
 
 type Step = "summary" | "confirm" | "report"
 
-export function CloseSessionDialog({ open, onOpenChange, refreshKey = 0 }: CloseSessionDialogProps) {
+export function CloseSessionDialog({ open, onOpenChange, refreshKey = 0, onSessionClosed }: CloseSessionDialogProps) {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [step, setStep] = useState<Step>("summary")
@@ -78,6 +79,7 @@ export function CloseSessionDialog({ open, onOpenChange, refreshKey = 0 }: Close
 
   const isLoading = localLoading || queryLoading
   const prevOpenRef = useRef(false)
+  const wasClosedRef = useRef(false)
 
 useEffect(() => {
     if (open && !prevOpenRef.current) {
@@ -109,10 +111,15 @@ useEffect(() => {
 
   function handleOpenChange(v: boolean) {
     if (!v) {
+      const shouldLogout = wasClosedRef.current
+      wasClosedRef.current = false
       setStep("summary")
       setClosingBalance("")
       setClosedSessionData(null)
       onOpenChange(v)
+      if (shouldLogout) {
+        onSessionClosed?.()
+      }
     }
   }
 
@@ -126,6 +133,7 @@ useEffect(() => {
       toast.error("Ingresa un monto válido")
       return
     }
+    wasClosedRef.current = true
     mutation.mutate({ id: session.id, closingBalance: amount })
   }
 
