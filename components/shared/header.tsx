@@ -13,20 +13,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { OnlineBadge } from "@/components/shared/online-badge"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
-import { LogOut, User, AlertTriangle, Menu } from "lucide-react"
+import { CloseSessionDialog } from "@/components/cajas/close-session-dialog"
+import { LogOut, User, Menu } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
@@ -54,7 +45,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const { data: session } = useSession()
-  const [showLogoutWarning, setShowLogoutWarning] = useState(false)
+  const [showCloseDialog, setShowCloseDialog] = useState(false)
   const initials = session?.user?.name?.charAt(0).toUpperCase() ?? "?"
   const title = pageTitles[pathname] ?? APP_NAME
 
@@ -65,9 +56,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   })
 
   async function handleLogoutClick() {
-    const session = await fetchActiveSession()
-    if (session) {
-      setShowLogoutWarning(true)
+    const active = await fetchActiveSession()
+    if (active) {
+      setShowCloseDialog(true)
     } else {
       signOut({ callbackUrl: "/login" })
     }
@@ -138,27 +129,11 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
       </header>
 
-      <AlertDialog open={showLogoutWarning} onOpenChange={setShowLogoutWarning}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-amber-500" />
-              Caja abierta
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Tienes una sesión de caja abierta en{" "}
-              <strong>{activeSession?.cashRegister?.name || "una caja"}</strong>.
-              Debes cerrar la caja antes de cerrar sesión.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => router.push("/cajas")}>
-              Ir a cerrar caja
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CloseSessionDialog
+        open={showCloseDialog}
+        onOpenChange={setShowCloseDialog}
+        onSessionClosed={() => signOut({ callbackUrl: "/login" })}
+      />
     </>
   )
 }

@@ -58,8 +58,15 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }:
   const toast = useToast()
   const [registerId, setRegisterId] = useState("")
   const [baseAmount, setBaseAmount] = useState("")
-  const [deviceId] = useState(() => generateDeviceId())
-  const [deviceName] = useState(() => getDeviceName())
+  const [deviceId, setDeviceId] = useState("")
+  const [deviceName, setDeviceName] = useState("")
+
+  useEffect(() => {
+    if (open) {
+      setDeviceId(generateDeviceId())
+      setDeviceName(getDeviceName())
+    }
+  }, [open])
 
   const { data: registers, isLoading } = useQuery({
     queryKey: ["cash-registers"],

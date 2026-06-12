@@ -414,6 +414,19 @@ export async function getNumberingRangeByDocumentType(companyId: string, documen
   });
 }
 
+export async function sendRadianEvent(
+  billNumber: string,
+  eventType: string,
+  companyId: string,
+  body?: Record<string, unknown>
+) {
+  return factusRequest<Record<string, unknown>>(
+    `/v2/bills/${encodeURIComponent(billNumber)}/radian/events/${eventType}`,
+    { method: 'POST', body: body ?? {} } as any,
+    companyId
+  );
+}
+
 export async function createNumberingRange(
   companyId: string,
   data: { document: string; prefix: string; from: string; to: string; current: string }

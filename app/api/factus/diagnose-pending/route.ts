@@ -3,6 +3,21 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { listPendingBills, listPendingCreditNotes, FactusApiError } from "@/lib/factus/client"
 
+async function getCompanyInfo(companyId: string | null | undefined) {
+  if (!companyId) return null
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { name: true, factusEnabled: true, factusTokenExpiresAt: true },
+  })
+  if (!company) return null
+  return {
+    name: company.name,
+    factusEnabled: company.factusEnabled,
+    tokenExpiresAt: company.factusTokenExpiresAt,
+    tokenValid: company.factusTokenExpiresAt ? new Date(company.factusTokenExpiresAt) > new Date() : false,
+  }
+}
+
 export async function GET() {
   try {
     const session = await auth()
@@ -11,23 +26,23 @@ export async function GET() {
     }
 
     const role = session.user.role
-    if (role !== "GOD" && role !== "ADMIN") {
-      return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+    const canManage = role === "GOD" || role === "ADMIN"
+
+    if (!canManage) {
+      return NextResponse.json({
+        company: await getCompanyInfo(session.user.companyId),
+        pendingBills: [],
+        pendingBillsError: null,
+        pendingCreditNotes: [],
+        pendingCreditNotesError: null,
+        pendingBillsRestricted: true,
+      })
     }
 
     const companyId = session.user.companyId
     if (!companyId) {
       return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
     }
-
-    const company = await prisma.company.findUnique({
-      where: { id: companyId },
-      select: {
-        factusEnabled: true,
-        factusTokenExpiresAt: true,
-        name: true,
-      },
-    })
 
     let bills: Awaited<ReturnType<typeof listPendingBills>> | null = null
     let creditNotes: Awaited<ReturnType<typeof listPendingCreditNotes>> | null = null
@@ -47,12 +62,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      company: company ? {
-        name: company.name,
-        factusEnabled: company.factusEnabled,
-        tokenExpiresAt: company.factusTokenExpiresAt,
-        tokenValid: company.factusTokenExpiresAt ? new Date(company.factusTokenExpiresAt) > new Date() : false,
-      } : null,
+      company: await getCompanyInfo(companyId),
       pendingBills: bills ?? [],
       pendingBillsError: billsError,
       pendingCreditNotes: creditNotes ?? [],
