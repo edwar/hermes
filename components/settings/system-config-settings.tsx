@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Pencil, Trash2, CheckCircle2, XCircle, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 interface SystemConfig {
   id: string
@@ -54,17 +55,18 @@ export function SystemConfigSettings() {
   async function saveSystemConfig(config: SystemConfig) {
     setSaving(true)
     try {
-      const res = await fetch("/api/settings/configs", {
+      const result = await apiFetch<Record<string, unknown>>("/api/settings/configs", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "systemConfig", ...config }),
+        body: { type: "systemConfig", ...config },
+        resource: "settings-configs",
+        entityId: config.id,
       })
-      if (res.ok) {
-        success("Configuración guardada")
+      if (result.ok) {
+        success(result.queued ? "Configuración encolada: se sincronizará al reconectar" : "Configuración guardada")
         setEditingConfig(null)
-        fetchConfigs()
+        if (!result.queued) fetchConfigs()
       } else {
-        error("Error al guardar")
+        error(result.error || "Error al guardar")
       }
     } catch {
       error("Error al guardar configuración")
@@ -76,10 +78,15 @@ export function SystemConfigSettings() {
   async function deleteSystemConfig(id: string) {
     if (!confirm("¿Eliminar esta configuración?")) return
     try {
-      const res = await fetch(`/api/settings/configs?id=${id}&type=systemConfig`, { method: "DELETE" })
-      if (res.ok) {
-        success("Configuración eliminada")
-        fetchConfigs()
+      const result = await apiFetch<Record<string, unknown>>(`/api/settings/configs?id=${id}&type=systemConfig`, {
+        method: "DELETE",
+        resource: "settings-configs",
+        entityId: id,
+        mockResponse: (_body, cid) => ({ id, clientId: cid, deleted: true }),
+      })
+      if (result.ok) {
+        success(result.queued ? "Eliminación encolada" : "Configuración eliminada")
+        if (!result.queued) fetchConfigs()
       }
     } catch {
       error("Error al eliminar")
@@ -89,15 +96,15 @@ export function SystemConfigSettings() {
   async function saveGeneralSettings() {
     setSaving(true)
     try {
-      const res = await fetch("/api/settings", {
+      const result = await apiFetch<Record<string, unknown>>("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inviteExpiryHours }),
+        body: { inviteExpiryHours },
+        resource: "settings",
       })
-      if (res.ok) {
-        success("Configuración guardada")
+      if (result.ok) {
+        success(result.queued ? "Configuración encolada: se sincronizará al reconectar" : "Configuración guardada")
       } else {
-        error("Error al guardar")
+        error(result.error || "Error al guardar")
       }
     } catch {
       error("Error al guardar configuración")

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import type { CreatePurchaseOrderInput } from "../schemas/purchase-order-schema"
 
 async function fetchPurchaseOrders(status?: string, page?: number, pageSize = 20) {
@@ -12,26 +13,6 @@ async function fetchPurchaseOrders(status?: string, page?: number, pageSize = 20
 
   const res = await fetch(`/api/purchase-orders?${params}`)
   if (!res.ok) throw new Error("Error al cargar pedidos")
-  return res.json()
-}
-
-async function createPurchaseOrder(data: CreatePurchaseOrderInput) {
-  const res = await fetch("/api/purchase-orders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error("Error al crear pedido")
-  return res.json()
-}
-
-async function receivePurchaseOrder(id: string, items: { productId: string; quantity: number; purchasePrice: number }[]) {
-  const res = await fetch("/api/purchase-orders/receive", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, items }),
-  })
-  if (!res.ok) throw new Error("Error al recibir pedido")
   return res.json()
 }
 
@@ -47,14 +28,21 @@ export function useCreatePurchaseOrder() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: createPurchaseOrder,
-    onSuccess: () => {
-      toast.success("Pedido creado exitosamente")
+    mutationFn: async (data: CreatePurchaseOrderInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/purchase-orders", {
+        method: "POST",
+        body: data,
+        resource: "purchase-orders",
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Pedido encolado: se creará al reconectar" : "Pedido creado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
     },
-    onError: () => {
-      toast.error("Error al crear pedido")
-    },
+    onError: (err: Error) => toast.error(err.message || "Error al crear pedido"),
   })
 }
 
@@ -63,15 +51,22 @@ export function useReceivePurchaseOrder() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: ({ id, items }: { id: string; items: { productId: string; quantity: number; purchasePrice: number }[] }) =>
-      receivePurchaseOrder(id, items),
-    onSuccess: () => {
-      toast.success("Pedido recibido exitosamente. Stock actualizado.")
+    mutationFn: async ({ id, items }: { id: string; items: { productId: string; quantity: number; purchasePrice: number }[] }) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/purchase-orders/receive", {
+        method: "POST",
+        body: { id, items },
+        resource: "purchase-orders",
+        entityId: id,
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Recepción encolada: se aplicará al reconectar" : "Pedido recibido exitosamente. Stock actualizado.")
       queryClient.invalidateQueries({ queryKey: ["purchase-orders"] })
       queryClient.invalidateQueries({ queryKey: ["products"] })
     },
-    onError: () => {
-      toast.error("Error al recibir pedido")
-    },
+    onError: (err: Error) => toast.error(err.message || "Error al recibir pedido"),
   })
 }

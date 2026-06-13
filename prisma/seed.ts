@@ -141,6 +141,34 @@ async function main() {
     }
   }
 
+  const denominations = [
+    { value: 50, label: "$50" },
+    { value: 100, label: "$100" },
+    { value: 200, label: "$200" },
+    { value: 500, label: "$500" },
+    { value: 1000, label: "$1.000" },
+    { value: 2000, label: "$2.000" },
+    { value: 5000, label: "$5.000" },
+    { value: 10000, label: "$10.000" },
+    { value: 20000, label: "$20.000" },
+    { value: 50000, label: "$50.000" },
+    { value: 100000, label: "$100.000" },
+  ]
+
+  for (let i = 0; i < denominations.length; i++) {
+    const d = denominations[i]
+    await prisma.cashDenomination.upsert({
+      where: { value_companyId: { value: d.value, companyId: "default-company" } },
+      update: {},
+      create: {
+        value: d.value,
+        label: d.label,
+        sortOrder: i,
+        companyId: "default-company",
+      },
+    })
+  }
+
   console.log("Seed completado exitosamente")
   console.log(`  - Admin: admin@hermes.com / admin123`)
   console.log(`  - Gerente: gerente@hermes.com / gerente123`)
@@ -149,6 +177,7 @@ async function main() {
   console.log(`  - ${cajasCount} cajas registradoras creadas`)
   console.log(`  - ${paymentMethods.length} métodos de pago configurados`)
   console.log(`  - ${systemConfigs.length} configuraciones del sistema`)
+  console.log(`  - ${denominations.length} denominaciones de efectivo`)
 }
 
 main()

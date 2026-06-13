@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const registers = await prisma.cashRegister.findMany({
-    where: companyScope(session),
-    orderBy: { name: "asc" },
-  })
+  const registers = await withPrismaRetry(
+    () =>
+      prisma.cashRegister.findMany({
+        where: companyScope(session),
+        orderBy: { name: "asc" },
+      }),
+    "cash-registers:list"
+  )
 
   return NextResponse.json(registers)
 }
@@ -23,6 +27,7 @@ export async function POST(req: NextRequest) {
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }
+  const companyId = session.user.companyId
 
   const body = await req.json()
   const { name } = body
@@ -32,14 +37,21 @@ export async function POST(req: NextRequest) {
   }
 
   const where = { name: name.trim(), ...companyScope(session) }
-  const existing = await prisma.cashRegister.findFirst({ where })
+  const existing = await withPrismaRetry(
+    () => prisma.cashRegister.findFirst({ where }),
+    "cash-registers:duplicate-check"
+  )
   if (existing) {
     return NextResponse.json({ error: "Ya existe una caja con ese nombre" }, { status: 400 })
   }
 
-  const register = await prisma.cashRegister.create({
-    data: { name: name.trim(), companyId: session.user.companyId },
-  })
+  const register = await withPrismaRetry(
+    () =>
+      prisma.cashRegister.create({
+        data: { name: name.trim(), companyId },
+      }),
+    "cash-registers:create"
+  )
 
   return NextResponse.json(register, { status: 201 })
 }

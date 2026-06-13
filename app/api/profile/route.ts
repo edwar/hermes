@@ -1,32 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-      _count: { select: { sales: true } },
-    },
-  })
+  const user = await withPrismaRetry(
+    () =>
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          _count: { select: { sales: true } },
+        },
+      }),
+    "profile:user-lookup"
+  )
 
   if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const salesToday = await prisma.sale.count({
-    where: { userId: session.user.id, createdAt: { gte: today } },
-  })
+  const salesToday = await withPrismaRetry(
+    () =>
+      prisma.sale.count({
+        where: { userId: session.user.id, createdAt: { gte: today } },
+      }),
+    "profile:sales-today-count"
+  )
 
   return NextResponse.json({ ...user, salesToday })
 }
@@ -55,7 +63,10 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "La nueva contraseña debe tener al menos 6 caracteres" }, { status: 400 })
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
+    const user = await withPrismaRetry(
+      () => prisma.user.findUnique({ where: { id: session.user.id } }),
+      "profile:password-verify-lookup"
+    )
     if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
 
     const isValid = await bcrypt.compare(currentPassword, user.passwordHash)
@@ -70,11 +81,15 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "No hay datos para actualizar" }, { status: 400 })
   }
 
-  const updated = await prisma.user.update({
-    where: { id: session.user.id },
-    data: updateData,
-    select: { id: true, name: true, email: true, role: true },
-  })
+  const updated = await withPrismaRetry(
+    () =>
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: updateData,
+        select: { id: true, name: true, email: true, role: true },
+      }),
+    "profile:update"
+  )
 
   return NextResponse.json(updated)
 }

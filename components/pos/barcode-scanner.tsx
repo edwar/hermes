@@ -1,7 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import { useSession } from "next-auth/react"
 import { sileo } from "sileo"
+import { useOfflineCache } from "@/hooks/use-offline-cache"
 
 interface BarcodeScannerProps {
   onProductFound: (product: {
@@ -16,6 +18,9 @@ interface BarcodeScannerProps {
 const SCAN_THRESHOLD_MS = 50
 
 export function BarcodeScanner({ onProductFound }: BarcodeScannerProps) {
+  const { data: session } = useSession()
+  const companyId = session?.user?.companyId
+  const { getCachedProductByBarcode, cacheProducts } = useOfflineCache()
   const bufferRef = useRef("")
   const lastTimeRef = useRef(0)
   const processingRef = useRef(false)
@@ -30,15 +35,30 @@ export function BarcodeScanner({ onProductFound }: BarcodeScannerProps) {
         (p: any) => p.barcode?.toLowerCase() === code.toLowerCase()
       )
       if (product) {
+        if (companyId) cacheProducts([product], companyId)
         onProductFound(product)
         sileo.success({ title: `${product.name} agregado`, duration: 1500 })
+        return
       }
     } catch {
-      // Silenciar errores de búsqueda
-    } finally {
-      processingRef.current = false
+      // Fallback a cache local
     }
-  }, [onProductFound])
+
+    // Fallback: buscar en Dexie
+    if (companyId) {
+      const cached = await getCachedProductByBarcode(code, companyId)
+      if (cached) {
+        onProductFound({
+          id: cached.id,
+          name: cached.name,
+          barcode: cached.barcode,
+          price: cached.price,
+          stock: cached.stock,
+        })
+        sileo.success({ title: `${cached.name} agregado (offline)`, duration: 1500 })
+      }
+    }
+  }, [onProductFound, companyId, getCachedProductByBarcode, cacheProducts])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

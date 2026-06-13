@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Loader2, User, Mail, Shield, Calendar, ShoppingCart, Save, Lock } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -16,19 +17,6 @@ import { es } from "date-fns/locale"
 async function fetchProfile() {
   const res = await fetch("/api/profile")
   if (!res.ok) throw new Error("Error al cargar perfil")
-  return res.json()
-}
-
-async function updateProfile(data: { name?: string; currentPassword?: string; newPassword?: string }) {
-  const res = await fetch("/api/profile", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error ?? "Error al actualizar perfil")
-  }
   return res.json()
 }
 
@@ -52,11 +40,21 @@ export default function ProfilePage() {
   }, [profile?.name])
 
   const mutation = useMutation({
-    mutationFn: updateProfile,
+    mutationFn: async (data: { name?: string; currentPassword?: string; newPassword?: string }) => {
+      const result = await apiFetch<{ name: string } & Record<string, unknown>>("/api/profile", {
+        method: "PUT",
+        body: data,
+        resource: "profile",
+        queueable: false,
+      })
+      if (!result.ok) throw new Error(result.error)
+      return (result.queued ? result.mock : result.data) as { name: string } & Record<string, unknown>
+    },
     onSuccess: (data) => {
-      toast.success("Perfil actualizado")
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Cambios encolados: se sincronizarán al reconectar" : "Perfil actualizado")
       queryClient.invalidateQueries({ queryKey: ["profile"] })
-      updateSession({ name: data.name })
+      if (!queued && data.name) updateSession({ name: data.name })
       setCurrentPassword("")
       setNewPassword("")
       setConfirmPassword("")

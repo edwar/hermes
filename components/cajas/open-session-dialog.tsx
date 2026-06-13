@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 import { Loader2 } from "lucide-react"
 
@@ -37,22 +38,6 @@ async function fetchRegisters() {
   return res.json()
 }
 
-async function openSession(data: { cashRegisterId: string; openingBalance: number; deviceId: string; deviceName: string }) {
-  const res = await fetch("/api/cash-sessions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    const error = new Error(err.error ?? "Error al abrir caja")
-    ;(error as any).activeUser = err.activeUser
-    ;(error as any).activeDevice = err.activeDevice
-    throw error
-  }
-  return res.json()
-}
-
 export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }: OpenSessionDialogProps) {
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -75,9 +60,22 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }:
   })
 
   const mutation = useMutation({
-    mutationFn: openSession,
-    onSuccess: () => {
-      toast.success("Caja abierta exitosamente")
+    mutationFn: async (data: { cashRegisterId: string; openingBalance: number; deviceId: string; deviceName: string }) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/cash-sessions", {
+        method: "POST",
+        body: data,
+        resource: "cash-sessions",
+        entityId: data.cashRegisterId,
+      })
+      if (!result.ok) {
+        const err = new Error(result.error || "Error al abrir caja") as Error & { activeUser?: string; activeDevice?: string }
+        throw err
+      }
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Apertura encolada: se sincronizará al reconectar" : "Caja abierta exitosamente")
       queryClient.invalidateQueries({ queryKey: ["active-session"] })
       queryClient.invalidateQueries({ queryKey: ["cash-sessions"] })
       setRegisterId("")
@@ -87,12 +85,9 @@ export function OpenSessionDialog({ open, onOpenChange, onSuccess, onConflict }:
     },
     onError: (err: Error) => {
       const errorMsg = err.message
-      const activeUser = (err as any).activeUser
-      const activeDevice = (err as any).activeDevice
-      
       if (errorMsg.includes("ya está abierta") || errorMsg.includes("dispositivo")) {
         if (onConflict) {
-          onConflict({ sessionId: `conflict-${Date.now()}`, activeUser, activeDevice })
+          onConflict({ sessionId: `conflict-${Date.now()}` })
           return
         }
       }

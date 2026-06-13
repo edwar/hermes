@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useOfflineCache } from "@/hooks/use-offline-cache"
 import { Loader2, Search, Check, X, UserPlus, Pencil } from "lucide-react"
 
 interface Customer {
@@ -18,7 +20,7 @@ interface Customer {
 }
 
 interface CustomerLookupProps {
-  onCustomerSelect: (customer: { id: string; name: string } | null) => void
+  onCustomerSelect: (customer: { id: string; name: string; email?: string | null; phone?: string | null; address?: string | null; cedula?: string | null } | null) => void
   onRequestElectronicInvoiceChange: (value: boolean) => void
   requestElectronicInvoice: boolean
   onRequestCreateCustomer: (data: { cedula: string }) => void
@@ -33,14 +35,6 @@ interface CustomerLookupProps {
   } | null
 }
 
-async function searchCustomerByCedula(cedula: string): Promise<Customer | null> {
-  const res = await fetch(`/api/customers?search=${encodeURIComponent(cedula)}`)
-  if (!res.ok) return null
-  const data = await res.json()
-  const found = data.customers?.find((c: Customer) => c.cedula === cedula)
-  return found || null
-}
-
 export function CustomerLookup({
   onCustomerSelect,
   onRequestElectronicInvoiceChange,
@@ -49,6 +43,9 @@ export function CustomerLookup({
   onRequestEditCustomer,
   selectedCustomer,
 }: CustomerLookupProps) {
+  const { data: session } = useSession()
+  const companyId = session?.user?.companyId
+  const { searchCachedCustomers, cacheCustomers } = useOfflineCache()
   const [cedula, setCedula] = useState("")
   const [loading, setLoading] = useState(false)
   const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null)
@@ -92,6 +89,31 @@ export function CustomerLookup({
     }
   }, [cedula])
 
+  async function searchCustomerByCedula(cedulaToSearch: string) {
+    const trimmed = cedulaToSearch.trim()
+    if (!trimmed) return null
+
+    try {
+      const res = await fetch(`/api/customers?search=${encodeURIComponent(trimmed)}`)
+      if (res.ok) {
+        const data = await res.json()
+        const found = data.customers?.find((c: Customer) => c.cedula === trimmed)
+        if (found && companyId) {
+          cacheCustomers([found], companyId)
+        }
+        return found || null
+      }
+    } catch {
+      // fallback a cache local
+    }
+
+    if (companyId) {
+      const cached = await searchCachedCustomers(trimmed, companyId)
+      if (cached) return JSON.parse(cached.data) as Customer
+    }
+    return null
+  }
+
   async function runSearch(cedulaToSearch: string) {
     const trimmed = cedulaToSearch.trim()
     if (!trimmed) return
@@ -104,16 +126,9 @@ export function CustomerLookup({
         setFoundCustomer(customer)
         setCedula(customer.cedula ?? trimmed)
         lastTypedCedulaRef.current = customer.cedula ?? trimmed
-        onCustomerSelect({ id: customer.id, name: customer.name })
+        onCustomerSelect({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, address: customer.address, cedula: customer.cedula })
         lastSearchedCedulaRef.current = customer.cedula ?? null
       }
-      // Cuando hay cliente preseleccionado, confiamos en el prop: no se
-      // pasa a "no encontrado" solo porque la búsqueda aún no devolvió
-      // un resultado (carrera durante el refresco en segundo plano justo
-      // después de crear). El flujo de handleSearch disparado por el
-      // usuario pasa por la misma función pero con el prop en null, así
-      // que el flujo explícito se maneja seteando notFound=true en el
-      // call site de más abajo.
     } catch {
       setError("Error al buscar cliente")
     } finally {
@@ -122,9 +137,6 @@ export function CustomerLookup({
   }
 
   async function handleSearch() {
-    // Búsqueda disparada por el usuario: limpiar el resultado anterior
-    // primero para que el panel verde desaparezca mientras carga y vuelva
-    // a aparecer solo si la nueva búsqueda encuentra algo.
     const trimmed = (cedula || lastTypedCedulaRef.current).trim()
     if (!trimmed) return
     setFoundCustomer(null)
@@ -137,7 +149,7 @@ export function CustomerLookup({
         setFoundCustomer(customer)
         setCedula(customer.cedula ?? trimmed)
         lastTypedCedulaRef.current = customer.cedula ?? trimmed
-        onCustomerSelect({ id: customer.id, name: customer.name })
+        onCustomerSelect({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, address: customer.address, cedula: customer.cedula })
         lastSearchedCedulaRef.current = customer.cedula ?? null
       } else {
         setNotFound(true)
@@ -166,103 +178,89 @@ export function CustomerLookup({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1.5">
-        <Label htmlFor="cedula">Buscar por cédula / NIT</Label>
+    <div className="space-y-2">
+      <div className="space-y-1">
         <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="cedula"
-              value={cedula}
-              onChange={(e) => {
-                setCedula(e.target.value)
-                lastTypedCedulaRef.current = e.target.value
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Ingrese cédula o NIT"
-              className="pl-9"
-              disabled={!!foundCustomer}
-            />
-          </div>
           {!foundCustomer ? (
-            <Button onClick={handleSearch} disabled={loading || !cedula.trim()}>
-              {loading ? <Loader2 className="size-4 animate-spin" /> : "Buscar"}
-            </Button>
+            <>
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="cedula"
+                  value={cedula}
+                  onChange={(e) => {
+                    setCedula(e.target.value)
+                    lastTypedCedulaRef.current = e.target.value
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Cédula / NIT del cliente"
+                  className="pl-8 h-9 text-xs"
+                />
+              </div>
+              <Button size="sm" onClick={handleSearch} disabled={loading || !cedula.trim()} className="h-9">
+                {loading ? <Loader2 className="size-3.5 animate-spin" /> : "Buscar"}
+              </Button>
+            </>
           ) : (
-            <Button variant="ghost" size="icon" onClick={handleClear}>
-              <X className="size-4" />
-            </Button>
+            <div className="flex-1 rounded-lg border bg-card px-3 py-2 min-h-[36px]">
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 shrink-0 text-green-600" />
+                <span className="text-xs font-medium truncate min-w-0">{foundCustomer.name}</span>
+                <Badge variant="outline" className="text-[10px] shrink-0 ml-auto">
+                  {foundCustomer.cedula || cedula || "Sin cédula"}
+                </Badge>
+                <Button variant="ghost" size="icon-sm" className="size-6 shrink-0" onClick={() => onRequestEditCustomer(foundCustomer)}>
+                  <Pencil className="size-3" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" className="size-6 shrink-0 text-destructive" onClick={handleClear}>
+                  <X className="size-3" />
+                </Button>
+              </div>
+              {(foundCustomer.email || foundCustomer.phone) && (
+                <div className="flex items-center gap-3 mt-0.5 ml-[22px]">
+                  {foundCustomer.email && (
+                    <span className="text-[10px] text-muted-foreground truncate">{foundCustomer.email}</span>
+                  )}
+                  {foundCustomer.phone && (
+                    <span className="text-[10px] text-muted-foreground shrink-0">{foundCustomer.phone}</span>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
 
-      {foundCustomer && (
-        <div className="rounded-lg border p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Check className="size-4" />
-              <span className="text-sm font-medium">Cliente encontrado</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">
-                {foundCustomer.cedula || cedula || "Sin cédula"}
-              </Badge>
-              <Button variant="ghost" size="icon" className="size-7" onClick={() => onRequestEditCustomer(foundCustomer)}>
-                <Pencil className="size-3 text-green-700" />
-              </Button>
-            </div>
-          </div>
-          <div className="pl-6 space-y-1">
-            <p className="text-sm font-medium">{foundCustomer.name}</p>
-            {foundCustomer.email && (
-              <p className="text-xs text-muted-foreground">{foundCustomer.email}</p>
-            )}
-            {foundCustomer.phone && (
-              <p className="text-xs text-muted-foreground">{foundCustomer.phone}</p>
-            )}
-          </div>
-        </div>
-      )}
-
       {notFound && !foundCustomer && (
-        <div className="rounded-lg border border-dashed p-3 space-y-3">
-          <div className="flex items-center gap-2">
-            <UserPlus className="size-4" />
-            <span className="text-sm font-medium">Cliente no encontrado</span>
-          </div>
-          <p className="text-xs text-muted-foreground pl-6">
-            ¿Deseas registrarlo?
-          </p>
-          <div className="pl-6">
-            <Button
-              size="sm"
-              onClick={() => onRequestCreateCustomer({ cedula: cedula.trim() })}
-              className="w-full"
-            >
-              <UserPlus className="size-4 mr-1" />
-              Registrar cliente
-            </Button>
-          </div>
+        <div className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2">
+          <UserPlus className="size-3.5 shrink-0" />
+          <span className="text-xs text-muted-foreground">Cliente no encontrado</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onRequestCreateCustomer({ cedula: cedula.trim() })}
+            className="ml-auto h-7 text-xs"
+          >
+            Registrar
+          </Button>
         </div>
       )}
 
       {foundCustomer && (
-        <div className="flex items-center space-x-2 rounded-lg border p-3">
+        <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
           <Checkbox
             id="electronicInvoice"
             checked={requestElectronicInvoice}
             onCheckedChange={(checked) => onRequestElectronicInvoiceChange(checked === true)}
+            className="size-3.5"
           />
-          <div className="space-y-0.5 leading-none">
-            <Label htmlFor="electronicInvoice" className="text-sm font-medium cursor-pointer">
-              Factura electrónica DIAN
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {foundCustomer.email ? "Se enviará por correo electrónico" : "Requiere datos del cliente"}
-            </p>
-          </div>
+          <Label htmlFor="electronicInvoice" className="text-xs cursor-pointer font-medium leading-none">
+            Factura electrónica DIAN
+          </Label>
+          <span className="text-[10px] text-muted-foreground ml-auto">
+            {foundCustomer.email ? "Se envía por correo" : "Sin email para FE"}
+          </span>
         </div>
       )}
     </div>

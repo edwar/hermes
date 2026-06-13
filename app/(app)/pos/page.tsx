@@ -2,7 +2,9 @@
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
+import { db } from "@/lib/db"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -32,16 +34,39 @@ import { PrinterSettings } from "@/components/settings/printer-settings"
 import { useSessionHeartbeat } from "@/hooks/use-session-heartbeat"
 import { usePresenceMonitor } from "@/hooks/use-presence-monitor"
 import { useIsMobile } from "@/hooks/use-is-mobile"
-import { RotateCcw, Printer, Loader2, ArrowUpDown, AlertTriangle, ShoppingCart, MoreVertical } from "lucide-react"
+import { useSync } from "@/providers/sync-provider"
+import { RotateCcw, Printer, Loader2, ArrowUpDown, AlertTriangle, ShoppingCart, MoreVertical, WifiOff } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
 
 async function fetchActiveSession() {
-  const res = await fetch("/api/cash-sessions/active")
-  if (!res.ok) {
-    if (res.status === 401) return null
-    throw new Error("Error al cargar sesión activa")
+  try {
+    const res = await fetch("/api/cash-sessions/active")
+    if (!res.ok) {
+      if (res.status === 401) return null
+      throw new Error("Error al cargar sesión activa")
+    }
+    const data = await res.json()
+    if (data?.id) {
+      try { localStorage.setItem("hermes-active-session", JSON.stringify(data)) } catch {}
+    }
+    return data
+  } catch (err) {
+    const cached = localStorage.getItem("hermes-active-session")
+    if (cached) {
+      try { return JSON.parse(cached) } catch {}
+    }
+    throw err
   }
-  return res.json()
+}
+
+function useActiveSession(sessionKey: number) {
+  const { data: session } = useSession()
+  return useQuery({
+    queryKey: ["active-session", sessionKey],
+    queryFn: fetchActiveSession,
+    refetchInterval: 30_000,
+    retry: 0,
+  })
 }
 
 export default function POSPage() {
@@ -64,10 +89,8 @@ export default function POSPage() {
   const newlyCreatedCustomerRef = useRef<any>(null)
   const isMobile = useIsMobile()
 
-  const { data: activeSession, isLoading: sessionLoading } = useQuery({
-    queryKey: ["active-session", sessionKey],
-    queryFn: fetchActiveSession,
-  })
+  const { data: activeSession, isLoading: sessionLoading } = useActiveSession(sessionKey)
+  const { isOnline } = useSync()
 
   useSessionHeartbeat(activeSession?.id ?? null)
 
@@ -94,6 +117,23 @@ export default function POSPage() {
   const handleCheckout = useCallback(() => {
     setPaymentOpen(true)
   }, [])
+
+  // Atajo de teclado: Space para abrir cobro si hay productos en el carrito
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== " " && e.key !== "Spacebar") return
+      if (cart.isEmpty) return
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+      if (paymentOpen || returnOpen || printerOpen || closeSessionOpen || movementOpen || customerFormOpen || cartSheetOpen) return
+
+      e.preventDefault()
+      handleCheckout()
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [cart.isEmpty, paymentOpen, returnOpen, printerOpen, closeSessionOpen, movementOpen, customerFormOpen, cartSheetOpen, handleCheckout])
 
   const handleConfirmPayment = useCallback(
     async (data: {
@@ -221,6 +261,12 @@ export default function POSPage() {
     <div className="flex h-[calc(100vh-4rem)] -m-4 md:-m-6 overflow-hidden">
       <BarcodeScanner onProductFound={handleAddProduct} />
       <div className="flex flex-1 flex-col min-w-0">
+        {!isOnline && (
+          <div className="flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+            <WifiOff className="size-3.5 shrink-0" />
+            <span>Modo offline — las ventas se guardarán localmente y se sincronizarán al recuperar la conexión.</span>
+          </div>
+        )}
         <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-6 pb-2 gap-2">
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPrinterOpen(true)}>

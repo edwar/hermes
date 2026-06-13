@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Loader2, Save, Building2, MapPin, Phone, Hash, Mail, DollarSign, FileText, Image } from "lucide-react"
 import type { StoreSettings } from "@/hooks/use-settings"
 import { FactusSettings } from "@/components/settings/factus-settings"
+import { DenominationSettings } from "@/components/settings/denomination-settings"
 import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
@@ -223,6 +224,8 @@ export default function SettingsPage() {
           </div>
 
           <FactusSettings />
+
+          <DenominationSettings />
         </>
       )}
 

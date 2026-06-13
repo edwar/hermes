@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createCustomerSchema, updateCustomerSchema } from "@/features/inventory/schemas/customer-schema"
 import { companyScope } from "@/lib/company-scope"
 
@@ -26,13 +26,20 @@ export async function GET(req: NextRequest) {
   }
 
   const [customers, total] = await Promise.all([
-    prisma.customer.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.customer.count({ where }),
+    withPrismaRetry(
+      () =>
+        prisma.customer.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      "customers:list"
+    ),
+    withPrismaRetry(
+      () => prisma.customer.count({ where }),
+      "customers:list-count"
+    ),
   ])
 
   return NextResponse.json({ customers, total, pages: Math.ceil(total / pageSize), page })
@@ -44,6 +51,7 @@ export async function POST(req: NextRequest) {
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }
+  const companyId = session.user.companyId
 
   const body = await req.json()
   const parsed = createCustomerSchema.safeParse(body)
@@ -51,16 +59,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const customer = await prisma.customer.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email || null,
-      phone: parsed.data.phone || null,
-      address: parsed.data.address || null,
-      cedula: parsed.data.cedula || null,
-      companyId: session.user.companyId,
-    },
-  })
+  const customer = await withPrismaRetry(
+    () =>
+      prisma.customer.create({
+        data: {
+          name: parsed.data.name,
+          email: parsed.data.email || null,
+          phone: parsed.data.phone || null,
+          address: parsed.data.address || null,
+          cedula: parsed.data.cedula || null,
+          companyId,
+        },
+      }),
+    "customers:create"
+  )
   return NextResponse.json(customer, { status: 201 })
 }
 
@@ -75,16 +87,20 @@ export async function PUT(req: NextRequest) {
   }
 
   const { id, ...data } = parsed.data
-  const customer = await prisma.customer.update({
-    where: { id, ...companyScope(session) },
-    data: {
-      ...(data.name && { name: data.name }),
-      ...(data.email !== undefined && { email: data.email || null }),
-      ...(data.phone !== undefined && { phone: data.phone || null }),
-      ...(data.address !== undefined && { address: data.address || null }),
-      ...(data.cedula !== undefined && { cedula: data.cedula || null }),
-    },
-  })
+  const customer = await withPrismaRetry(
+    () =>
+      prisma.customer.update({
+        where: { id, ...companyScope(session) },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.email !== undefined && { email: data.email || null }),
+          ...(data.phone !== undefined && { phone: data.phone || null }),
+          ...(data.address !== undefined && { address: data.address || null }),
+          ...(data.cedula !== undefined && { cedula: data.cedula || null }),
+        },
+      }),
+    "customers:update"
+  )
   return NextResponse.json(customer)
 }
 
@@ -96,6 +112,9 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id")
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  await prisma.customer.delete({ where: { id, ...companyScope(session) } })
+  await withPrismaRetry(
+    () => prisma.customer.delete({ where: { id, ...companyScope(session) } }),
+    "customers:delete"
+  )
   return NextResponse.json({ success: true })
 }

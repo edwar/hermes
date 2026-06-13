@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET() {
   const session = await auth()
@@ -10,14 +10,22 @@ export async function GET() {
 
   const paymentMethods = session.user.role === "GOD"
     ? []
-    : await prisma.paymentMethodConfig.findMany({
-        where: { companyId },
-        orderBy: { internalCode: "asc" },
-      })
+    : await withPrismaRetry(
+        () =>
+          prisma.paymentMethodConfig.findMany({
+            where: { companyId },
+            orderBy: { internalCode: "asc" },
+          }),
+        "configs:payment-methods"
+      )
 
-  const systemConfigs = await prisma.systemConfig.findMany({
-    orderBy: [{ category: "asc" }, { key: "asc" }],
-  })
+  const systemConfigs = await withPrismaRetry(
+    () =>
+      prisma.systemConfig.findMany({
+        orderBy: [{ category: "asc" }, { key: "asc" }],
+      }),
+    "configs:system"
+  )
 
   return NextResponse.json({ paymentMethods, systemConfigs })
 }
@@ -35,9 +43,15 @@ export async function PUT(req: NextRequest) {
     const data = { internalCode, name, factusPaymentForm: parseInt(factusPaymentForm), factusPaymentMethodCode, isActive: !!isActive, companyId }
 
     if (id) {
-      await prisma.paymentMethodConfig.update({ where: { id }, data })
+      await withPrismaRetry(
+        () => prisma.paymentMethodConfig.update({ where: { id }, data }),
+        "configs:update-payment-method"
+      )
     } else {
-      await prisma.paymentMethodConfig.create({ data })
+      await withPrismaRetry(
+        () => prisma.paymentMethodConfig.create({ data }),
+        "configs:create-payment-method"
+      )
     }
     return NextResponse.json({ success: true })
   }
@@ -47,9 +61,15 @@ export async function PUT(req: NextRequest) {
     const data = { category, key, value, label, description, isActive: !!isActive }
 
     if (id) {
-      await prisma.systemConfig.update({ where: { id }, data })
+      await withPrismaRetry(
+        () => prisma.systemConfig.update({ where: { id }, data }),
+        "configs:update-system-config"
+      )
     } else {
-      await prisma.systemConfig.create({ data })
+      await withPrismaRetry(
+        () => prisma.systemConfig.create({ data }),
+        "configs:create-system-config"
+      )
     }
     return NextResponse.json({ success: true })
   }
@@ -69,9 +89,15 @@ export async function DELETE(req: NextRequest) {
   if (!id || !type) return NextResponse.json({ error: "Faltan parámetros" }, { status: 400 })
 
   if (type === "paymentMethod") {
-    await prisma.paymentMethodConfig.delete({ where: { id } })
+    await withPrismaRetry(
+      () => prisma.paymentMethodConfig.delete({ where: { id } }),
+      "configs:delete-payment-method"
+    )
   } else if (type === "systemConfig") {
-    await prisma.systemConfig.delete({ where: { id } })
+    await withPrismaRetry(
+      () => prisma.systemConfig.delete({ where: { id } }),
+      "configs:delete-system-config"
+    )
   }
 
   return NextResponse.json({ success: true })

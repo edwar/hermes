@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { CashRegisterForm } from "./cash-register-form"
 import { Pencil, Trash2, Plus, Loader2 } from "lucide-react"
 import {
@@ -37,12 +38,18 @@ export function CashRegistersList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/cash-registers/${id}`, { method: "DELETE" })
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error ?? "Error al eliminar caja") }
-      return res.json()
+      const result = await apiFetch<Record<string, unknown>>(`/api/cash-registers/${id}`, {
+        method: "DELETE",
+        resource: "cash-registers",
+        entityId: id,
+        mockResponse: (_body, cid) => ({ id, clientId: cid, deleted: true }),
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
     },
-    onSuccess: () => {
-      toast.success("Caja eliminada")
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Eliminación encolada: se aplicará al reconectar" : "Caja eliminada")
       queryClient.invalidateQueries({ queryKey: ["cash-registers"] })
       setDeleteId(null)
     },

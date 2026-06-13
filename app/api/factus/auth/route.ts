@@ -10,9 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    if (session.user.role === 'CASHIER') {
-      return NextResponse.json({ error: 'No tiene permisos para esta acción' }, { status: 403 });
-    }
+    // CASHIER puede reconectar (el token se refresca automáticamente al facturar)
 
     const companyId = session.user.companyId;
     if (!companyId) {

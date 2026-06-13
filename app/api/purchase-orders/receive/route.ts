@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { receivePurchaseOrderSchema } from "@/features/purchase-orders/schemas/purchase-order-schema"
 import { companyScope } from "@/lib/company-scope"
 
@@ -40,40 +40,51 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Este pedido fue cancelado" }, { status: 400 })
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    for (const item of items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: { increment: item.quantity },
-          purchasePrice: item.purchasePrice,
-        },
-      })
-
-      await tx.stockMovement.create({
-        data: {
-          type: "IN",
-          quantity: item.quantity,
-          reason: `Entrada por pedido #${id.slice(0, 8)}`,
-          productId: item.productId,
-          purchaseOrderId: id,
-          companyId,
-        },
-      })
-    }
-
-    const updatedOrder = await tx.purchaseOrder.update({
-      where: { id },
-      data: { status: "RECEIVED" },
-      include: {
-        supplier: true,
-        user: { select: { id: true, name: true } },
-        items: { include: { product: true } },
+  const stockOps = items.flatMap((item) => [
+    prisma.product.update({
+      where: { id: item.productId },
+      data: {
+        stock: { increment: item.quantity },
+        purchasePrice: item.purchasePrice,
       },
-    })
+    }),
+    prisma.stockMovement.create({
+      data: {
+        type: "IN",
+        quantity: item.quantity,
+        reason: `Entrada por pedido #${id.slice(0, 8)}`,
+        productId: item.productId,
+        purchaseOrderId: id,
+        companyId,
+      },
+    }),
+  ])
 
-    return updatedOrder
+  const stockResults = await Promise.allSettled(stockOps)
+  stockResults.forEach((result, idx) => {
+    if (result.status === "rejected") {
+      const opIdx = Math.floor(idx / 2)
+      const op = idx % 2 === 0 ? "increment" : "stock-movement"
+      console.error(
+        `[po-receive] ${op} failed for product ${items[opIdx]?.productId}:`,
+        result.reason
+      )
+    }
   })
+
+  const result = await withPrismaRetry(
+    () =>
+      prisma.purchaseOrder.update({
+        where: { id },
+        data: { status: "RECEIVED" },
+        include: {
+          supplier: true,
+          user: { select: { id: true, name: true } },
+          items: { include: { product: true } },
+        },
+      }),
+    "po-receive:update-status"
+  )
 
   return NextResponse.json(result)
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/table"
 import { Pagination } from "@/components/ui/pagination"
 import { SaleDetail } from "@/components/sales/sale-detail"
+import { useOfflineCache } from "@/hooks/use-offline-cache"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Receipt, Search, ShoppingBag } from "lucide-react"
@@ -44,6 +46,9 @@ function getDefaultDateRange() {
 }
 
 export function SalesTable() {
+  const { data: session } = useSession()
+  const companyId = session?.user?.companyId
+  const { cacheSales, getCachedSales } = useOfflineCache()
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<any>(null)
   const [sales, setSales] = useState<any[]>([])
@@ -51,6 +56,7 @@ export function SalesTable() {
   const [pages, setPages] = useState(1)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [isOfflineData, setIsOfflineData] = useState(false)
   const [initialized, setInitialized] = useState(false)
   const [from, setFrom] = useState("")
   const [to, setTo] = useState("")
@@ -71,6 +77,7 @@ export function SalesTable() {
 
   async function fetchSales(p: number = 1) {
     setLoading(true)
+    setIsOfflineData(false)
     const params = new URLSearchParams()
     params.set("page", String(p))
     params.set("pageSize", "20")
@@ -80,7 +87,7 @@ export function SalesTable() {
     try {
       const res = await fetch(`/api/sales?${params}`)
       const data = await res.json()
-      // Filtrar por método de pago en el cliente
+      if (companyId && data.sales) cacheSales(data.sales, companyId)
       let filtered = data.sales ?? []
       if (paymentFilter) {
         filtered = filtered.filter((s: any) => s.paymentMethod === paymentFilter)
@@ -90,7 +97,21 @@ export function SalesTable() {
       setPages(data.pages)
       setPage(p)
     } catch {
-      setSales([])
+      if (companyId) {
+        const cached = await getCachedSales(companyId)
+        const parsed = cached.map((s) => JSON.parse(s.data))
+        let filtered = parsed
+        if (paymentFilter) {
+          filtered = filtered.filter((s: any) => s.paymentMethod === paymentFilter)
+        }
+        setSales(filtered)
+        setTotal(filtered.length)
+        setPages(1)
+        setPage(1)
+        setIsOfflineData(true)
+      } else {
+        setSales([])
+      }
     } finally {
       setLoading(false)
     }
@@ -138,6 +159,11 @@ export function SalesTable() {
           <Search className="mr-2 size-4" />
           Buscar
         </Button>
+        {isOfflineData && (
+          <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-xs">
+            Datos locales (sin conexión)
+          </Badge>
+        )}
       </div>
 
       {loading ? (
@@ -169,9 +195,14 @@ export function SalesTable() {
             </TableHeader>
             <TableBody>
               {sales.map((s: any) => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={s.isSynced === false ? "opacity-70" : undefined}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
-                    {s.localId ?? s.id.slice(0, 8)}
+                    {s.localId?.startsWith("offline-") ? s.localId.slice(0, 12) : (s.localId ?? s.id.slice(0, 8))}
+                    {s.isSynced === false && (
+                      <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-normal">
+                        Pendiente
+                      </Badge>
+                    )}
                     {s.isReturn && (
                       <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-normal">
                         Devolución

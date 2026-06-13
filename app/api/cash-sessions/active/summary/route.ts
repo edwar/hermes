@@ -1,22 +1,26 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const activeSession = await prisma.cashSession.findFirst({
-    where: { userId: session.user.id, status: "OPEN" },
-    include: {
-      cashRegister: true,
-      user: { select: { id: true, name: true } },
-      sales: {
-        where: { isSynced: true },
-      },
-      cashMovements: true,
-    },
-  })
+  const activeSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findFirst({
+        where: { userId: session.user.id, status: "OPEN" },
+        include: {
+          cashRegister: true,
+          user: { select: { id: true, name: true } },
+          sales: {
+            where: { isSynced: true },
+          },
+          cashMovements: true,
+        },
+      }),
+    "cash-sessions:active-summary"
+  )
 
   if (!activeSession) {
     return NextResponse.json(null)

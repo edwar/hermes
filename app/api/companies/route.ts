@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -10,11 +10,15 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const search = searchParams.get("search") || ""
 
-  const companies = await prisma.company.findMany({
-    where: search ? { name: { contains: search, mode: "insensitive" } } : {},
-    include: { _count: { select: { users: true } } },
-    orderBy: { createdAt: "desc" },
-  })
+  const companies = await withPrismaRetry(
+    () =>
+      prisma.company.findMany({
+        where: search ? { name: { contains: search, mode: "insensitive" } } : {},
+        include: { _count: { select: { users: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+    "companies:list"
+  )
 
   return NextResponse.json(companies)
 }
@@ -29,10 +33,14 @@ export async function PUT(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  const company = await prisma.company.update({
-    where: { id },
-    data: { name, nit, address, phone, email, isActive },
-  })
+  const company = await withPrismaRetry(
+    () =>
+      prisma.company.update({
+        where: { id },
+        data: { name, nit, address, phone, email, isActive },
+      }),
+    "companies:update"
+  )
 
   return NextResponse.json(company)
 }
@@ -47,7 +55,10 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  await prisma.company.update({ where: { id }, data: { isActive: false } })
+  await withPrismaRetry(
+    () => prisma.company.update({ where: { id }, data: { isActive: false } }),
+    "companies:deactivate"
+  )
 
   return NextResponse.json({ message: "Empresa desactivada" })
 }

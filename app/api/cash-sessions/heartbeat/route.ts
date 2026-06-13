@@ -1,45 +1,66 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-
-const HEARTBEAT_TIMEOUT_MS = 60 * 1000
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  try {
+    const session = await auth()
+    if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const body = await req.json()
-  const { sessionId, deviceId } = body
+    const body = await req.json()
+    const { sessionId, deviceId } = body
 
-  if (!sessionId || !deviceId) {
-    return NextResponse.json({ error: "sessionId y deviceId son requeridos" }, { status: 400 })
+    if (!sessionId || !deviceId) {
+      return NextResponse.json({ error: "sessionId y deviceId son requeridos" }, { status: 400 })
+    }
+
+    const cashSession = await withPrismaRetry(
+      () =>
+        prisma.cashSession.findUnique({
+          where: { id: sessionId },
+          include: { user: { select: { id: true } } },
+        }),
+      "heartbeat:lookup"
+    )
+
+    if (!cashSession) {
+      return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
+    }
+
+    if (cashSession.userId !== session.user.id) {
+      return NextResponse.json({ error: "No tienes acceso a esta sesión" }, { status: 403 })
+    }
+
+    if (cashSession.status !== "OPEN") {
+      return NextResponse.json({ error: "La sesión ya está cerrada" }, { status: 400 })
+    }
+
+    const updated = await withPrismaRetry(
+      () =>
+        prisma.cashSession.update({
+          where: { id: sessionId },
+          data: {
+            lastHeartbeat: new Date(),
+            deviceId: deviceId,
+          },
+        }),
+      "heartbeat:update"
+    )
+
+    return NextResponse.json({ success: true, lastHeartbeat: updated.lastHeartbeat })
+  } catch (error: any) {
+    if (
+      error?.code === "P2024" ||
+      error?.code === "P2028" ||
+      error?.code === "P2034" ||
+      error?.message?.includes("Can't reach database") ||
+      error?.message?.includes("Timed out fetching a new connection") ||
+      error?.message?.includes("server closed the connection")
+    ) {
+      console.warn("Heartbeat: base de datos no disponible, reintentando en el próximo ciclo")
+      return NextResponse.json({ success: false, error: "Base de datos no disponible" }, { status: 503 })
+    }
+    console.error("Heartbeat error:", error)
+    return NextResponse.json({ error: "Error interno" }, { status: 500 })
   }
-
-  const cashSession = await prisma.cashSession.findUnique({
-    where: { id: sessionId },
-    include: { user: { select: { id: true } } },
-  })
-
-  if (!cashSession) {
-    return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
-  }
-
-  if (cashSession.userId !== session.user.id) {
-    return NextResponse.json({ error: "No tienes acceso a esta sesión" }, { status: 403 })
-  }
-
-  if (cashSession.status !== "OPEN") {
-    return NextResponse.json({ error: "La sesión ya está cerrada" }, { status: 400 })
-  }
-
-  // Actualizar el heartbeat
-  const updated = await prisma.cashSession.update({
-    where: { id: sessionId },
-    data: {
-      lastHeartbeat: new Date(),
-      deviceId: deviceId // Actualizar deviceId en caso de que haya cambiado
-    },
-  })
-
-  return NextResponse.json({ success: true, lastHeartbeat: updated.lastHeartbeat })
 }

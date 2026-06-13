@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
 import { formatCOP } from "@/lib/utils"
 import { TAX_RATE } from "@/lib/constants"
 import { Receipt } from "@/components/pos/receipt"
@@ -19,14 +22,47 @@ import { CustomerLookup } from "@/components/pos/customer-lookup"
 import { usePrinter } from "@/hooks/use-printer"
 import { useSettings } from "@/hooks/use-settings"
 import { getPrintMethod } from "@/lib/print/print-service"
-import { Banknote, CreditCard, Landmark, Wallet, Printer, Loader2 } from "lucide-react"
+import { Banknote, CreditCard, Landmark, Wallet, Printer, Loader2, Eraser } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
+
+interface CashDenomination {
+  id: string
+  value: number
+  label: string
+  sortOrder: number
+  isActive: boolean
+}
+
+async function cachedFetchDenominations(companyId: string): Promise<CashDenomination[]> {
+  try {
+    const res = await fetch("/api/cash-denominations")
+    if (res.ok) {
+      const data: CashDenomination[] = await res.json()
+      return data
+    }
+  } catch {
+    // fallback
+  }
+  const { db } = await import("@/lib/db")
+  const cached = await db.cachedDenominations
+    .where("companyId")
+    .equals(companyId)
+    .filter((d) => d.isActive)
+    .sortBy("sortOrder")
+  return cached.map((d) => ({
+    id: d.id,
+    value: Number(d.value),
+    label: d.label,
+    sortOrder: d.sortOrder,
+    isActive: d.isActive,
+  }))
+}
 
 const paymentMethods = [
   { value: "CASH", label: "Efectivo", icon: Banknote },
   { value: "CARD", label: "Tarjeta", icon: CreditCard },
-  { value: "TRANSFER", label: "Transferencia", icon: Landmark },
   { value: "CREDIT", label: "Crédito", icon: Wallet },
+  { value: "TRANSFER", label: "Transferencia", icon: Landmark },
 ]
 
 interface CustomerInfo {
@@ -83,10 +119,18 @@ export function PaymentModal({
   const [paymentMethod, setPaymentMethod] = useState("CASH")
   const [amountReceived, setAmountReceived] = useState("")
   const [showReceipt, setShowReceipt] = useState(false)
+  const { data: session } = useSession()
+  const companyId = session?.user?.companyId
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerInfo | null>(null)
   const [requestElectronicInvoice, setRequestElectronicInvoice] = useState(false)
   const { print: printReceipt, isPrinting } = usePrinter()
   const { settings } = useSettings()
+
+  const { data: denominations } = useQuery({
+    queryKey: ["cash-denominations", companyId],
+    queryFn: () => cachedFetchDenominations(companyId!),
+    enabled: open && !!companyId,
+  })
 
   useEffect(() => {
     if (preSelectedCustomer) {
@@ -94,6 +138,14 @@ export function PaymentModal({
       onPreSelectedCustomerConsumed?.()
     }
   }, [preSelectedCustomer, onPreSelectedCustomerConsumed])
+
+  function addDenomination(value: number) {
+    setAmountReceived((prev) => {
+      const digits = prev.replace(/\D/g, "")
+      const current = parseFloat(digits || "0")
+      return String(current + value)
+    })
+  }
 
   if (saleResult && showReceipt) {
     const isSilent = getPrintMethod() !== "browser"
@@ -181,15 +233,15 @@ export function PaymentModal({
         if (!isProcessing) onOpenChange(v)
       }}
     >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Finalizar venta</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-xl p-0 gap-0">
+        <DialogHeader className="px-4 pt-4 pb-0 shrink-0">
+          <DialogTitle className="text-base">Finalizar venta</DialogTitle>
+          <DialogDescription className="text-xs">
             Selecciona el método de pago y confirma la venta
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-3 px-4 py-3">
           <CustomerLookup
             selectedCustomer={selectedCustomer}
             onCustomerSelect={setSelectedCustomer}
@@ -199,73 +251,108 @@ export function PaymentModal({
             onRequestEditCustomer={onRequestEditCustomer}
           />
 
-          <div className="space-y-3">
-            <Label>Método de pago</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {paymentMethods.map(({ value, label, icon: Icon }) => (
-                <Button
-                  key={value}
-                  variant={paymentMethod === value ? "default" : "outline"}
-                  className="h-16 flex-col gap-1"
-                  onClick={() => {
-                    setPaymentMethod(value)
-                    setAmountReceived("")
-                  }}
-                >
-                  <Icon className="size-5" />
-                  <span className="text-xs">{label}</span>
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {paymentMethod === "CASH" && (
-            <div className="space-y-2">
-              <Label htmlFor="amount">Monto recibido</Label>
-              <CurrencyInput
-                id="amount"
-                value={amountReceived}
-                onChange={setAmountReceived}
-                placeholder={`Mínimo ${formatCOP(total)}`}
-              />
-            </div>
-          )}
-
-          <div className="rounded-lg bg-muted p-3">
-            <div className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-mono tabular-nums">{formatCOP(subtotal)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>IVA ({(TAX_RATE * 100).toFixed(0)}%)</span>
-                <span className="font-mono tabular-nums">{formatCOP(tax)}</span>
-              </div>
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-                <span className="font-mono tabular-nums">{formatCOP(total)}</span>
-              </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-3 min-w-0">
               {paymentMethod === "CASH" && (
                 <>
-                  <div className="flex justify-between text-sm">
-                    <span>Recibido</span>
-                    <span className="font-mono tabular-nums">{formatCOP(parseFloat(amountReceived || "0"))}</span>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Monto recibido</Label>
+                    <CurrencyInput
+                      id="amount"
+                      value={amountReceived}
+                      onChange={setAmountReceived}
+                      placeholder={`Mínimo ${formatCOP(total)}`}
+                      className="h-9 text-sm"
+                    />
                   </div>
-                  {parseFloat(amountReceived || "0") >= total && (
-                    <div className="flex justify-between font-semibold text-green-600">
-                      <span>Cambio</span>
-                      <span className="font-mono tabular-nums">{formatCOP(change)}</span>
+
+                  {denominations && denominations.length > 0 && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Denominaciones</Label>
+                      <div className="flex flex-wrap gap-1">
+                        {denominations.map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => addDenomination(Number(d.value))}
+                            className="rounded-md border bg-card px-2 py-1 text-[11px] font-mono font-medium tabular-nums transition-colors hover:bg-accent hover:text-accent-foreground active:scale-95"
+                          >
+                            {d.label}
+                          </button>
+                        ))}
+                        {amountReceived && (
+                          <button
+                            type="button"
+                            onClick={() => setAmountReceived("")}
+                            className="rounded-md border border-dashed bg-card px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted active:scale-95"
+                          >
+                            <Eraser className="inline size-2.5 mr-0.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </>
               )}
+
+              <div className="rounded-lg bg-muted p-3 space-y-1 text-xs">
+                <div className="flex justify-between gap-2 text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span className="font-mono tabular-nums">{formatCOP(subtotal)}</span>
+                </div>
+                <div className="flex justify-between gap-2 text-muted-foreground">
+                  <span>IVA ({(TAX_RATE * 100).toFixed(0)}%)</span>
+                  <span className="font-mono tabular-nums">{formatCOP(tax)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between gap-2 font-semibold">
+                  <span>Total</span>
+                  <span className="font-mono tabular-nums">{formatCOP(total)}</span>
+                </div>
+                {paymentMethod === "CASH" && (
+                  <>
+                    <Separator />
+                    <div className="flex justify-between gap-2 text-muted-foreground">
+                      <span>Recibido</span>
+                      <span className="font-mono tabular-nums">{formatCOP(parseFloat(amountReceived || "0"))}</span>
+                    </div>
+                    {parseFloat(amountReceived || "0") >= total && (
+                      <div className="flex justify-between gap-2 font-semibold text-green-600">
+                        <span>Cambio</span>
+                        <span className="font-mono tabular-nums">{formatCOP(change)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1.5 min-w-0">
+              <Label className="text-xs">Método de pago</Label>
+              <div className="grid grid-cols-2 gap-1.5 max-h-[120px] overflow-y-auto">
+                {paymentMethods.map(({ value, label, icon: Icon }) => (
+                  <Button
+                    key={value}
+                    variant={paymentMethod === value ? "default" : "outline"}
+                    className="h-10 flex-col gap-0.5"
+                    onClick={() => {
+                      setPaymentMethod(value)
+                      setAmountReceived("")
+                    }}
+                  >
+                    <Icon className="size-4" />
+                    <span className="text-[10px] leading-tight">{label}</span>
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+        <DialogFooter className="flex-col-reverse gap-1.5 sm:flex-row mx-0 mb-0 rounded-none border-t bg-background px-4 pb-4 pt-3 shrink-0">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isProcessing}
             className="w-full sm:w-auto"
@@ -273,6 +360,7 @@ export function PaymentModal({
             Cancelar
           </Button>
           <Button
+            size="sm"
             onClick={handleConfirm}
             disabled={isProcessing || (paymentMethod === "CASH" && parseFloat(amountReceived || "0") < total)}
             className="w-full sm:w-auto"

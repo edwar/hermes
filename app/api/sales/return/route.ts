@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { factusRequest, getNumberingRangeByDocumentType } from "@/lib/factus/client"
 import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
@@ -10,7 +10,13 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const body = await req.json()
-  const { saleId, items, reason, sessionId, createCreditNote } = body
+  const { saleId, items, reason, sessionId, createCreditNote } = body as {
+    saleId: string
+    items: { productId: string; quantity: number; unitPrice: number; subtotal: number }[]
+    reason?: string
+    sessionId?: string
+    createCreditNote?: boolean
+  }
 
   if (!saleId || !items?.length) {
     return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 })
@@ -71,52 +77,65 @@ export async function POST(req: NextRequest) {
     select: { factusEnabled: true },
   })
 
-  const returnSale = await prisma.$transaction(async (tx) => {
-    for (const item of items) {
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } },
-      })
+  const returnSubtotal = items.reduce((acc: number, i: { subtotal: number }) => acc + i.subtotal, 0)
 
-      await tx.stockMovement.create({
+  const returnSale = await withPrismaRetry(
+    () =>
+      prisma.sale.create({
         data: {
-          type: "IN",
-          quantity: item.quantity,
-          reason: `Devolución venta #${saleId}`,
-          productId: item.productId,
+          subtotal: returnSubtotal,
+          tax: 0,
+          discount: 0,
+          total: -returnSubtotal,
+          paymentMethod: originalSale.paymentMethod,
+          notes: reason || "Devolución",
+          isReturn: true,
+          parentSaleId: saleId,
+          returnReason: reason || null,
+          userId: session.user.id,
+          sessionId: sessionId || null,
+          customerId: originalSale.customerId,
           companyId,
+          items: {
+            create: items.map((item: { productId: string; quantity: number; unitPrice: number; subtotal: number }) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            })),
+          },
         },
-      })
-    }
+        include: { items: { include: { product: true } }, user: true, customer: true, company: true },
+      }),
+    "return-sale:create"
+  )
 
-    const returnSubtotal = items.reduce((acc: number, i: { subtotal: number }) => acc + i.subtotal, 0)
-
-    return tx.sale.create({
+  const stockOps = items.flatMap((item) => [
+    prisma.product.update({
+      where: { id: item.productId },
+      data: { stock: { increment: item.quantity } },
+    }),
+    prisma.stockMovement.create({
       data: {
-        subtotal: returnSubtotal,
-        tax: 0,
-        discount: 0,
-        total: -returnSubtotal,
-        paymentMethod: originalSale.paymentMethod,
-        notes: reason || "Devolución",
-        isReturn: true,
-        parentSaleId: saleId,
-        returnReason: reason || null,
-        userId: session.user.id,
-        sessionId: sessionId || null,
-        customerId: originalSale.customerId,
+        type: "IN",
+        quantity: item.quantity,
+        reason: `Devolución venta #${saleId}`,
+        productId: item.productId,
         companyId,
-        items: {
-          create: items.map((item: { productId: string; quantity: number; unitPrice: number; subtotal: number }) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-          })),
-        },
       },
-      include: { items: { include: { product: true } }, user: true, customer: true, company: true },
-    })
+    }),
+  ])
+
+  const stockResults = await Promise.allSettled(stockOps)
+  stockResults.forEach((result, idx) => {
+    if (result.status === "rejected") {
+      const opIdx = Math.floor(idx / 2)
+      const op = idx % 2 === 0 ? "increment" : "stock-movement"
+      console.error(
+        `[return-sale] ${op} failed for product ${items[opIdx]?.productId}:`,
+        result.reason
+      )
+    }
   })
 
   if (

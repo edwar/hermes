@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import type { CreateProductInput, UpdateProductInput } from "../schemas/product-schema"
 
 export interface ProductFilters {
@@ -31,32 +32,6 @@ async function fetchProduct(id: string) {
   return res.json()
 }
 
-async function createProduct(data: CreateProductInput) {
-  const res = await fetch("/api/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error("Error al crear producto")
-  return res.json()
-}
-
-async function updateProduct(id: string, data: UpdateProductInput) {
-  const res = await fetch(`/api/products/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error("Error al actualizar producto")
-  return res.json()
-}
-
-async function deleteProduct(id: string) {
-  const res = await fetch(`/api/products/${id}`, { method: "DELETE" })
-  if (!res.ok) throw new Error("Error al eliminar producto")
-  return res.json()
-}
-
 export function useProducts(filters: ProductFilters = {}) {
   return useQuery({
     queryKey: ["products", filters],
@@ -77,13 +52,22 @@ export function useCreateProduct() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: createProduct,
-    onSuccess: () => {
-      toast.success("Producto creado exitosamente")
+    mutationFn: async (data: CreateProductInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/products", {
+        method: "POST",
+        body: data,
+        resource: "products",
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Producto encolado: se creará al reconectar" : "Producto creado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["products"] })
     },
-    onError: () => {
-      toast.error("Error al crear producto")
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al crear producto")
     },
   })
 }
@@ -93,13 +77,23 @@ export function useUpdateProduct(id: string) {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: (data: UpdateProductInput) => updateProduct(id, data),
-    onSuccess: () => {
-      toast.success("Producto actualizado exitosamente")
+    mutationFn: async (data: UpdateProductInput) => {
+      const result = await apiFetch<Record<string, unknown>>(`/api/products/${id}`, {
+        method: "PUT",
+        body: data,
+        resource: "products",
+        entityId: id,
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Cambios guardados: se sincronizarán al reconectar" : "Producto actualizado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["products"] })
     },
-    onError: () => {
-      toast.error("Error al actualizar producto")
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al actualizar producto")
     },
   })
 }
@@ -109,13 +103,23 @@ export function useDeleteProduct() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: () => {
-      toast.success("Producto eliminado exitosamente")
+    mutationFn: async (productId: string) => {
+      const result = await apiFetch<Record<string, unknown>>(`/api/products/${productId}`, {
+        method: "DELETE",
+        resource: "products",
+        entityId: productId,
+        mockResponse: (_body, cid) => ({ id: productId, clientId: cid, deleted: true }),
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Eliminación encolada: se aplicará al reconectar" : "Producto eliminado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["products"] })
     },
-    onError: () => {
-      toast.error("Error al eliminar producto")
+    onError: (err: Error) => {
+      toast.error(err.message || "Error al eliminar producto")
     },
   })
 }

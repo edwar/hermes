@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 function isAdminOrGod(role: string) {
   return role === "ADMIN" || role === "GOD"
@@ -18,14 +18,18 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "El monto contado es requerido" }, { status: 400 })
   }
 
-  const cashSession = await prisma.cashSession.findUnique({
-    where: { id },
-    include: {
-      cashRegister: true,
-      sales: true,
-      cashMovements: true,
-    },
-  })
+  const cashSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findUnique({
+        where: { id },
+        include: {
+          cashRegister: true,
+          sales: true,
+          cashMovements: true,
+        },
+      }),
+    "cash-sessions:close-lookup"
+  )
 
   if (!cashSession) {
     return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })
@@ -64,21 +68,25 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const difference = closingBalance - expectedClosing
 
-  const updated = await prisma.cashSession.update({
-    where: { id },
-    data: {
-      status: "CLOSED",
-      closingBalance,
-      expectedClosing,
-      difference,
-      closedAt: new Date(),
-      notes: notes || null,
-    },
-    include: {
-      cashRegister: true,
-      user: { select: { id: true, name: true, email: true } },
-    },
-  })
+  const updated = await withPrismaRetry(
+    () =>
+      prisma.cashSession.update({
+        where: { id },
+        data: {
+          status: "CLOSED",
+          closingBalance,
+          expectedClosing,
+          difference,
+          closedAt: new Date(),
+          notes: notes || null,
+        },
+        include: {
+          cashRegister: true,
+          user: { select: { id: true, name: true, email: true } },
+        },
+      }),
+    "cash-sessions:close-update"
+  )
 
   return NextResponse.json(updated)
 }

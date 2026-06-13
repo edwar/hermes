@@ -1,44 +1,75 @@
 "use client"
 
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
+import { db } from "@/lib/db"
+import { apiFetch } from "@/lib/api-client"
 import type { CreateSaleInput } from "../schemas/sale-schema"
-
-async function createSale(data: CreateSaleInput) {
-  const res = await fetch("/api/sales", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    let message = `Error ${res.status} al procesar venta`
-    try {
-      const err = await res.json()
-      message = err?.error?.message ?? err?.error ?? err?.message ?? message
-    } catch {
-      try {
-        const text = await res.text()
-        if (text && text.length < 200) message = text
-      } catch {
-        // use default
-      }
-    }
-    throw new Error(message)
-  }
-  return res.json()
-}
 
 export function useCheckout() {
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { data: session } = useSession()
 
   return useMutation({
-    mutationFn: createSale,
-    onSuccess: (sale) => {
-      toast.success("Venta registrada exitosamente")
+    mutationFn: async (data: CreateSaleInput) => {
+      const localId = `offline-${crypto.randomUUID()}`
+
+      const result = await apiFetch<Record<string, unknown>>("/api/sales", {
+        method: "POST",
+        body: { ...data, localId },
+        resource: "sale",
+        entityId: null,
+        mockResponse: (body, cid) => {
+          const payload = body as CreateSaleInput
+          return {
+            id: cid,
+            localId: cid,
+            subtotal: payload.subtotal,
+            tax: payload.tax,
+            discount: payload.discount ?? 0,
+            total: payload.total,
+            paymentMethod: payload.paymentMethod,
+            isSynced: false,
+            items: payload.items.map((item) => ({
+              product: { name: "" },
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            })),
+            createdAt: new Date().toISOString(),
+            user: { name: session?.user?.name ?? "Offline" },
+            customer: null,
+            electronicInvoice: null,
+          }
+        },
+      })
+
+      if (!result.ok) {
+        throw new Error(result.error || "Error al procesar venta")
+      }
+
+      if (result.queued) {
+        await db.offlineSales.add({
+          localId,
+          data: JSON.stringify(data),
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        })
+        return result.mock
+      }
+
+      return result.data
+    },
+    onSuccess: (sale: { isSynced?: boolean }) => {
+      if (sale.isSynced !== false) {
+        toast.success("Venta registrada exitosamente")
+      } else {
+        toast.success("Venta guardada localmente. Se sincronizará automáticamente.")
+      }
       queryClient.invalidateQueries({ queryKey: ["products"] })
       queryClient.invalidateQueries({ queryKey: ["sales"] })
-      return sale
     },
     onError: (err: Error) => {
       toast.error(err.message)

@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Plus, Pencil, Users } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 
@@ -53,29 +54,6 @@ const emptyForm: UserForm = { name: "", email: "", password: "", role: "CASHIER"
 async function fetchUsers() {
   const res = await fetch("/api/users")
   if (!res.ok) throw new Error("Error al cargar usuarios")
-  return res.json()
-}
-
-async function createUser(data: { name: string; email: string; password: string; role: string }) {
-  const res = await fetch("/api/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error?.message ?? "Error al crear usuario")
-  }
-  return res.json()
-}
-
-async function updateUser(data: any) {
-  const res = await fetch("/api/users", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error("Error al actualizar usuario")
   return res.json()
 }
 
@@ -109,11 +87,24 @@ export default function UsersPage() {
     setLoading(true)
     try {
       if (editing) {
-        await updateUser({ id: editing.id, name: form.name, role: form.role, password: form.password || undefined })
-        toast.success("Usuario actualizado")
+        const result = await apiFetch<Record<string, unknown>>("/api/users", {
+          method: "PUT",
+          body: { id: editing.id, name: form.name, role: form.role, password: form.password || undefined },
+          resource: "users",
+          entityId: editing.id,
+        })
+        if (!result.ok) throw new Error(result.error)
+        const queued = (result.queued ? result.mock : result.data) as { _queued?: boolean }
+        toast.success(queued._queued ? "Cambios encolados: se sincronizarán al reconectar" : "Usuario actualizado")
       } else {
-        await createUser({ name: form.name, email: form.email, password: form.password, role: form.role })
-        toast.success("Usuario creado")
+        const result = await apiFetch<Record<string, unknown>>("/api/users", {
+          method: "POST",
+          body: { name: form.name, email: form.email, password: form.password, role: form.role },
+          resource: "users",
+        })
+        if (!result.ok) throw new Error(result.error)
+        const queued = (result.queued ? result.mock : result.data) as { _queued?: boolean }
+        toast.success(queued._queued ? "Usuario encolado: se creará al reconectar" : "Usuario creado")
       }
       queryClient.invalidateQueries({ queryKey: ["users"] })
       setFormOpen(false)

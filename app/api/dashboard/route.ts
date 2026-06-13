@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 export async function GET() {
@@ -27,59 +27,90 @@ export async function GET() {
     topProducts,
     dailySales,
   ] = await Promise.all([
-    prisma.sale.aggregate({
-      where: {
-        ...scope,
-        createdAt: { gte: today },
-      },
-      _sum: { total: true },
-      _count: true,
-    }),
-    prisma.sale.aggregate({
-      where: {
-        ...scope,
-        createdAt: { gte: startOfMonth },
-      },
-      _sum: { total: true },
-    }),
-    prisma.product.count({ where: { ...scope, isActive: true } }),
-    prisma.product.count({
-      where: { ...scope, isActive: true, stock: { lte: 5 } },
-    }),
-    prisma.sale.groupBy({
-      by: ["paymentMethod"],
-      where: {
-        ...scope,
-        createdAt: { gte: startOfMonth },
-      },
-      _sum: { total: true },
-      _count: true,
-    }),
-    prisma.saleItem.groupBy({
-      by: ["productId"],
-      where: { sale: { ...scope, createdAt: { gte: startOfMonth } } },
-      _sum: { quantity: true, subtotal: true },
-      orderBy: { _sum: { quantity: "desc" } },
-      take: 10,
-    }),
-    prisma.$queryRawUnsafe<{ date: Date; total: bigint; count: bigint }[]>(`
-      SELECT DATE(s."createdAt") as date,
-             SUM(s.total::numeric) as total,
-             COUNT(*)::integer as count
-      FROM "Sale" s
-      WHERE s."createdAt" >= $1
-        ${whereClause}
-      GROUP BY DATE(s."createdAt")
-      ORDER BY date ASC
-    `, thirtyDaysAgo),
+    withPrismaRetry(
+      () =>
+        prisma.sale.aggregate({
+          where: {
+            ...scope,
+            createdAt: { gte: today },
+          },
+          _sum: { total: true },
+          _count: true,
+        }),
+      "dashboard:sales-today"
+    ),
+    withPrismaRetry(
+      () =>
+        prisma.sale.aggregate({
+          where: {
+            ...scope,
+            createdAt: { gte: startOfMonth },
+          },
+          _sum: { total: true },
+        }),
+      "dashboard:sales-month"
+    ),
+    withPrismaRetry(
+      () => prisma.product.count({ where: { ...scope, isActive: true } }),
+      "dashboard:total-products"
+    ),
+    withPrismaRetry(
+      () =>
+        prisma.product.count({
+          where: { ...scope, isActive: true, stock: { lte: 5 } },
+        }),
+      "dashboard:low-stock"
+    ),
+    withPrismaRetry(
+      () =>
+        prisma.sale.groupBy({
+          by: ["paymentMethod"],
+          where: {
+            ...scope,
+            createdAt: { gte: startOfMonth },
+          },
+          _sum: { total: true },
+          _count: true,
+        }),
+      "dashboard:sales-by-method"
+    ),
+    withPrismaRetry(
+      () =>
+        prisma.saleItem.groupBy({
+          by: ["productId"],
+          where: { sale: { ...scope, createdAt: { gte: startOfMonth } } },
+          _sum: { quantity: true, subtotal: true },
+          orderBy: { _sum: { quantity: "desc" } },
+          take: 10,
+        }),
+      "dashboard:top-products"
+    ),
+    withPrismaRetry(
+      () =>
+        prisma.$queryRawUnsafe<{ date: Date; total: bigint; count: bigint }[]>(`
+          SELECT DATE(s."createdAt") as date,
+                 SUM(s.total::numeric) as total,
+                 COUNT(*)::integer as count
+          FROM "Sale" s
+          WHERE s."createdAt" >= $1
+            ${whereClause}
+          GROUP BY DATE(s."createdAt")
+          ORDER BY date ASC
+        `, thirtyDaysAgo),
+      "dashboard:daily-sales"
+    ),
   ])
 
   const topProductIds = topProducts.map((t) => t.productId)
   const products = topProductIds.length > 0
-    ? await prisma.product.findMany({
-        where: { id: { in: topProductIds }, ...scope },
-        select: { id: true, name: true },
-      })
+    ? await withPrismaRetry(
+        () =>
+          prisma.product.findMany({
+            where: { id: { in: topProductIds }, ...scope },
+            select: { id: true, name: true },
+          }),
+        "dashboard:top-products-names"
+      )
     : []
 
   const topProductsWithNames = topProducts.map((t) => ({

@@ -1,0 +1,20 @@
+{
+  "name": "Hermes POS",
+  "short_name": "Hermes",
+  "description": "Sistema POS y gestión de inventarios para tu negocio",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#18181b",
+  "orientation": "portrait-primary",
+  "lang": "es-CO",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,21 +1,13 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import type { CreateCategoryInput } from "../schemas/category-schema"
 
 async function fetchCategories() {
   const res = await fetch("/api/categories")
   if (!res.ok) throw new Error("Error al cargar categorías")
-  return res.json()
-}
-
-async function createCategory(data: CreateCategoryInput) {
-  const res = await fetch("/api/categories", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) throw new Error("Error al crear categoría")
   return res.json()
 }
 
@@ -28,11 +20,23 @@ export function useCategories() {
 
 export function useCreateCategory() {
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   return useMutation({
-    mutationFn: createCategory,
-    onSuccess: () => {
+    mutationFn: async (data: CreateCategoryInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/categories", {
+        method: "POST",
+        body: data,
+        resource: "categories",
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      if (queued) toast.success("Categoría encolada: se creará al reconectar")
       queryClient.invalidateQueries({ queryKey: ["categories"] })
     },
+    onError: (err: Error) => toast.error(err.message || "Error al crear categoría"),
   })
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -15,11 +15,15 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const companyId = searchParams.get("companyId") || session.user.companyId
 
-  const invites = await prisma.companyInvite.findMany({
-    where: isGod && companyId ? {} : { createdById: session.user.id },
-    include: { createdBy: { select: { name: true, email: true } } },
-    orderBy: { createdAt: "desc" },
-  })
+  const invites = await withPrismaRetry(
+    () =>
+      prisma.companyInvite.findMany({
+        where: isGod && companyId ? {} : { createdById: session.user.id },
+        include: { createdBy: { select: { name: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+    "invites:list"
+  )
 
   return NextResponse.json(invites)
 }
@@ -40,7 +44,10 @@ export async function POST(req: NextRequest) {
   }
 
   const companyId = session.user.companyId ?? "default"
-  const settings = await prisma.storeSettings.findUnique({ where: { companyId } })
+  const settings = await withPrismaRetry(
+    () => prisma.storeSettings.findUnique({ where: { companyId } }),
+    "invites:settings-lookup"
+  )
   const expiryHours = settings?.inviteExpiryHours ?? 168
 
   const expiresAt = new Date()
@@ -48,15 +55,19 @@ export async function POST(req: NextRequest) {
 
   const token = crypto.randomUUID()
 
-  const invite = await prisma.companyInvite.create({
-    data: {
-      token,
-      companyName: companyName.trim(),
-      email: email || null,
-      createdById: session.user.id!,
-      expiresAt,
-    },
-  })
+  const invite = await withPrismaRetry(
+    () =>
+      prisma.companyInvite.create({
+        data: {
+          token,
+          companyName: companyName.trim(),
+          email: email || null,
+          createdById: session.user.id!,
+          expiresAt,
+        },
+      }),
+    "invites:create"
+  )
 
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/register?token=${token}${email ? `&email=${encodeURIComponent(email)}` : ""}`
 
@@ -100,7 +111,10 @@ export async function DELETE(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  await prisma.companyInvite.delete({ where: { id } })
+  await withPrismaRetry(
+    () => prisma.companyInvite.delete({ where: { id } }),
+    "invites:delete"
+  )
 
   return NextResponse.json({ message: "Invitación eliminada" })
 }

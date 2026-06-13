@@ -68,14 +68,17 @@ model Company {
   purchaseOrders   PurchaseOrder[]
   electronicInvoices ElectronicInvoice[]
 
-  factusEnabled         Boolean @default(false)
-  factusAccessToken     String?
-  factusRefreshToken    String?
-  factusTokenExpiresAt  DateTime?
-  factusEconomicActivity String?
-  factusDv              String?
+  factusEnabled           Boolean @default(false)
+  factusAccessToken       String?
+  factusRefreshToken      String?
+  factusTokenExpiresAt    DateTime?
+  factusEconomicActivity  String?
+  factusDv                String?
+  factusCreditBalance     Int     @default(0)
+  factusCreditTotal       Int     @default(0)
 
   numberingRanges      CompanyNumberingRange[]
+  cashDenominations    CashDenomination[]
 }
 
 model CompanyNumberingRange {
@@ -407,4 +410,34 @@ model PaymentMethodConfig {
   updatedAt            DateTime @updatedAt
 
   @@unique([internalCode, companyId])
+}
+
+model CashDenomination {
+  id        String   @id @default(cuid())
+  value     Decimal  @db.Decimal(12, 2)
+  label     String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([value, companyId])
+}
+
+model ProcessedSyncRequest {
+  id          String   @id @default(cuid())
+  clientId    String
+  method      String
+  url         String
+  status      Int
+  responseJson String
+  companyId   String?
+  createdAt   DateTime @default(now())
+
+  @@unique([clientId, method, url])
+  @@index([companyId])
+  @@index([createdAt])
 }
