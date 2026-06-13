@@ -170,13 +170,17 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     function handleQueueUpdate() {
-      refreshPendingCount()
+      refreshPendingCount().then(() => {
+        if (navigator.onLine) {
+          runSync(false)
+        }
+      })
     }
     window.addEventListener("hermes:queue-updated", handleQueueUpdate)
     return () => {
       window.removeEventListener("hermes:queue-updated", handleQueueUpdate)
     }
-  }, [refreshPendingCount])
+  }, [refreshPendingCount, runSync])
 
   useEffect(() => {
     if (isOnline && pendingCount > 0 && !autoSyncedRef.current && !syncing) {
