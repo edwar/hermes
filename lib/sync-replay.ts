@@ -15,7 +15,8 @@ interface ReplayResult {
 
 export async function processReplayQueue(
   clientId: string,
-  request: ReplayRequest
+  request: ReplayRequest,
+  replayHeaders: Record<string, string> = {}
 ): Promise<ReplayResult> {
   const existing = await prisma.processedSyncRequest.findUnique({
     where: {
@@ -42,6 +43,7 @@ export async function processReplayQueue(
       "Content-Type": "application/json",
       "x-offline-replay": "true",
       "x-offline-client-id": clientId,
+      ...replayHeaders,
     },
     body: request.body ?? undefined,
   })

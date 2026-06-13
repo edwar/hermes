@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "items requerido" }, { status: 400 })
   }
 
+  const replayHeaders: Record<string, string> = {}
+  const cookie = req.headers.get("cookie")
+  if (cookie) replayHeaders.cookie = cookie
+  const authz = req.headers.get("authorization")
+  if (authz) replayHeaders.authorization = authz
+
   const results = []
   for (const item of body.items) {
     if (!item.clientId || !item.method || !item.url) {
@@ -41,11 +47,15 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const r = await processReplayQueue(item.clientId, {
-        method: item.method,
-        url: item.url,
-        body: item.body,
-      })
+      const r = await processReplayQueue(
+        item.clientId,
+        {
+          method: item.method,
+          url: item.url,
+          body: item.body,
+        },
+        replayHeaders
+      )
       results.push(r)
     } catch (err) {
       results.push({
