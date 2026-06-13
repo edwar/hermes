@@ -139,6 +139,20 @@ export function PaymentModal({
     }
   }, [preSelectedCustomer, onPreSelectedCustomerConsumed])
 
+  useEffect(() => {
+    // Reset state when modal opens for a new sale
+    if (open && !saleResult) {
+      setPaymentMethod("CASH")
+      setAmountReceived("")
+      setShowReceipt(false)
+      setRequestElectronicInvoice(false)
+      if (!preSelectedCustomer) {
+        setSelectedCustomer(null)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, saleResult])
+
   function addDenomination(value: number) {
     setAmountReceived((prev) => {
       const digits = prev.replace(/\D/g, "")

@@ -20,6 +20,9 @@ export interface StoreSettings {
 }
 
 async function fetchSettings(): Promise<StoreSettings> {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    throw new Error("Sin conexión")
+  }
   const res = await fetch("/api/settings")
   if (!res.ok) throw new Error("Error al cargar configuración")
   return res.json()
@@ -33,6 +36,10 @@ export function useSettings() {
     queryKey: ["store-settings"],
     queryFn: fetchSettings,
     staleTime: 1000 * 60 * 5,
+    retry: (failureCount, error) => {
+      if (typeof navigator !== "undefined" && !navigator.onLine) return false
+      return failureCount < 1
+    }
   })
 
   const mutation = useMutation({

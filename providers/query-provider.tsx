@@ -14,6 +14,10 @@ export function QueryProvider({ children }: { children: ReactNode }) {
             staleTime: 5 * 60 * 1000,
             gcTime: 24 * 60 * 60 * 1000,
             retry: 1,
+            networkMode: "offlineFirst",
+          },
+          mutations: {
+            networkMode: "offlineFirst",
           },
         },
       })

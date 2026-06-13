@@ -28,6 +28,7 @@ export interface ApiFetchOptions<TMock = unknown> {
   entityId?: string | null
   mockResponse?: (body: unknown, clientId: string) => TMock
   queueable?: boolean
+  forceQueue?: boolean
 }
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
@@ -137,6 +138,7 @@ export async function apiFetch<T = unknown>(
     entityId,
     mockResponse,
     queueable = true,
+    forceQueue = false,
   } = options
 
   const isMutation = MUTATING_METHODS.has(method.toUpperCase())
@@ -144,8 +146,7 @@ export async function apiFetch<T = unknown>(
   if (
     isMutation &&
     queueable &&
-    typeof navigator !== "undefined" &&
-    navigator.onLine === false
+    (forceQueue || (typeof navigator !== "undefined" && navigator.onLine === false))
   ) {
     return enqueueMutation<T>({
       resource,
