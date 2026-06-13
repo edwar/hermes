@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { SessionProvider } from "@/providers/session-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { SyncProvider } from "@/providers/sync-provider";
+import { DataCacheProvider } from "@/providers/data-cache-provider";
 import { APP_NAME } from "@/lib/constants";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hermes-pos.app"
@@ -100,6 +101,7 @@ export const metadata: Metadata = {
     shortcut: ["/icon.svg"],
     apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
   },
+  manifest: "/manifest.json",
 }
 
 export const viewport: Viewport = {
@@ -170,7 +172,9 @@ export default function RootLayout({
         <ThemeProvider>
           <SessionProvider>
             <QueryProvider>
-              <SyncProvider>{children}</SyncProvider>
+              <SyncProvider>
+                <DataCacheProvider>{children}</DataCacheProvider>
+              </SyncProvider>
             </QueryProvider>
           </SessionProvider>
         </ThemeProvider>

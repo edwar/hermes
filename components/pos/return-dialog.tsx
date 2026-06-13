@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatCOP } from "@/lib/utils"
+import { apiFetch } from "@/lib/api-client"
 import { Search, RotateCcw, Minus, Plus, Loader2, Zap } from "lucide-react"
 import { sileo } from "sileo"
 
@@ -81,24 +82,23 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
           subtotal: i.unitPrice * i.quantity,
         }))
 
-      const res = await fetch("/api/sales/return", {
+      const result = await apiFetch<Record<string, unknown>>("/api/sales/return", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           saleId: selectedSale.id,
           items,
           reason,
           createCreditNote: selectedSale?.electronicInvoice ? createCreditNote : false,
-        }),
+        },
+        resource: "sale-return",
+        entityId: selectedSale.id,
       })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || "Error al procesar devolución")
-      }
-      return res.json()
+      if (!result.ok) throw new Error(result.error || "Error al procesar devolución")
+      return result.queued ? result.mock : result.data
     },
-    onSuccess: () => {
-      sileo.success({ title: "Devolución procesada exitosamente" })
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      sileo.success({ title: queued ? "Devolución encolada: se procesará al reconectar" : "Devolución procesada exitosamente" })
       handleClose()
     },
     onError: (err: Error) => {

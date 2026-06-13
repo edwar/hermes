@@ -1,7 +1,6 @@
 "use client"
 
 import { Fragment, useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,6 +66,7 @@ export function FactusPendingCard() {
   const [confirmClear, setConfirmClear] = useState<PendingBill | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [rowErrors, setRowErrors] = useState<Record<string, { message: string; isDianConflict: boolean }>>({})
+  const [reconnecting, setReconnecting] = useState(false)
 
   const fetchDiagnose = useCallback(async () => {
     try {
@@ -85,6 +85,24 @@ export function FactusPendingCard() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchDiagnose()
+  }, [fetchDiagnose])
+
+  const handleReconnect = useCallback(async () => {
+    setReconnecting(true)
+    try {
+      const res = await fetch("/api/factus/auth", { method: "POST" })
+      const json = await res.json()
+      if (res.ok) {
+        sileo.success({ title: "Token renovado exitosamente" })
+        fetchDiagnose()
+      } else {
+        sileo.error({ title: json.error || "Error al reconectar" })
+      }
+    } catch {
+      sileo.error({ title: "Error de conexión al reconectar" })
+    } finally {
+      setReconnecting(false)
+    }
   }, [fetchDiagnose])
 
   function describeFactusError(message: string): { isDianConflict: boolean; tip: string } {
@@ -257,14 +275,20 @@ export function FactusPendingCard() {
             <div>
               <p className="font-medium">Token de Factus expirado</p>
               <p className="text-xs text-amber-600/80">
-                Reconecta el switch en Configuración para renovar el token.
+                El token se renovará automáticamente al procesar la próxima venta con FE.
               </p>
-              <Link
-                href="/settings"
-                className="mt-2 inline-flex h-7 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-xs font-medium transition-colors hover:bg-muted touch-target"
-              >
-                Ir a Configuración
-              </Link>
+              {reconnecting ? (
+                <span className="mt-2 inline-flex h-7 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" /> Reconectando...
+                </span>
+              ) : (
+                <button
+                  onClick={handleReconnect}
+                  className="mt-2 inline-flex h-7 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-xs font-medium transition-colors hover:bg-muted touch-target"
+                >
+                  <RefreshCw className="mr-1 size-3" /> Reconectar ahora
+                </button>
+              )}
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import type { CreateSupplierInput, UpdateSupplierInput } from "../schemas/supplier-schema"
 
 export interface SupplierFilters {
@@ -23,41 +24,6 @@ async function fetchSuppliers(filters: SupplierFilters = {}) {
   return res.json()
 }
 
-async function createSupplier(data: CreateSupplierInput) {
-  const res = await fetch("/api/suppliers", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: "Error desconocido" }))
-    throw new Error(error.error || "Error al crear proveedor")
-  }
-  return res.json()
-}
-
-async function updateSupplier(data: UpdateSupplierInput) {
-  const res = await fetch("/api/suppliers", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: "Error desconocido" }))
-    throw new Error(error.error || "Error al actualizar proveedor")
-  }
-  return res.json()
-}
-
-async function deleteSupplier(id: string) {
-  const res = await fetch(`/api/suppliers?id=${id}`, { method: "DELETE" })
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: "Error desconocido" }))
-    throw new Error(error.error || "Error al eliminar proveedor")
-  }
-  return res.json()
-}
-
 export function useSuppliers(filters: SupplierFilters = {}) {
   return useQuery({
     queryKey: ["suppliers", filters],
@@ -70,14 +36,21 @@ export function useCreateSupplier() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: createSupplier,
-    onSuccess: () => {
-      toast.success("Proveedor creado exitosamente")
+    mutationFn: async (data: CreateSupplierInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/suppliers", {
+        method: "POST",
+        body: data,
+        resource: "suppliers",
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Proveedor encolado: se creará al reconectar" : "Proveedor creado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["suppliers"] })
     },
-    onError: () => {
-      toast.error("Error al crear proveedor")
-    },
+    onError: (err: Error) => toast.error(err.message || "Error al crear proveedor"),
   })
 }
 
@@ -86,14 +59,22 @@ export function useUpdateSupplier() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: updateSupplier,
-    onSuccess: () => {
-      toast.success("Proveedor actualizado exitosamente")
+    mutationFn: async (data: UpdateSupplierInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/suppliers", {
+        method: "PUT",
+        body: data,
+        resource: "suppliers",
+        entityId: data.id,
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Cambios guardados: se sincronizarán al reconectar" : "Proveedor actualizado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["suppliers"] })
     },
-    onError: () => {
-      toast.error("Error al actualizar proveedor")
-    },
+    onError: (err: Error) => toast.error(err.message || "Error al actualizar proveedor"),
   })
 }
 
@@ -102,13 +83,21 @@ export function useDeleteSupplier() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: deleteSupplier,
-    onSuccess: () => {
-      toast.success("Proveedor eliminado exitosamente")
+    mutationFn: async (id: string) => {
+      const result = await apiFetch<Record<string, unknown>>(`/api/suppliers?id=${id}`, {
+        method: "DELETE",
+        resource: "suppliers",
+        entityId: id,
+        mockResponse: (_body, cid) => ({ id, clientId: cid, deleted: true }),
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Eliminación encolada: se aplicará al reconectar" : "Proveedor eliminado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["suppliers"] })
     },
-    onError: () => {
-      toast.error("Error al eliminar proveedor")
-    },
+    onError: (err: Error) => toast.error(err.message || "Error al eliminar proveedor"),
   })
 }

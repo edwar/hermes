@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,21 +10,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params
 
   const scope = companyScope(session)
-  const cashSession = await prisma.cashSession.findFirst({
-    where: {
-      id,
-      ...(scope.companyId ? { cashRegister: { companyId: scope.companyId } } : {}),
-    },
-    include: {
-      cashRegister: true,
-      user: { select: { id: true, name: true, email: true } },
-      sales: {
-        include: { items: { include: { product: true } } },
-        orderBy: { createdAt: "asc" },
-      },
-      cashMovements: { orderBy: { createdAt: "asc" } },
-    },
-  })
+  const cashSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findFirst({
+        where: {
+          id,
+          ...(scope.companyId ? { cashRegister: { companyId: scope.companyId } } : {}),
+        },
+        include: {
+          cashRegister: true,
+          user: { select: { id: true, name: true, email: true } },
+          sales: {
+            include: { items: { include: { product: true } } },
+            orderBy: { createdAt: "asc" },
+          },
+          cashMovements: { orderBy: { createdAt: "asc" } },
+        },
+      }),
+    "cash-sessions:report"
+  )
 
   if (!cashSession) {
     return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 })

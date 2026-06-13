@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 
 export async function POST(req: NextRequest) {
@@ -26,10 +26,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sesión de caja requerida" }, { status: 400 })
   }
 
-  const cashSession = await prisma.cashSession.findFirst({
-    where: { id: sessionId },
-    include: { cashRegister: true },
-  })
+  const cashSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findFirst({
+        where: { id: sessionId },
+        include: { cashRegister: true },
+      }),
+    "cash-movements:session-lookup"
+  )
 
   if (!cashSession || cashSession.status !== "OPEN") {
     return NextResponse.json({ error: "La sesión de caja no está abierta" }, { status: 400 })
@@ -52,9 +56,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "AUTHORIZATION_REQUIRED", requiresAdmin: true }, { status: 403 })
     }
 
-    const adminUser = await prisma.user.findFirst({
-      where: { role: "ADMIN", companyId: session.user.companyId, isActive: true },
-    })
+    const adminUser = await withPrismaRetry(
+      () =>
+        prisma.user.findFirst({
+          where: { role: "ADMIN", companyId: session.user.companyId, isActive: true },
+        }),
+      "cash-movements:admin-lookup"
+    )
 
     if (!adminUser) {
       return NextResponse.json({ error: "No hay administradores para autorizar" }, { status: 400 })
@@ -66,14 +74,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const movement = await prisma.cashMovement.create({
-    data: {
-      type,
-      amount,
-      reason: reason.trim(),
-      sessionId,
-    },
-  })
+  const movement = await withPrismaRetry(
+    () =>
+      prisma.cashMovement.create({
+        data: {
+          type,
+          amount,
+          reason: reason.trim(),
+          sessionId,
+        },
+      }),
+    "cash-movements:create"
+  )
 
   return NextResponse.json(movement, { status: 201 })
 }

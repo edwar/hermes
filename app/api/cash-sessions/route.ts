@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 const HEARTBEAT_TIMEOUT_MS = 60 * 1000 // 60 segundos sin heartbeat = sesión muerta
@@ -25,18 +25,25 @@ export async function GET(req: NextRequest) {
   if (to) where.openedAt = { ...(where.openedAt as Record<string, unknown> || {}), lte: new Date(to + "T23:59:59.999Z") }
 
   const [sessions, total] = await Promise.all([
-    prisma.cashSession.findMany({
-      where,
-      include: {
-        cashRegister: true,
-        user: { select: { id: true, name: true, email: true } },
-        _count: { select: { sales: true } },
-      },
-      orderBy: { openedAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.cashSession.count({ where }),
+    withPrismaRetry(
+      () =>
+        prisma.cashSession.findMany({
+          where,
+          include: {
+            cashRegister: true,
+            user: { select: { id: true, name: true, email: true } },
+            _count: { select: { sales: true } },
+          },
+          orderBy: { openedAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      "cash-sessions:list"
+    ),
+    withPrismaRetry(
+      () => prisma.cashSession.count({ where }),
+      "cash-sessions:list-count"
+    ),
   ])
 
   return NextResponse.json({ sessions, total, pages: Math.ceil(total / pageSize), page })
@@ -59,15 +66,22 @@ export async function POST(req: NextRequest) {
 
   const scope = companyScope(session)
   const registerWhere = { id: cashRegisterId, ...scope, isActive: true }
-  const register = await prisma.cashRegister.findUnique({ where: registerWhere })
+  const register = await withPrismaRetry(
+    () => prisma.cashRegister.findUnique({ where: registerWhere }),
+    "cash-sessions:register-lookup"
+  )
   if (!register) {
     return NextResponse.json({ error: "Caja no encontrada o inactiva" }, { status: 400 })
   }
 
   // Verificar si el usuario ya tiene una sesión abierta (quizás en otro dispositivo)
-  const userActiveSession = await prisma.cashSession.findFirst({
-    where: { userId: session.user.id, status: "OPEN" },
-  })
+  const userActiveSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findFirst({
+        where: { userId: session.user.id, status: "OPEN" },
+      }),
+    "cash-sessions:user-active-lookup"
+  )
 
   if (userActiveSession) {
     // Verificar si la sesión excedió el timeout de heartbeat (dispositivo muerto)
@@ -85,18 +99,26 @@ export async function POST(req: NextRequest) {
 
     // La sesión es obsoleta (sin heartbeat): cerrarla automáticamente
     if (hasTimedOut) {
-      await prisma.cashSession.update({
-        where: { id: userActiveSession.id },
-        data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
-      })
+      await withPrismaRetry(
+        () =>
+          prisma.cashSession.update({
+            where: { id: userActiveSession.id },
+            data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
+          }),
+        "cash-sessions:auto-close-stale"
+      )
     }
   }
 
   // Verificar si la caja ya tiene una sesión abierta
-  const registerActiveSession = await prisma.cashSession.findFirst({
-    where: { cashRegisterId, status: "OPEN" },
-    include: { user: { select: { name: true, email: true } } }
-  })
+  const registerActiveSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.findFirst({
+        where: { cashRegisterId, status: "OPEN" },
+        include: { user: { select: { name: true, email: true } } }
+      }),
+    "cash-sessions:register-active-lookup"
+  )
 
   if (registerActiveSession) {
     // Verificar si la sesión es obsoleta (sin heartbeat de ese dispositivo)
@@ -105,10 +127,14 @@ export async function POST(req: NextRequest) {
 
     if (hasTimedOut) {
       // Cerrar la sesión obsoleta
-      await prisma.cashSession.update({
-        where: { id: registerActiveSession.id },
-        data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
-      })
+      await withPrismaRetry(
+        () =>
+          prisma.cashSession.update({
+            where: { id: registerActiveSession.id },
+            data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
+          }),
+        "cash-sessions:auto-close-stale-2"
+      )
     } else if (registerActiveSession.userId !== session.user.id) {
       // Otro usuario tiene esta caja abierta
       return NextResponse.json({
@@ -126,20 +152,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const cashSession = await prisma.cashSession.create({
-    data: {
-      openingBalance,
-      cashRegisterId,
-      userId: session.user.id,
-      deviceId,
-      deviceName,
-      lastHeartbeat: new Date(),
-    },
-    include: {
-      cashRegister: true,
-      user: { select: { id: true, name: true } },
-    },
-  })
+  const cashSession = await withPrismaRetry(
+    () =>
+      prisma.cashSession.create({
+        data: {
+          openingBalance,
+          cashRegisterId,
+          userId: session.user.id,
+          deviceId,
+          deviceName,
+          lastHeartbeat: new Date(),
+        },
+        include: {
+          cashRegister: true,
+          user: { select: { id: true, name: true } },
+        },
+      }),
+    "cash-sessions:create"
+  )
 
   return NextResponse.json(cashSession, { status: 201 })
 }

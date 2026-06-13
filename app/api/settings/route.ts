@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET() {
   const session = await auth()
@@ -12,12 +12,21 @@ export async function GET() {
     return NextResponse.json({ storeName: "Sistema", isGod: true })
   }
 
-  let settings = await prisma.storeSettings.findUnique({ where: { companyId } })
+  let settings = await withPrismaRetry(
+    () => prisma.storeSettings.findUnique({ where: { companyId } }),
+    "settings:store-find"
+  )
   if (!settings) {
-    settings = await prisma.storeSettings.create({ data: { companyId } })
+    settings = await withPrismaRetry(
+      () => prisma.storeSettings.create({ data: { companyId } }),
+      "settings:store-create"
+    )
   }
 
-  const company = await prisma.company.findUnique({ where: { id: companyId } })
+  const company = await withPrismaRetry(
+    () => prisma.company.findUnique({ where: { id: companyId } }),
+    "settings:company-lookup"
+  )
 
   return NextResponse.json({ ...settings, companyName: company?.name })
 }
@@ -41,11 +50,15 @@ export async function PUT(req: NextRequest) {
     }
   }
 
-  const settings = await prisma.storeSettings.upsert({
-    where: { companyId },
-    update: data,
-    create: { companyId, ...data },
-  })
+  const settings = await withPrismaRetry(
+    () =>
+      prisma.storeSettings.upsert({
+        where: { companyId },
+        update: data,
+        create: { companyId, ...data },
+      }),
+    "settings:store-upsert"
+  )
 
   const companyData: Record<string, unknown> = {}
   if (body.companyName !== undefined) companyData.name = body.companyName
@@ -55,10 +68,14 @@ export async function PUT(req: NextRequest) {
   if (body.email !== undefined) companyData.email = body.email
 
   if (Object.keys(companyData).length > 0) {
-    await prisma.company.update({
-      where: { id: companyId },
-      data: companyData,
-    })
+    await withPrismaRetry(
+      () =>
+        prisma.company.update({
+          where: { id: companyId },
+          data: companyData,
+        }),
+      "settings:company-update"
+    )
   }
 
   return NextResponse.json({ ...settings, ...companyData })

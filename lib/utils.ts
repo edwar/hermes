@@ -5,17 +5,29 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+const formatterCache = new Map<string, Intl.NumberFormat>()
+
+function getFormatter(currency: string, locale: string) {
+  const key = `${locale}:${currency}`
+  let fmt = formatterCache.get(key)
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
+    formatterCache.set(key, fmt)
+  }
+  return fmt
+}
+
 export function formatCurrency(
   value: number,
   currency = "COP",
   locale = "es-CO"
 ) {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
+  return getFormatter(currency, locale).format(value)
 }
 
 export function formatCOP(value: number) {

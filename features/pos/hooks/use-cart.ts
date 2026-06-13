@@ -1,14 +1,39 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import type { CartItem } from "../types"
+import { useState, useCallback, useEffect } from "react"
+import type { CartItem, CartState } from "../types"
+
+const CART_STORAGE_KEY = "hermes-pos-cart"
+
+function loadCart(): CartState {
+  if (typeof window === "undefined") return { items: [] }
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY)
+    if (!raw) return { items: [] }
+    return JSON.parse(raw) as CartState
+  } catch {
+    return { items: [] }
+  }
+}
+
+function saveCart(state: CartState) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // storage full or unavailable
+  }
+}
 
 export function useCart() {
-  const [items, setItems] = useState<CartItem[]>([])
-  const [customerName, setCustomerName] = useState("")
-  const [customerId, setCustomerId] = useState<string | undefined>()
-  const [notes, setNotes] = useState("")
+  const [items, setItems] = useState<CartItem[]>(() => loadCart().items)
+  const [customerName, setCustomerName] = useState(() => loadCart().customerName ?? "")
+  const [customerId, setCustomerId] = useState<string | undefined>(() => loadCart().customerId)
+  const [notes, setNotes] = useState(() => loadCart().notes ?? "")
   const [requestElectronicInvoice, setRequestElectronicInvoice] = useState(false)
+
+  useEffect(() => {
+    saveCart({ items, customerName, customerId, notes })
+  }, [items, customerName, customerId, notes])
 
   const addItem = useCallback((product: {
     id: string
@@ -64,6 +89,11 @@ export function useCart() {
     setCustomerId(undefined)
     setNotes("")
     setRequestElectronicInvoice(false)
+    try {
+      localStorage.removeItem(CART_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
   }, [])
 
   const subtotal = items.reduce((sum, i) => sum + i.subtotal, 0)

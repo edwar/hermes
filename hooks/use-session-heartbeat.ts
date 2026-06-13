@@ -3,16 +3,19 @@
 import { useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 
-const HEARTBEAT_INTERVAL_MS = 30 * 1000 // 30 segundos
+const HEARTBEAT_INTERVAL_MS = 30 * 1000
+const BACKOFF_INTERVAL_MS = 90 * 1000
+const BACKOFF_AFTER_FAILURES = 2
 
 export function useSessionHeartbeat(sessionId: string | null) {
   const queryClient = useQueryClient()
   const deviceIdRef = useRef<string | null>(null)
+  const failuresRef = useRef(0)
+  const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!sessionId) return
 
-    // Generar el ID del dispositivo una sola vez
     if (!deviceIdRef.current) {
       const screen = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`
       const nav = `${navigator.userAgent.substring(0, 50)}`
@@ -20,24 +23,59 @@ export function useSessionHeartbeat(sessionId: string | null) {
       deviceIdRef.current = btoa(`${screen}|${nav}|${time}`).substring(0, 32)
     }
 
-    const sendHeartbeat = async () => {
+    const sendHeartbeat = async (): Promise<boolean> => {
+      if (!navigator.onLine) {
+        return false
+      }
       try {
-        await fetch("/api/cash-sessions/heartbeat", {
+        const res = await fetch("/api/cash-sessions/heartbeat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId, deviceId: deviceIdRef.current }),
+          body: JSON.stringify({
+            sessionId,
+            deviceId: deviceIdRef.current,
+          }),
         })
-      } catch (err) {
-        console.error("Heartbeat failed:", err)
+        if (res.status >= 500) {
+          return false
+        }
+        return res.ok
+      } catch {
+        return false
       }
     }
 
-    // Enviar de inmediato
-    sendHeartbeat()
+    let cancelled = false
 
-    // Enviar cada 30 segundos
-    const interval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS)
+    const scheduleNext = () => {
+      if (cancelled) return
+      const delay =
+        failuresRef.current >= BACKOFF_AFTER_FAILURES
+          ? BACKOFF_INTERVAL_MS
+          : HEARTBEAT_INTERVAL_MS
+      intervalRef.current = setTimeout(tick, delay)
+    }
 
-    return () => clearInterval(interval)
+    const tick = async () => {
+      if (cancelled) return
+      const ok = await sendHeartbeat()
+      if (ok) {
+        failuresRef.current = 0
+      } else {
+        failuresRef.current = Math.min(failuresRef.current + 1, 10)
+      }
+      scheduleNext()
+    }
+
+    void sendHeartbeat().then((ok) => {
+      if (ok) failuresRef.current = 0
+      else failuresRef.current = 1
+      scheduleNext()
+    })
+
+    return () => {
+      cancelled = true
+      if (intervalRef.current) clearTimeout(intervalRef.current)
+    }
   }, [sessionId, queryClient])
 }

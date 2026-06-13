@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 export interface StoreSettings {
   id: string
@@ -24,19 +25,6 @@ async function fetchSettings(): Promise<StoreSettings> {
   return res.json()
 }
 
-async function updateSettings(data: Partial<StoreSettings>) {
-  const res = await fetch("/api/settings", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error ?? "Error al guardar configuración")
-  }
-  return res.json()
-}
-
 export function useSettings() {
   const queryClient = useQueryClient()
   const toast = useToast()
@@ -48,9 +36,18 @@ export function useSettings() {
   })
 
   const mutation = useMutation({
-    mutationFn: updateSettings,
-    onSuccess: () => {
-      toast.success("Configuración guardada")
+    mutationFn: async (data: Partial<StoreSettings>) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/settings", {
+        method: "PUT",
+        body: data,
+        resource: "settings",
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Configuración encolada: se sincronizará al reconectar" : "Configuración guardada")
       queryClient.invalidateQueries({ queryKey: ["store-settings"] })
     },
     onError: (err: Error) => toast.error(err.message),

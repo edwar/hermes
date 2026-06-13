@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+
+export async function GET() {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const companyId = session.user.companyId
+  if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
+
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: { factusCreditBalance: true, factusCreditTotal: true },
+  })
+
+  return NextResponse.json({
+    balance: company?.factusCreditBalance ?? 0,
+    total: company?.factusCreditTotal ?? 0,
+  })
+}
+
+export async function POST(req: NextRequest) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+
+  const role = session.user.role
+  if (role !== "GOD" && role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo ADMIN/GOD pueden comprar créditos" }, { status: 403 })
+  }
+
+  const companyId = session.user.companyId
+  if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
+
+  const body = await req.json()
+  const quantity = parseInt(body.quantity)
+  if (isNaN(quantity) || quantity <= 0) {
+    return NextResponse.json({ error: "Cantidad inválida" }, { status: 400 })
+  }
+
+  const company = await prisma.company.update({
+    where: { id: companyId },
+    data: {
+      factusCreditBalance: { increment: quantity },
+      factusCreditTotal: { increment: quantity },
+    },
+    select: { factusCreditBalance: true, factusCreditTotal: true },
+  })
+
+  return NextResponse.json({
+    message: `${quantity} crédito(s) agregado(s)`,
+    balance: company.factusCreditBalance,
+    total: company.factusCreditTotal,
+  })
+}

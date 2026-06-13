@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Loader2 } from "lucide-react"
 
 interface CashRegisterFormProps {
@@ -26,16 +27,17 @@ export function CashRegisterForm({ open, onOpenChange, edit }: CashRegisterFormP
 
   const createMutation = useMutation({
     mutationFn: async (data: { name: string }) => {
-      const res = await fetch("/api/cash-registers", {
+      const result = await apiFetch<Record<string, unknown>>("/api/cash-registers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: data,
+        resource: "cash-registers",
       })
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error ?? "Error al crear caja") }
-      return res.json()
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
     },
-    onSuccess: () => {
-      toast.success("Caja creada exitosamente")
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Caja encolada: se creará al reconectar" : "Caja creada exitosamente")
       queryClient.invalidateQueries({ queryKey: ["cash-registers"] })
       onOpenChange(false)
     },
@@ -44,16 +46,18 @@ export function CashRegisterForm({ open, onOpenChange, edit }: CashRegisterFormP
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: string; name: string }) => {
-      const res = await fetch(`/api/cash-registers/${data.id}`, {
+      const result = await apiFetch<Record<string, unknown>>(`/api/cash-registers/${data.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: data.name }),
+        body: { name: data.name },
+        resource: "cash-registers",
+        entityId: data.id,
       })
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error ?? "Error al actualizar caja") }
-      return res.json()
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
     },
-    onSuccess: () => {
-      toast.success("Caja actualizada exitosamente")
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Cambios encolados: se sincronizarán al reconectar" : "Caja actualizada exitosamente")
       queryClient.invalidateQueries({ queryKey: ["cash-registers"] })
       onOpenChange(false)
     },

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Loader2, ShieldCheck } from "lucide-react"
 
 interface CashMovementFormProps {
@@ -32,22 +33,23 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
 
   const mutation = useMutation({
     mutationFn: async (data: { type: string; amount: number; reason: string; sessionId: string; adminPassword?: string }) => {
-      const res = await fetch("/api/cash-movements", {
+      const result = await apiFetch<Record<string, unknown>>("/api/cash-movements", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: data,
+        resource: "cash-movements",
+        entityId: sessionId,
       })
-      if (!res.ok) {
-        const err = await res.json()
-        if (err.requiresAdmin) {
+      if (!result.ok) {
+        if (result.error.toLowerCase().includes("admin")) {
           setShowAdminAuth(true)
         }
-        throw new Error(err.error ?? "Error al registrar movimiento")
+        throw new Error(result.error)
       }
-      return res.json()
+      return result.queued ? result.mock : result.data
     },
-    onSuccess: () => {
-      toast.success("Movimiento registrado")
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Movimiento encolado: se sincronizará al reconectar" : "Movimiento registrado")
       queryClient.invalidateQueries({ queryKey: ["active-session"] })
       setAmount("")
       setReason("")
@@ -58,7 +60,7 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
     },
     onError: (err: Error) => {
       toast.error(err.message)
-      if (!err.message.includes("requiresAdmin")) {
+      if (!err.message.includes("admin")) {
         setAdminPassword("")
       }
     },

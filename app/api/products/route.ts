@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { createProductSchema, updateProductSchema } from "@/features/inventory/schemas/product-schema"
 
@@ -29,14 +29,21 @@ export async function GET(req: NextRequest) {
   }
 
   const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.product.count({ where }),
+    withPrismaRetry(
+      () =>
+        prisma.product.findMany({
+          where,
+          include: { category: true },
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      "products:list"
+    ),
+    withPrismaRetry(
+      () => prisma.product.count({ where }),
+      "products:list-count"
+    ),
   ])
 
   return NextResponse.json({
@@ -56,6 +63,7 @@ export async function POST(req: NextRequest) {
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }
+  const companyId = session.user.companyId
 
   const body = await req.json()
   const parsed = createProductSchema.safeParse(body)
@@ -63,12 +71,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const product = await prisma.product.create({
-    data: {
-      ...parsed.data,
-      companyId: session.user.companyId,
-    },
-  })
+  const product = await withPrismaRetry(
+    () =>
+      prisma.product.create({
+        data: {
+          ...parsed.data,
+          companyId,
+        },
+      }),
+    "products:create"
+  )
   return NextResponse.json(product, { status: 201 })
 }
 
@@ -88,10 +100,14 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const product = await prisma.product.update({
-    where: { id, ...companyScope(session) },
-    data: parsed.data,
-  })
+  const product = await withPrismaRetry(
+    () =>
+      prisma.product.update({
+        where: { id, ...companyScope(session) },
+        data: parsed.data,
+      }),
+    "products:update"
+  )
   return NextResponse.json(product)
 }
 
@@ -106,9 +122,13 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id")
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  await prisma.product.update({
-    where: { id, ...companyScope(session) },
-    data: { isActive: false },
-  })
+  await withPrismaRetry(
+    () =>
+      prisma.product.update({
+        where: { id, ...companyScope(session) },
+        data: { isActive: false },
+      }),
+    "products:deactivate"
+  )
   return NextResponse.json({ success: true })
 }

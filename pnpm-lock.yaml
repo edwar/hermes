@@ -17,6 +17,9 @@ importers:
       '@prisma/client':
         specifier: 6.6.0
         version: 6.6.0(prisma@6.6.0(typescript@5.9.3))(typescript@5.9.3)
+      '@tanstack/query-sync-storage-persister':
+        specifier: ^5.101.0
+        version: 5.101.0
       '@tanstack/react-query':
         specifier: ^5.100.14
         version: 5.100.14(react@19.2.4)
@@ -1288,8 +1291,17 @@ packages:
   '@tanstack/query-core@5.100.14':
     resolution: {integrity: sha512-5X41dGpxgeaHISCRW2oYwcSycZeULZzAunaudXT9ov1KOTj9xwt0CH6hbwqP1/z74ZWF7rYFnDpyYH07XFcZew==}
 
+  '@tanstack/query-core@5.101.0':
+    resolution: {integrity: sha512-cQetA74EB+seWySv1TTKr828TnP0u39m6LykwDXIo84SNortpDkp30TMEjkqtYCNP9c40uT/iwl6MLiufEt0Ow==}
+
   '@tanstack/query-persist-client-core@5.100.14':
     resolution: {integrity: sha512-mn60cqoQO/xB6aHxp/hxlSj5mcdcTO4tjj4SXSz5MKzkaMZnvcEGySz3+cGQOT8McREN56fL41L0eR//v5RwNw==}
+
+  '@tanstack/query-persist-client-core@5.101.0':
+    resolution: {integrity: sha512-LH99WepGVLwlLfuOcQcPK7f3Xg/Gf+xlMMIj9xWu/8oQ3egnDzjr+a4HvEmi6PGob5SmGXvmDKZaH5+In9dzjw==}
+
+  '@tanstack/query-sync-storage-persister@5.101.0':
+    resolution: {integrity: sha512-UAGbsIJe9vkV/rbFxUBOPH27Eu6K17KuVLfK1mSy8qoSUJ4qt6JKGMxA8NMUoowbPG0ZnTfRt1Y5SFsqfqlfcA==}
 
   '@tanstack/react-query-persist-client@5.100.14':
     resolution: {integrity: sha512-lQSnbJva85o7jGcJiIDrA8s3VGGx9zaBCgAljm0H1QcScU2iaDYnPuRLg/xI0k0dC45pgg9RTvpgJx5iVHRsjA==}
@@ -5042,9 +5054,20 @@ snapshots:
 
   '@tanstack/query-core@5.100.14': {}
 
+  '@tanstack/query-core@5.101.0': {}
+
   '@tanstack/query-persist-client-core@5.100.14':
     dependencies:
       '@tanstack/query-core': 5.100.14
+
+  '@tanstack/query-persist-client-core@5.101.0':
+    dependencies:
+      '@tanstack/query-core': 5.101.0
+
+  '@tanstack/query-sync-storage-persister@5.101.0':
+    dependencies:
+      '@tanstack/query-core': 5.101.0
+      '@tanstack/query-persist-client-core': 5.101.0
 
   '@tanstack/react-query-persist-client@5.100.14(@tanstack/react-query@5.100.14(react@19.2.4))(react@19.2.4)':
     dependencies:

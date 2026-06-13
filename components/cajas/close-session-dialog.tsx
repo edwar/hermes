@@ -9,6 +9,7 @@ import { CurrencyInput } from "@/components/ui/currency-input"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { formatCOP } from "@/lib/utils"
 import { Loader2, Printer, Plus, Minus, CheckCircle, ArrowRight } from "lucide-react"
 import { SessionReport } from "./session-report"
@@ -35,19 +36,6 @@ async function fetchSessionSummary() {
   if (!res.ok) {
     if (res.status === 401) return null
     throw new Error(`Error ${res.status}`)
-  }
-  return res.json()
-}
-
-async function closeSessionApi({ id, closingBalance }: { id: string; closingBalance: number }) {
-  const res = await fetch(`/api/cash-sessions/${id}/close`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ closingBalance }),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error ?? "Error al cerrar caja")
   }
   return res.json()
 }
@@ -98,9 +86,19 @@ useEffect(() => {
   }
 
   const mutation = useMutation({
-    mutationFn: closeSessionApi,
+    mutationFn: async ({ id, closingBalance }: { id: string; closingBalance: number }) => {
+      const result = await apiFetch<Record<string, unknown>>(`/api/cash-sessions/${id}/close`, {
+        method: "PUT",
+        body: { closingBalance },
+        resource: "cash-sessions",
+        entityId: id,
+      })
+      if (!result.ok) throw new Error(result.error || "Error al cerrar caja")
+      return result.queued ? result.mock : result.data
+    },
     onSuccess: (result) => {
-      toast.success("Caja cerrada exitosamente")
+      const queued = (result as { _queued?: boolean })._queued
+      toast.success(queued ? "Cierre encolado: se sincronizará al reconectar" : "Caja cerrada exitosamente")
       queryClient.invalidateQueries({ queryKey: ["active-session"] })
       queryClient.invalidateQueries({ queryKey: ["cash-sessions"] })
       setClosedSessionData(result)

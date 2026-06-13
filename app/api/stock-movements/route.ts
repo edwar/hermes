@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createStockMovementSchema } from "@/features/inventory/schemas/stock-movement-schema"
 import { companyScope } from "@/lib/company-scope"
 
@@ -52,25 +52,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
   }
 
-  const movement = await prisma.$transaction(async (tx) => {
-    const newStock = type === "IN"
-      ? product.stock + quantity
-      : product.stock - quantity
+  const newStock = type === "IN"
+    ? product.stock + quantity
+    : product.stock - quantity
 
-    if (newStock < 0) {
-      throw new Error("Stock insuficiente para esta salida")
-    }
+  if (newStock < 0) {
+    return NextResponse.json({ error: "Stock insuficiente para esta salida" }, { status: 400 })
+  }
 
-    await tx.product.update({
-      where: { id: productId },
-      data: { stock: newStock },
-    })
+  await withPrismaRetry(
+    () => prisma.product.update({ where: { id: productId }, data: { stock: newStock } }),
+    "stock-movement:update-product"
+  )
 
-    return tx.stockMovement.create({
-      data: { type, quantity, reason, productId, companyId },
-      include: { product: { select: { id: true, name: true } } },
-    })
-  })
+  const movement = await withPrismaRetry(
+    () =>
+      prisma.stockMovement.create({
+        data: { type, quantity, reason, productId, companyId },
+        include: { product: { select: { id: true, name: true } } },
+      }),
+    "stock-movement:create"
+  )
 
   return NextResponse.json(movement, { status: 201 })
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
@@ -16,25 +16,33 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   if (session.user.role === "GOD") {
-    const users = await prisma.user.findMany({
-      where: { role: { not: "GOD" } },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
-        company: { select: { id: true, name: true } },
-      },
-    })
+    const users = await withPrismaRetry(
+      () =>
+        prisma.user.findMany({
+          where: { role: { not: "GOD" } },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
+            company: { select: { id: true, name: true } },
+          },
+        }),
+      "users:list-god"
+    )
     return NextResponse.json(users)
   }
 
   if (session.user.role === "ADMIN") {
-    const users = await prisma.user.findMany({
-      where: { companyId: session.user.companyId },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
-      },
-    })
+    const users = await withPrismaRetry(
+      () =>
+        prisma.user.findMany({
+          where: { companyId: session.user.companyId },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
+          },
+        }),
+      "users:list-admin"
+    )
     return NextResponse.json(users)
   }
 
@@ -59,22 +67,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No tienes permiso para crear usuarios ADMIN" }, { status: 403 })
   }
 
-  const existing = await prisma.user.findFirst({
-    where: { email: parsed.data.email, companyId: session.user.companyId ?? null },
-  })
+  const existing = await withPrismaRetry(
+    () =>
+      prisma.user.findFirst({
+        where: { email: parsed.data.email, companyId: session.user.companyId ?? null },
+      }),
+    "users:email-exists-check"
+  )
   if (existing) {
     return NextResponse.json({ error: "El email ya está registrado en esta empresa" }, { status: 409 })
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12)
-  const user = await prisma.user.create({
-    data: {
-      ...parsed.data,
-      passwordHash,
-      companyId: session.user.companyId ?? undefined,
-    },
-    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
-  })
+  const user = await withPrismaRetry(
+    () =>
+      prisma.user.create({
+        data: {
+          ...parsed.data,
+          passwordHash,
+          companyId: session.user.companyId ?? undefined,
+        },
+        select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      }),
+    "users:create"
+  )
   return NextResponse.json(user, { status: 201 })
 }
 
@@ -101,10 +117,14 @@ export async function PUT(req: NextRequest) {
   if (data.isActive !== undefined) updateData.isActive = data.isActive
   if (data.password) updateData.passwordHash = await bcrypt.hash(data.password, 12)
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: updateData,
-    select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
-  })
+  const user = await withPrismaRetry(
+    () =>
+      prisma.user.update({
+        where: { id },
+        data: updateData,
+        select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+      }),
+    "users:update"
+  )
   return NextResponse.json(user)
 }

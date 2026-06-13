@@ -30,31 +30,13 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Copy, Plus, Trash2, Mail, CheckCircle, XCircle, Send } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 
 async function fetchInvites() {
   const res = await fetch("/api/invites")
   if (!res.ok) throw new Error("Error al cargar invitaciones")
-  return res.json()
-}
-
-async function createInvite(data: { companyName: string; email?: string }) {
-  const res = await fetch("/api/invites", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Error al crear invitación")
-  }
-  return res.json()
-}
-
-async function deleteInvite(id: string) {
-  const res = await fetch(`/api/invites?id=${id}`, { method: "DELETE" })
-  if (!res.ok) throw new Error("Error al eliminar invitación")
   return res.json()
 }
 
@@ -77,8 +59,14 @@ export function InvitesClient() {
     e.preventDefault()
     setLoading(true)
     try {
-      const invite = await createInvite({ companyName, email: email || undefined })
-      toast.success("Invitación creada")
+      const result = await apiFetch<{ token: string; inviteUrl: string } & Record<string, unknown>>("/api/invites", {
+        method: "POST",
+        body: { companyName, email: email || undefined },
+        resource: "invites",
+      })
+      if (!result.ok) throw new Error(result.error)
+      const invite = (result.queued ? result.mock : result.data) as { token: string; inviteUrl: string } & Record<string, unknown>
+      toast.success(result.queued ? "Invitación encolada: se creará al reconectar" : "Invitación creada")
       setCreatedInvite({ token: invite.token, inviteUrl: invite.inviteUrl })
       queryClient.invalidateQueries({ queryKey: ["invites"] })
       setCompanyName("")
@@ -99,8 +87,15 @@ export function InvitesClient() {
 
   async function handleDelete(id: string) {
     try {
-      await deleteInvite(id)
-      toast.success("Invitación eliminada")
+      const result = await apiFetch<Record<string, unknown>>(`/api/invites?id=${id}`, {
+        method: "DELETE",
+        resource: "invites",
+        entityId: id,
+        mockResponse: (_body, cid) => ({ id, clientId: cid, deleted: true }),
+      })
+      if (!result.ok) throw new Error(result.error)
+      const queued = (result.queued ? result.mock : result.data) as { _queued?: boolean }
+      toast.success(queued._queued ? "Eliminación encolada: se aplicará al reconectar" : "Invitación eliminada")
       queryClient.invalidateQueries({ queryKey: ["invites"] })
     } catch (err: any) {
       toast.error(err.message)

@@ -1,7 +1,10 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
+import { db } from "@/lib/db"
+import { apiFetch } from "@/lib/api-client"
 import type { CreateStockMovementInput } from "../schemas/stock-movement-schema"
 
 export interface StockMovementFilters {
@@ -23,23 +26,33 @@ async function fetchMovements(filters: StockMovementFilters = {}) {
   return res.json()
 }
 
-async function createMovement(data: CreateStockMovementInput) {
-  const res = await fetch("/api/stock-movements", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error ?? "Error al registrar movimiento")
-  }
-  return res.json()
-}
-
 export function useStockMovements(filters: StockMovementFilters = {}) {
+  const { data: session } = useSession()
+  const companyId = session?.user?.companyId
+
   return useQuery({
-    queryKey: ["stock-movements", filters],
-    queryFn: () => fetchMovements(filters),
+    queryKey: ["stock-movements", filters, companyId],
+    queryFn: async () => {
+      try {
+        return await fetchMovements(filters)
+      } catch {
+        const cached = await db.cachedProducts
+          .where("companyId")
+          .equals(companyId ?? "")
+          .toArray()
+        return {
+          movements: [],
+          total: 0,
+          products: cached.map((p) => ({
+            id: p.id,
+            name: p.name,
+            stock: p.stock,
+            minStock: p.minStock,
+          })),
+        }
+      }
+    },
+    retry: 0,
   })
 }
 
@@ -48,9 +61,19 @@ export function useCreateStockMovement() {
   const toast = useToast()
 
   return useMutation({
-    mutationFn: createMovement,
-    onSuccess: () => {
-      toast.success("Movimiento registrado exitosamente")
+    mutationFn: async (data: CreateStockMovementInput) => {
+      const result = await apiFetch<Record<string, unknown>>("/api/stock-movements", {
+        method: "POST",
+        body: data,
+        resource: "stock-movements",
+        entityId: data.productId,
+      })
+      if (!result.ok) throw new Error(result.error)
+      return result.queued ? result.mock : result.data
+    },
+    onSuccess: (data) => {
+      const queued = (data as { _queued?: boolean })._queued
+      toast.success(queued ? "Movimiento encolado: se aplicará al reconectar" : "Movimiento registrado exitosamente")
       queryClient.invalidateQueries({ queryKey: ["stock-movements"] })
       queryClient.invalidateQueries({ queryKey: ["products"] })
     },

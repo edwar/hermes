@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, CheckCircle2, XCircle, Zap, AlertCircle, Plus, RefreshCw } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { CreditBalanceCard } from "@/components/settings/credit-balance-card"
 import { sileo } from "sileo"
 import {
   Dialog,
@@ -433,6 +434,8 @@ export function FactusSettings() {
               </p>
             </div>
           </div>
+
+          <CreditBalanceCard />
 
           {message && (
             <div className={`flex items-center gap-2 rounded-lg p-3 text-sm ${message.type === "success"

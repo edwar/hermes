@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
 import { factusRequest, getNumberingRangeByDocumentType, listPendingBills, sendRadianEvent } from "@/lib/factus/client"
@@ -79,55 +79,84 @@ export async function POST(req: NextRequest) {
   const { items, subtotal, tax, discount, total, paymentMethod, sessionId, customerId, notes, localId, requestElectronicInvoice } = parsed.data
   const companyId = session.user.companyId
 
-  const sale = await prisma.$transaction(async (tx) => {
-    for (const item of items) {
-      const product = await tx.product.findUnique({ where: { id: item.productId, companyId } })
-      if (!product || product.stock < item.quantity) {
-        throw new Error(`Stock insuficiente para ${product?.name ?? item.productId}`)
-      }
+  const productIds = items.map((i) => i.productId)
+  const products = await withPrismaRetry(
+    () =>
+      prisma.product.findMany({
+        where: { id: { in: productIds }, companyId },
+        select: { id: true, name: true, stock: true, companyId: true },
+      }),
+    "sale:validate-stock"
+  )
 
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } },
-      })
-
-      await tx.stockMovement.create({
-        data: {
-          type: "OUT",
-          quantity: item.quantity,
-          reason: `Venta #${localId ?? "directa"}`,
-          productId: item.productId,
-          companyId,
-        },
-      })
+  for (const item of items) {
+    const product = products.find((p) => p.id === item.productId)
+    if (!product || product.stock < item.quantity) {
+      return NextResponse.json(
+        { error: `Stock insuficiente para ${product?.name ?? item.productId}` },
+        { status: 400 }
+      )
     }
+  }
 
-    return tx.sale.create({
-      data: {
-        subtotal,
-        tax,
-        discount,
-        total,
-        paymentMethod,
-        notes,
-        localId,
-        userId: session.user.id,
-        sessionId: sessionId || null,
-        customerId: customerId || null,
-        companyId,
-        isSynced: true,
-        requestElectronicInvoice: requestElectronicInvoice ?? false,
-        items: {
-          create: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-          })),
+  const sale = await withPrismaRetry(
+    () =>
+      prisma.sale.create({
+        data: {
+          subtotal,
+          tax,
+          discount,
+          total,
+          paymentMethod,
+          notes,
+          localId,
+          userId: session.user.id,
+          sessionId: sessionId || null,
+          customerId: customerId || null,
+          companyId,
+          isSynced: true,
+          requestElectronicInvoice: requestElectronicInvoice ?? false,
+          items: {
+            create: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              subtotal: item.subtotal,
+            })),
+          },
         },
+        include: { items: { include: { product: true } }, user: true, customer: true, company: true },
+      }),
+    "sale:create"
+  )
+
+  const stockOps = items.flatMap((item) => [
+    prisma.product.update({
+      where: { id: item.productId },
+      data: { stock: { decrement: item.quantity } },
+    }),
+    prisma.stockMovement.create({
+      data: {
+        type: "OUT",
+        quantity: item.quantity,
+        reason: `Venta #${sale.id.slice(0, 8)}`,
+        productId: item.productId,
+        companyId,
       },
-      include: { items: { include: { product: true } }, user: true, customer: true, company: true },
-    })
+    }),
+  ])
+
+  const stockResults = await Promise.allSettled(stockOps)
+
+  stockResults.forEach((result, idx) => {
+    if (result.status === "rejected") {
+      const opIdx = Math.floor(idx / 2)
+      const op = idx % 2 === 0 ? "decrement" : "stock-movement"
+      console.error(
+        `[sale] ${op} failed for product ${items[opIdx]?.productId}:`,
+        result.reason
+      )
+    }
   })
 
   let electronicInvoiceResult = null
@@ -138,11 +167,14 @@ export async function POST(req: NextRequest) {
         where: { id: companyId },
         select: {
           factusEnabled: true,
+          factusCreditBalance: true,
         },
       })
 
       if (!company?.factusEnabled) {
         console.error("Factus not enabled for company")
+      } else if ((company.factusCreditBalance ?? 0) <= 0) {
+        console.warn("Factus: saldo de créditos insuficiente. La venta se creó sin FE.")
       } else {
         // Obtener el rango de numeración para facturas (tipo de documento "21")
         const rangeRecord = await getNumberingRangeByDocumentType(companyId, "21")
@@ -246,6 +278,12 @@ export async function POST(req: NextRequest) {
               total: sale.total,
               taxTotal: sale.tax,
             },
+          })
+
+          // Descontar un crédito de facturación
+          await prisma.company.update({
+            where: { id: companyId },
+            data: { factusCreditBalance: { decrement: 1 } },
           })
 
           electronicInvoiceResult = factusResponse

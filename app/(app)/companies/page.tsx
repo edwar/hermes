@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import { Building2, Pencil, Search, Trash2 } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 
@@ -58,25 +59,6 @@ async function fetchCompanies(search?: string) {
   const url = search ? `/api/companies?search=${encodeURIComponent(search)}` : "/api/companies"
   const res = await fetch(url)
   if (!res.ok) throw new Error("Error al cargar empresas")
-  return res.json()
-}
-
-async function updateCompany(data: CompanyForm) {
-  const res = await fetch("/api/companies", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error || "Error al actualizar empresa")
-  }
-  return res.json()
-}
-
-async function deleteCompany(id: string) {
-  const res = await fetch(`/api/companies?id=${id}`, { method: "DELETE" })
-  if (!res.ok) throw new Error("Error al eliminar empresa")
   return res.json()
 }
 
@@ -112,8 +94,15 @@ export default function CompaniesPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await updateCompany(form)
-      toast.success("Empresa actualizada")
+      const result = await apiFetch<Record<string, unknown>>("/api/companies", {
+        method: "PUT",
+        body: form,
+        resource: "companies",
+        entityId: form.id,
+      })
+      if (!result.ok) throw new Error(result.error)
+      const queued = (result.queued ? result.mock : result.data) as { _queued?: boolean }
+      toast.success(queued._queued ? "Cambios encolados: se sincronizarán al reconectar" : "Empresa actualizada")
       queryClient.invalidateQueries({ queryKey: ["companies"] })
       setFormOpen(false)
     } catch (err: any) {
@@ -126,8 +115,15 @@ export default function CompaniesPage() {
   async function handleDelete() {
     if (!deleteId) return
     try {
-      await deleteCompany(deleteId)
-      toast.success("Empresa desactivada")
+      const result = await apiFetch<Record<string, unknown>>(`/api/companies?id=${deleteId}`, {
+        method: "DELETE",
+        resource: "companies",
+        entityId: deleteId,
+        mockResponse: (_body, cid) => ({ id: deleteId, clientId: cid, deleted: true }),
+      })
+      if (!result.ok) throw new Error(result.error)
+      const queued = (result.queued ? result.mock : result.data) as { _queued?: boolean }
+      toast.success(queued._queued ? "Desactivación encolada: se aplicará al reconectar" : "Empresa desactivada")
       queryClient.invalidateQueries({ queryKey: ["companies"] })
     } catch (err: any) {
       toast.error(err.message)

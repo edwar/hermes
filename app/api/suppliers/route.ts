@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSupplierSchema, updateSupplierSchema } from "@/features/suppliers/schemas/supplier-schema"
 import { companyScope } from "@/lib/company-scope"
 
@@ -30,13 +30,20 @@ export async function GET(req: NextRequest) {
   }
 
   const [suppliers, total] = await Promise.all([
-    prisma.supplier.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.supplier.count({ where }),
+    withPrismaRetry(
+      () =>
+        prisma.supplier.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      "suppliers:list"
+    ),
+    withPrismaRetry(
+      () => prisma.supplier.count({ where }),
+      "suppliers:list-count"
+    ),
   ])
 
   return NextResponse.json({ suppliers, total, page, pages: Math.ceil(total / pageSize) })
@@ -60,15 +67,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const supplier = await prisma.supplier.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email || null,
-      phone: parsed.data.phone || null,
-      address: parsed.data.address || null,
-      companyId,
-    },
-  })
+  const supplier = await withPrismaRetry(
+    () =>
+      prisma.supplier.create({
+        data: {
+          name: parsed.data.name,
+          email: parsed.data.email || null,
+          phone: parsed.data.phone || null,
+          address: parsed.data.address || null,
+          companyId,
+        },
+      }),
+    "suppliers:create"
+  )
   return NextResponse.json(supplier, { status: 201 })
 }
 
@@ -86,15 +97,19 @@ export async function PUT(req: NextRequest) {
   }
 
   const { id, ...data } = parsed.data
-  const supplier = await prisma.supplier.update({
-    where: { id, ...companyScope(session) },
-    data: {
-      ...(data.name && { name: data.name }),
-      ...(data.email !== undefined && { email: data.email || null }),
-      ...(data.phone !== undefined && { phone: data.phone || null }),
-      ...(data.address !== undefined && { address: data.address || null }),
-    },
-  })
+  const supplier = await withPrismaRetry(
+    () =>
+      prisma.supplier.update({
+        where: { id, ...companyScope(session) },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.email !== undefined && { email: data.email || null }),
+          ...(data.phone !== undefined && { phone: data.phone || null }),
+          ...(data.address !== undefined && { address: data.address || null }),
+        },
+      }),
+    "suppliers:update"
+  )
   return NextResponse.json(supplier)
 }
 
@@ -109,9 +124,13 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id")
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  await prisma.supplier.update({
-    where: { id, ...companyScope(session) },
-    data: { isActive: false },
-  })
+  await withPrismaRetry(
+    () =>
+      prisma.supplier.update({
+        where: { id, ...companyScope(session) },
+        data: { isActive: false },
+      }),
+    "suppliers:deactivate"
+  )
   return NextResponse.json({ success: true })
 }

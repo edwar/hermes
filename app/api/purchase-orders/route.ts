@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createPurchaseOrderSchema } from "@/features/purchase-orders/schemas/purchase-order-schema"
 import { companyScope } from "@/lib/company-scope"
 
@@ -22,18 +22,25 @@ export async function GET(req: NextRequest) {
   }
 
   const [orders, total] = await Promise.all([
-    prisma.purchaseOrder.findMany({
-      where,
-      include: {
-        supplier: true,
-        user: { select: { id: true, name: true } },
-        items: { include: { product: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.purchaseOrder.count({ where }),
+    withPrismaRetry(
+      () =>
+        prisma.purchaseOrder.findMany({
+          where,
+          include: {
+            supplier: true,
+            user: { select: { id: true, name: true } },
+            items: { include: { product: true } },
+          },
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      "purchase-orders:list"
+    ),
+    withPrismaRetry(
+      () => prisma.purchaseOrder.count({ where }),
+      "purchase-orders:list-count"
+    ),
   ])
 
   return NextResponse.json({ orders, total, page, pages: Math.ceil(total / pageSize) })
@@ -48,6 +55,7 @@ export async function POST(req: NextRequest) {
   if (!session.user.companyId) {
     return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
   }
+  const companyId = session.user.companyId
 
   const body = await req.json()
   const parsed = createPurchaseOrderSchema.safeParse(body)
@@ -59,27 +67,31 @@ export async function POST(req: NextRequest) {
 
   const total = items.reduce((sum, item) => sum + item.purchasePrice * item.quantity, 0)
 
-  const order = await prisma.purchaseOrder.create({
-    data: {
-      supplierId,
-      notes,
-      total,
-      companyId: session.user.companyId,
-      userId: session.user.id,
-      items: {
-        create: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          purchasePrice: item.purchasePrice,
-        })),
-      },
-    },
-    include: {
-      supplier: true,
-      user: { select: { id: true, name: true } },
-      items: { include: { product: true } },
-    },
-  })
+  const order = await withPrismaRetry(
+    () =>
+      prisma.purchaseOrder.create({
+        data: {
+          supplierId,
+          notes,
+          total,
+          companyId,
+          userId: session.user.id,
+          items: {
+            create: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+              purchasePrice: item.purchasePrice,
+            })),
+          },
+        },
+        include: {
+          supplier: true,
+          user: { select: { id: true, name: true } },
+          items: { include: { product: true } },
+        },
+      }),
+    "purchase-orders:create"
+  )
 
   return NextResponse.json(order, { status: 201 })
 }
@@ -96,15 +108,19 @@ export async function PUT(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
-  const order = await prisma.purchaseOrder.update({
-    where: { id, ...companyScope(session) },
-    data: { status },
-    include: {
-      supplier: true,
-      user: { select: { id: true, name: true } },
-      items: { include: { product: true } },
-    },
-  })
+  const order = await withPrismaRetry(
+    () =>
+      prisma.purchaseOrder.update({
+        where: { id, ...companyScope(session) },
+        data: { status },
+        include: {
+          supplier: true,
+          user: { select: { id: true, name: true } },
+          items: { include: { product: true } },
+        },
+      }),
+    "purchase-orders:update"
+  )
 
   return NextResponse.json(order)
 }

@@ -31,3 +31,31 @@ This version has breaking changes — APIs, conventions, and file structure may 
 13. **Usar Componentes UI**: Siempre utilizar los componentes de `@components/ui/` para las interfaces (Button, Select, Input, Card, Dialog, etc.). Nunca usar elementos HTML nativos como `<button>`, `<select>`, `<input>` o `<table>` directamente; usar los wrappers de shadcn/ui en su lugar.
 14. **Imports de Componentes**: Los imports de componentes deben seguir el patrón `@components/ui/nombre-componente` (ej. `import { Button } from '@/components/ui/button'`).
 15. **Skeleton Loading States**: Cada ruta protegida debe tener su propio `loading.tsx` con un skeleton que **calque exactamente** la estructura visual de la página (grid cols, nº de cards, columnas de tabla, dimensiones). Al modificar el layout de cualquier página (cambiar título, añadir/quitar stat cards, modificar columnas de tabla, reordenar secciones), el `loading.tsx` correspondiente debe actualizarse para reflejar los cambios y evitar CLS (Cumulative Layout Shift). Usar únicamente el componente `Skeleton` de `@components/ui/skeleton` con clases de ancho (`w-*`) y alto (`h-*`) que coincidan con los elementos reales.
+
+<!-- BEGIN:business-model -->
+# Modelo de Negocio — Hermes POS
+
+## Propuesta de Valor
+- **Gratuito para el core del negocio**: POS, inventario, clientes, cajas, reportes, usuarios.
+- **Monetización vía facturación electrónica**: Se compran créditos de Factus al por mayor y se revenden a los clientes con un margen.
+
+## Flujo de Facturación Electrónica
+1. Hermes compra créditos de facturación a Factus (X cantidad a X precio).
+2. Las empresas clientes pagan a Hermes por Y créditos (Y > X, la diferencia es la ganancia).
+3. Cada vez que se procesa una factura electrónica exitosamente, se descuenta 1 crédito del saldo de la empresa (`factusCreditBalance` en el modelo `Company`).
+4. Si `factusCreditBalance <= 0`, el sistema NO intenta crear la FE y la venta se crea sin ella, con un warning en consola.
+
+## Puntos Clave en Código
+- **`Company.factusCreditBalance`**: saldo actual de créditos disponibles.
+- **`Company.factusCreditTotal`**: total de créditos comprados históricamente.
+- **`POST /api/factus/credits`**: endpoint para comprar créditos (incrementa ambos campos).
+- **`GET /api/factus/credits`**: consulta saldo actual.
+- **`app/api/sales/route.ts`**: al crear FE exitosamente, descuenta 1 crédito con `prisma.company.update({ data: { factusCreditBalance: { decrement: 1 } } })`.
+- **`app/api/auth/register/route.ts`**: al registrarse una empresa, se auto-crean denominaciones de efectivo, configs del sistema y caja por defecto.
+
+## TODO a Futuro
+- Integración con pasarela de pago para compra automatizada de créditos.
+- Panel admin global (GOD) para gestionar precios y créditos de todas las empresas.
+- Histórico de transacciones de créditos (compras y consumos).
+- Alertas cuando el saldo esté por debajo de un umbral.
+<!-- END:business-model -->

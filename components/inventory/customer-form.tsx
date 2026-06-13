@@ -63,7 +63,7 @@ export function CustomerForm({ open, onOpenChange, customer, defaultCedula, onCr
     if (isEditing) {
       await updateCustomer.mutateAsync({ id: customer!.id, name, email, phone, address, cedula })
     } else {
-      const created = await createCustomer.mutateAsync({ name, email, phone, address, cedula })
+      const created = (await createCustomer.mutateAsync({ name, email, phone, address, cedula })) as { id: string; name: string; email: string | null; phone: string | null; address: string | null; cedula: string | null }
       onCreated?.(created)
     }
     onOpenChange(false)
