@@ -303,9 +303,14 @@ export function FactusPendingCard() {
                             {bill.customer?.names ?? "—"}
                           </td>
                           <td className="hidden md:table-cell px-3 py-2 text-xs text-muted-foreground">
-                            {bill.created_at
-                              ? format(new Date(bill.created_at), "dd/MM/yy HH:mm", { locale: es })
-                              : "—"}
+                            {(() => {
+                              if (!bill.created_at) return "—"
+                              try {
+                                const d = new Date(bill.created_at)
+                                if (isNaN(d.getTime())) return "—"
+                                return format(d, "dd/MM/yy HH:mm", { locale: es })
+                              } catch { return "—" }
+                            })()}
                           </td>
                           {canManage && (
                             <td className="px-3 py-2 text-right">

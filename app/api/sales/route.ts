@@ -79,6 +79,16 @@ export async function POST(req: NextRequest) {
   const { items, subtotal, tax, discount, total, paymentMethod, sessionId, customerId, notes, localId, requestElectronicInvoice } = parsed.data
   const companyId = session.user.companyId
 
+  if (localId) {
+    const existing = await prisma.sale.findFirst({
+      where: { localId, companyId },
+      include: { items: { include: { product: true } }, user: true, customer: true, company: true, electronicInvoice: true },
+    })
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 })
+    }
+  }
+
   const productIds = items.map((i) => i.productId)
   const products = await withPrismaRetry(
     () =>
