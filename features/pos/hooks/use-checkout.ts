@@ -21,7 +21,6 @@ export function useCheckout() {
         body: { ...data, localId },
         resource: "sale",
         entityId: null,
-        forceQueue: true,
         mockResponse: (body, cid) => {
           const payload = body as CreateSaleInput
           return {

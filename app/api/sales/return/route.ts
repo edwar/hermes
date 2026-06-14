@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
-import { factusRequest, getNumberingRangeByDocumentType } from "@/lib/factus/client"
+import { listNumberingRanges, getInvoice, factusRequest } from "@/lib/factus/client"
 import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
 
 export async function POST(req: NextRequest) {
@@ -144,48 +144,71 @@ export async function POST(req: NextRequest) {
     originalSale.electronicInvoice
   ) {
     try {
-      // Obtener el rango de numeración para notas crédito (tipo de documento "22")
-      const rangeRecord = await getNumberingRangeByDocumentType(companyId, "22")
-      const rangeId = rangeRecord?.factusRangeId
+      const rawRanges = await listNumberingRanges(companyId, { document: "22" });
+      const inner = (rawRanges as any)?.data;
+      const allRanges = Array.isArray(inner) ? inner : (inner as any)?.data ?? [];
+      const activeRange = allRanges.find((r: any) => r.is_active === true || r.is_active === 1);
 
-      const originalInvoice = originalSale.electronicInvoice
+      if (!activeRange) {
+        throw new Error(
+          "No se encontró un rango de numeración activo para notas crédito (documento 22) en Factus."
+        );
+      }
+
+      const originalInvoice = originalSale.electronicInvoice;
+      const billIdentifier = originalInvoice.consecutive || originalInvoice.factusBillId;
+      if (!billIdentifier || billIdentifier === 'unknown') {
+        throw new Error(
+          'La factura original no se creó correctamente en Factus (sin número de factura). ' +
+          'Regenera la factura electrónica para esta venta e intenta la devolución nuevamente.'
+        );
+      }
+
+      const factusInvoice = await getInvoice(billIdentifier, companyId) as any;
+      const factusId = Number(factusInvoice?.data?.id ?? factusInvoice?.id);
+      const billId = isNaN(factusId) ? undefined : factusId;
+
       const creditNotePayload = await mapSaleToFactusCreditNote(
         returnSale as any,
-        originalInvoice.consecutive || "",
-        rangeId,
+        billIdentifier,
+        activeRange.id,
         `return-${returnSale.id.slice(0, 8)}-${Date.now()}`,
-        1
-      )
+        1,
+        billId
+      );
 
       const factusResponse = await factusRequest<{
-        id: number
-        consecutive: string
-        cufe: string
-        status: string
-      }>(
-        "/v2/credit-notes/validate",
-        { method: "POST", body: creditNotePayload as any },
-        companyId
-      )
+        id: number;
+        consecutive: string;
+        cufe: string;
+        status: string;
+      }>("/v2/credit-notes/validate", { method: "POST", body: creditNotePayload as any }, companyId);
 
-      const responseData = (factusResponse as any).data || factusResponse
-      const isValidated = responseData.is_validated === true || factusResponse.status === "accepted" || responseData.status === "Created"
+      const responseData = (factusResponse as any).data || factusResponse;
+      const isValidated =
+        responseData.is_validated === true ||
+        responseData.status === "validated" ||
+        factusResponse.status === "accepted";
 
       await prisma.electronicInvoice.create({
         data: {
           companyId,
           saleId: returnSale.id,
-          cufe: responseData.cufe || "",
-          consecutive: responseData.consecutive || responseData.number || String(responseData.id),
+          cufe: responseData.cufe || factusResponse.cufe || "",
+          consecutive: responseData.number || factusResponse.consecutive || String(responseData.id || factusResponse.id),
           status: isValidated ? "VALIDATED" : "PENDING",
-          factusBillId: String(responseData.id || factusResponse.id),
+          factusBillId: String(responseData.id || factusResponse.id || responseData.number || factusResponse.consecutive),
           total: returnSale.total,
           taxTotal: returnSale.tax,
-          validatedAt: isValidated ? new Date() : null,
         },
-      })
+      });
     } catch (error: any) {
-      console.error("Error creating credit note:", error?.message || error)
+      console.error("Error preparando nota crédito:", error?.message || error);
+      if (error?.factusData) {
+        console.error("Factus error completo:", JSON.stringify(error.factusData, null, 2));
+      } else if (error?.details) {
+        console.error("Detalles:", JSON.stringify(error.details, null, 2));
+      }
     }
   }
 

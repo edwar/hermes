@@ -234,6 +234,8 @@ model Sale {
   items      SaleItem[]
   session    CashSession? @relation(fields: [sessionId], references: [id])
   electronicInvoice ElectronicInvoice?
+
+  @@unique([localId, companyId])
 }
 
 model SaleItem {

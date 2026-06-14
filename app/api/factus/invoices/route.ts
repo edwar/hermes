@@ -109,6 +109,11 @@ export async function POST(req: NextRequest) {
         customer: true,
         company: true,
         electronicInvoice: true,
+        parentSale: {
+          include: {
+            electronicInvoice: true,
+          },
+        },
       },
     });
 
@@ -116,7 +121,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
     }
 
-    if (isReturn && !sale.electronicInvoice) {
+    if (isReturn && !sale.parentSale?.electronicInvoice) {
       return NextResponse.json(
         { error: 'La venta original no tiene factura electrónica' },
         { status: 400 }
@@ -135,7 +140,13 @@ export async function POST(req: NextRequest) {
     let invoiceType: 'invoice' | 'credit-note' = 'invoice';
 
     if (isReturn) {
-      const originalInvoice = sale.electronicInvoice;
+      const originalInvoice = sale.parentSale?.electronicInvoice;
+      if (!originalInvoice?.factusBillId) {
+        return NextResponse.json(
+          { error: 'La factura original no tiene un ID de Factus asociado' },
+          { status: 400 }
+        );
+      }
       if (!originalInvoice?.cufe) {
         return NextResponse.json(
           { error: 'La factura original no tiene CUFE' },
@@ -143,12 +154,17 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const billNumber = originalInvoice.factusBillId ?? '';
+      let billIdNum: number | undefined = parseInt(billNumber, 10);
+      if (isNaN(billIdNum)) billIdNum = undefined;
+
       factusPayload = await mapSaleToFactusCreditNote(
         sale,
-        originalInvoice.consecutive || '',
+        billNumber,
         rangeRecord.factusRangeId,
         `return-${sale.id.slice(0, 8)}-${Date.now()}`,
-        correctionConceptId || '1'
+        Number(correctionConceptId || '1'),
+        billIdNum
       );
       endpoint = '/v2/credit-notes/validate';
       invoiceType = 'credit-note';

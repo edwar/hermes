@@ -79,6 +79,16 @@ export async function POST(req: NextRequest) {
   const { items, subtotal, tax, discount, total, paymentMethod, sessionId, customerId, notes, localId, requestElectronicInvoice } = parsed.data
   const companyId = session.user.companyId
 
+  if (localId) {
+    const existing = await prisma.sale.findFirst({
+      where: { localId, companyId },
+      include: { items: { include: { product: true } }, user: true, customer: true, company: true, electronicInvoice: true },
+    })
+    if (existing) {
+      return NextResponse.json(existing, { status: 200 })
+    }
+  }
+
   const productIds = items.map((i) => i.productId)
   const products = await withPrismaRetry(
     () =>
@@ -265,16 +275,16 @@ export async function POST(req: NextRequest) {
 
           const responseData = (factusResponse as any).data || factusResponse
           const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-          const factusBillId = responseData.number || factusResponse.number || String(responseData.id || factusResponse.id || 'unknown')
+          const billNumber = responseData.number || factusResponse.number || 'unknown'
 
           await prisma.electronicInvoice.create({
             data: {
               companyId,
               saleId: sale.id,
               cufe: responseData.cufe || factusResponse.cufe,
-              consecutive: responseData.number || factusResponse.consecutive,
+              consecutive: billNumber,
               status: isValidated ? "VALIDATED" : "PENDING",
-              factusBillId: factusBillId,
+              factusBillId: billNumber,
               total: sale.total,
               taxTotal: sale.tax,
             },
