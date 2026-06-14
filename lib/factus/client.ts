@@ -17,13 +17,18 @@ interface FactusError {
   error: string;
   message: string;
   details?: Record<string, string[]>;
+  data?: {
+    message?: string;
+    errors?: Record<string, unknown>;
+  };
 }
 
 export class FactusApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public details?: Record<string, string[]>
+    public details?: Record<string, string[]>,
+    public factusData?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'FactusApiError';
@@ -180,13 +185,13 @@ export async function factusRequest<T = unknown>(
     try {
       errorData = JSON.parse(responseText);
     } catch {
-      // Ignorar errores de parseo
     }
 
     throw new FactusApiError(
       errorData?.message || `Factus API error: ${response.statusText}`,
       response.status,
-      errorData?.details
+      errorData?.details,
+      errorData as Record<string, unknown>,
     );
   }
 
@@ -381,12 +386,25 @@ interface NumberingRange {
   is_active: number;
 }
 
-export async function listNumberingRanges(companyId: string) {
-  return factusRequest<{ data: NumberingRange[] }>(
-    '/v2/numbering-ranges',
+export async function listNumberingRanges(companyId: string, filters?: { document?: string; isActive?: boolean }) {
+  const query = new URLSearchParams();
+  if (filters?.document) query.set('filter[document]', filters.document);
+  if (filters?.isActive !== undefined) query.set('filter[is_active]', filters.isActive ? '1' : '0');
+  const qs = query.toString();
+
+  return factusRequest<FactusEnvelope<{ data: NumberingRange[]; pagination?: Record<string, unknown> }>>(
+    `/v2/numbering-ranges${qs ? `?${qs}` : ''}`,
     { method: 'GET' },
     companyId
   );
+}
+
+export async function getActiveNumberingRangeByDocument(companyId: string, document: string) {
+  const raw = await listNumberingRanges(companyId, { document, isActive: true });
+  const inner = raw?.data;
+  const ranges = Array.isArray(inner) ? inner : (inner as any)?.data ?? [];
+  if (ranges.length === 0) return null;
+  return ranges[0] as NumberingRange;
 }
 
 export async function getNumberingRange(companyId: string, id: number) {
