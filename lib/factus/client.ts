@@ -191,7 +191,7 @@ export async function factusRequest<T = unknown>(
       errorData?.message || `Factus API error: ${response.statusText}`,
       response.status,
       errorData?.details,
-      errorData as Record<string, unknown>,
+      errorData as unknown as Record<string, unknown>,
     );
   }
 
