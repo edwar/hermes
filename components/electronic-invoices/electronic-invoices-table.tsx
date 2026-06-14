@@ -221,7 +221,18 @@ export function ElectronicInvoicesTable() {
                 return (
                   <TableRow key={inv.id}>
                     <TableCell className="font-mono text-sm">
-                      {inv.consecutive ?? inv.id.slice(0, 8)}
+                      <div className="flex items-center gap-2">
+                        {inv.sale?.isReturn ? (
+                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/60 dark:text-amber-300 border-0">
+                            Nota Crédito
+                          </Badge>
+                        ) : (
+                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/60 dark:text-emerald-300 border-0">
+                            Factura
+                          </Badge>
+                        )}
+                        {inv.consecutive ?? inv.id.slice(0, 8)}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-sm">
                       {format(new Date(inv.createdAt), "dd/MM/yyyy HH:mm", { locale: es })}
@@ -283,16 +294,18 @@ export function ElectronicInvoicesTable() {
                             <Mail className="size-3.5" />
                           )}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="size-9 md:size-8 touch-target"
-                          title="Actualizar estado"
-                          aria-label="Actualizar estado"
-                          onClick={() => handleRefreshStatus(inv.id)}
-                        >
-                          <RefreshCw className="size-3.5" />
-                        </Button>
+                        {(inv.status === "PENDING" || inv.status === "REJECTED") && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-9 md:size-8 touch-target"
+                            title="Actualizar estado"
+                            aria-label="Actualizar estado"
+                            onClick={() => handleRefreshStatus(inv.id)}
+                          >
+                            <RefreshCw className="size-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

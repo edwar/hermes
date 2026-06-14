@@ -203,22 +203,22 @@ export async function factusRequest<T = unknown>(
   return jsonResponse;
 }
 
-export async function getInvoice(invoiceId: string, companyId: string) {
+export async function getInvoice(invoiceId: string, companyId: string, isCreditNote?: boolean) {
   return factusRequest<Record<string, unknown>>(
-    `/v2/bills/${invoiceId}`,
+    isCreditNote ? `/v2/credit-notes/${invoiceId}` : `/v2/bills/${invoiceId}`,
     { method: 'GET' },
     companyId
   );
 }
 
-export async function getInvoicePdf(invoiceId: string, companyId: string): Promise<ArrayBuffer> {
+export async function getInvoicePdf(invoiceId: string, companyId: string, isCreditNote?: boolean): Promise<ArrayBuffer> {
   if (!companyId) {
     throw new Error('companyId is required');
   }
 
   const accessToken = await authenticate(companyId);
 
-  const response = await fetch(`${FACTUS_API_URL}/v2/bills/${invoiceId}/download-pdf`, {
+  const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-pdf`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${accessToken}`,
@@ -245,14 +245,14 @@ export async function getInvoicePdf(invoiceId: string, companyId: string): Promi
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
-export async function getInvoiceXml(invoiceId: string, companyId: string): Promise<ArrayBuffer> {
+export async function getInvoiceXml(invoiceId: string, companyId: string, isCreditNote?: boolean): Promise<ArrayBuffer> {
   if (!companyId) {
     throw new Error('companyId is required');
   }
 
   const accessToken = await authenticate(companyId);
 
-  const response = await fetch(`${FACTUS_API_URL}/v2/bills/${invoiceId}/download-xml/`, {
+  const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-xml/`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${accessToken}`,

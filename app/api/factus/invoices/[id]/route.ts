@@ -37,9 +37,10 @@ export async function GET(
     }
 
     const factusIdentifier = (invoice.consecutive || invoice.factusBillId)!;
+    const isCreditNote = invoice.sale?.isReturn === true;
 
     if (format === 'pdf') {
-      const pdfBuffer = await getInvoicePdf(factusIdentifier, companyId);
+      const pdfBuffer = await getInvoicePdf(factusIdentifier, companyId, isCreditNote);
       return new NextResponse(pdfBuffer, {
         headers: {
           'Content-Type': 'application/pdf',
@@ -49,7 +50,7 @@ export async function GET(
     }
 
     if (format === 'xml') {
-      const xmlBuffer = await getInvoiceXml(factusIdentifier, companyId);
+      const xmlBuffer = await getInvoiceXml(factusIdentifier, companyId, isCreditNote);
       return new NextResponse(xmlBuffer, {
         headers: {
           'Content-Type': 'application/xml',
@@ -58,7 +59,7 @@ export async function GET(
       });
     }
 
-    const factusData = await getInvoice(factusIdentifier, companyId);
+    const factusData = await getInvoice(factusIdentifier, companyId, isCreditNote);
 
     return NextResponse.json({
       ...factusData,
@@ -121,6 +122,7 @@ export async function PATCH(
     }
 
     const factusIdentifier = (invoice.consecutive || invoice.factusBillId)!;
+    const isCreditNote = invoice.sale?.isReturn === true;
 
     if (action === 'send-email') {
       const customerEmail = invoice.sale?.customer?.email || invoice.sale?.customer?.email;
@@ -128,7 +130,7 @@ export async function PATCH(
         return NextResponse.json({ error: 'El cliente no tiene email' }, { status: 400 });
       }
       await factusRequest(
-        `/v2/bills/${factusIdentifier}/send-email`,
+        `${isCreditNote ? '/v2/credit-notes' : '/v2/bills'}/${factusIdentifier}/send-email`,
         { method: 'POST', body: JSON.stringify({ email: customerEmail }) },
         companyId
       );
@@ -136,7 +138,7 @@ export async function PATCH(
     }
 
     if (action === 'refresh-status') {
-      const factusData = await getInvoice(factusIdentifier, companyId) as { status?: string; data?: { status?: string; is_validated?: boolean }; errors?: Record<string, string> };
+      const factusData = await getInvoice(factusIdentifier, companyId, isCreditNote) as { status?: string; data?: { status?: string; is_validated?: boolean }; errors?: Record<string, string> };
 
       const factusStatus = factusData.data?.status || factusData.status;
       const factusValidated = factusData.data?.is_validated;
