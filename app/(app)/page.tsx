@@ -45,6 +45,7 @@ export default function DashboardPage() {
   const stats = data?.stats
   const dailySales = data?.dailySales ?? []
   const topProducts = data?.topProducts ?? []
+  const topProductsDaily = data?.topProductsDaily ?? []
   const paymentMethods = data?.salesByPaymentMethod ?? []
 
   return (
@@ -109,7 +110,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="h-64 md:h-72">
-            <TopProductsChart data={topProducts} />
+            <TopProductsChart data={topProductsDaily} />
           </div>
         </CardContent>
       </Card>

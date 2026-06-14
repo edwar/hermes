@@ -120,6 +120,41 @@ export async function GET() {
     total: Number(t._sum.subtotal ?? 0),
   }))
 
+  const topProductsDailyRaw = topProductIds.length > 0
+    ? await withPrismaRetry(
+        () =>
+          prisma.$queryRawUnsafe<{ productId: string; date: Date; total: bigint }[]>(`
+            SELECT si."productId", DATE(s."createdAt") as date, SUM(si.subtotal) as total
+            FROM "SaleItem" si
+            JOIN "Sale" s ON s.id = si."saleId"
+            WHERE s."createdAt" >= $1
+              AND si."productId" = ANY($2)
+              ${whereClause}
+            GROUP BY si."productId", DATE(s."createdAt")
+            ORDER BY si."productId", date ASC
+          `, thirtyDaysAgo, topProductIds),
+        "dashboard:top-products-daily"
+      )
+    : []
+
+  const productNames = Object.fromEntries(products.map((p) => [p.id, p.name]))
+  const dateSet = new Set<string>()
+  const productDates: Record<string, Record<string, number>> = {}
+  for (const row of topProductsDailyRaw) {
+    const dateStr = row.date instanceof Date ? row.date.toISOString().split("T")[0] : String(row.date)
+    dateSet.add(dateStr)
+    if (!productDates[row.productId]) productDates[row.productId] = {}
+    productDates[row.productId][dateStr] = Number(row.total)
+  }
+  const sortedDates = [...dateSet].sort()
+  const topProductsDaily = sortedDates.map((date) => {
+    const entry: Record<string, string | number> = { date }
+    for (const p of products) {
+      entry[p.name] = productDates[p.id]?.[date] ?? 0
+    }
+    return entry
+  })
+
   return NextResponse.json({
     stats: {
       salesToday: Number(salesToday._sum.total ?? 0),
@@ -134,6 +169,7 @@ export async function GET() {
       count: s._count,
     })),
     topProducts: topProductsWithNames,
+    topProductsDaily,
     dailySales: dailySales.map((d) => ({
       date: d.date instanceof Date ? d.date.toISOString().split("T")[0] : d.date,
       total: Number(d.total),
