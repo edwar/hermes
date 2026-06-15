@@ -20,6 +20,7 @@ import { RefreshCw, Coins } from "lucide-react"
 import { formatCOP } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { ExportCSVButton } from "@/components/shared/export-csv-button"
 
 export default function FactusTransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -74,6 +75,7 @@ export default function FactusTransactionsPage() {
         <Button onClick={() => fetchTx(1)} className="h-10">
           <RefreshCw className="mr-2 size-4" /> Actualizar
         </Button>
+        <ExportCSVButton report="credit-transactions" />
       </div>
 
       <Card>

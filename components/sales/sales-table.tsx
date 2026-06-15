@@ -27,6 +27,7 @@ import { useOfflineCache } from "@/hooks/use-offline-cache"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Receipt, Search, ShoppingBag } from "lucide-react"
+import { ExportCSVButton } from "@/components/shared/export-csv-button"
 
 const PAYMENT_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -159,6 +160,7 @@ export function SalesTable() {
           <Search className="mr-2 size-4" />
           Buscar
         </Button>
+        <ExportCSVButton report="sales" params={{ from, to }} />
         {isOfflineData && (
           <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-xs">
             Datos locales (sin conexión)
