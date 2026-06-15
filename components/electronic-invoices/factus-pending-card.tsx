@@ -58,7 +58,7 @@ interface DiagnoseResponse {
 export function FactusPendingCard() {
   const { data: session } = useSession()
   const role = session?.user?.role
-  const canManage = role === "GOD" || role === "ADMIN"
+  const canManage = role === "GOD" || role === "OWNER" || role === "ADMIN"
 
   const [data, setData] = useState<DiagnoseResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -395,7 +395,7 @@ export function FactusPendingCard() {
         {totalPending > 0 && !expanded && (
           <p className="text-xs text-muted-foreground">
             Estas facturas pendientes en Factus están bloqueando la emisión de nuevas facturas electrónicas.
-            {canManage && " Un ADMIN/GOD puede limpiarlas desde el botón superior."}
+            {canManage && " Un ADMIN/OWNER/GOD puede limpiarlas desde el botón superior."}
           </p>
         )}
       </CardContent>

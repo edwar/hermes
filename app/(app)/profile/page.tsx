@@ -74,7 +74,7 @@ export default function ProfilePage() {
     mutation.mutate({ currentPassword, newPassword })
   }
 
-  const roleLabel = profile?.role === "GOD" ? "Super Admin" : profile?.role === "ADMIN" ? "Gerente" : profile?.role === "MANAGER" ? "Gestor" : "Cajero"
+  const roleLabel = profile?.role === "GOD" ? "Super Admin" : profile?.role === "OWNER" ? "Dueño" : profile?.role === "ADMIN" ? "Gerente" : profile?.role === "MANAGER" ? "Gestor" : "Cajero"
 
   return (
     <div className="space-y-6">
@@ -103,7 +103,7 @@ export default function ProfilePage() {
                     <p className="font-medium">{profile?.name}</p>
                     <p className="text-sm text-muted-foreground">{profile?.email}</p>
 <Badge variant={profile?.role === "GOD" ? "default" : profile?.role === "ADMIN" ? "default" : "secondary"} className="mt-1">
-                          {profile?.role === "GOD" ? "Super Admin" : profile?.role === "ADMIN" ? "Gerente" : profile?.role === "MANAGER" ? "Gestor" : "Cajero"}
+                          {profile?.role === "GOD" ? "Super Admin" : profile?.role === "OWNER" ? "Dueño" : profile?.role === "ADMIN" ? "Gerente" : profile?.role === "MANAGER" ? "Gestor" : "Cajero"}
                         </Badge>
                   </div>
                 </div>

@@ -26,7 +26,7 @@ export async function GET() {
     }
 
     const role = session.user.role
-    const canManage = role === "GOD" || role === "ADMIN"
+    const canManage = role === "GOD" || role === "OWNER" || role === "ADMIN"
 
     if (!canManage) {
       return NextResponse.json({

@@ -10,9 +10,9 @@ export async function DELETE(req: NextRequest) {
     }
 
     const role = session.user.role
-    if (role !== "GOD" && role !== "ADMIN") {
+    if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Solo ADMIN/GOD pueden limpiar pendientes de Factus" },
+        { error: "Solo ADMIN/OWNER/GOD pueden limpiar pendientes de Factus" },
         { status: 403 }
       )
     }

@@ -41,8 +41,8 @@ export async function POST(req: NextRequest) {
 
   if (session.user.role === "GOD") {
     // GOD puede hacer cualquier cosa
-  } else if (session.user.role === "ADMIN") {
-    // ADMIN solo puede hacer movimientos en su empresa
+  } else if (session.user.role === "OWNER" || session.user.role === "ADMIN") {
+    // OWNER/ADMIN solo puede hacer movimientos en su empresa
     if (cashSession.cashRegister.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }

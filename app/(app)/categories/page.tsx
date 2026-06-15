@@ -5,5 +5,6 @@ import { CategoryManager } from "@/components/inventory/category-manager"
 export default async function CategoriesPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
+  if (session.user.role === "GOD") redirect("/system-settings")
   return <CategoryManager />
 }

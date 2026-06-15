@@ -57,8 +57,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
-    return NextResponse.json({ error: "No tienes permisos para crear productos" }, { status: 403 })
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
@@ -114,7 +114,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD") {
     return NextResponse.json({ error: "Solo administradores pueden eliminar productos" }, { status: 403 })
   }
 

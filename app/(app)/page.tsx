@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useDashboard } from "@/features/dashboard/hooks/use-dashboard"
+import { useSession } from "next-auth/react"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -35,10 +37,18 @@ const TopProductsChart = dynamic(
 )
 
 export default function DashboardPage() {
+  const router = useRouter()
+  const { data: session } = useSession()
   const { data, isLoading } = useDashboard()
   const [mounted, setMounted] = useState(false)
 
+  useEffect(() => {
+    if (session?.user?.role === "GOD") router.replace("/system-settings")
+  }, [session, router])
+
   useEffect(() => { setMounted(true) }, [])
+
+  if (session?.user?.role === "GOD") return null
 
   if (isLoading || !mounted) return <DashboardSkeleton />
 
