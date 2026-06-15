@@ -13,7 +13,7 @@ export default function NotFound() {
           La página que buscas no existe o fue movida. Verifica la URL o vuelve al inicio de {APP_NAME}.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href="/" className={buttonVariants({ variant: "default" })}>
+          <Link href="/landing" className={buttonVariants({ variant: "default" })}>
             <Home className="mr-2 size-4" />
             Ir al inicio
           </Link>
