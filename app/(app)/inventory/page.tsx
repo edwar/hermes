@@ -5,6 +5,7 @@ import { InventoryTabs } from "@/components/inventory/inventory-tabs"
 export default async function InventoryPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
+  if (session.user.role === "GOD") redirect("/system-settings")
 
   const role = session.user.role
 

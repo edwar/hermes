@@ -6,6 +6,7 @@ import { FactusPendingCard } from "@/components/electronic-invoices/factus-pendi
 export default async function ElectronicInvoicesPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
+  if (session.user.role === "GOD") redirect("/system-settings")
   return (
     <div className="space-y-6">
       <FactusPendingCard />

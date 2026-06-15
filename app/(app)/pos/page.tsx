@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useQuery } from "@tanstack/react-query"
 import { db } from "@/lib/db"
@@ -70,6 +70,8 @@ function useActiveSession(sessionKey: number) {
 }
 
 export default function POSPage() {
+  const { data: posSession } = useSession()
+  const router = useRouter()
   const cart = useCart()
   const checkout = useCheckout()
   const searchParams = useSearchParams()
@@ -77,6 +79,12 @@ export default function POSPage() {
   const [saleResult, setSaleResult] = useState<any>(null)
   const [returnOpen, setReturnOpen] = useState(false)
   const [returnSaleId, setReturnSaleId] = useState<string | undefined>()
+
+  useEffect(() => {
+    if (posSession?.user?.role === "GOD") router.replace("/system-settings")
+  }, [posSession, router])
+
+  if (posSession?.user?.role === "GOD") return null
   const [printerOpen, setPrinterOpen] = useState(false)
   const [closeSessionOpen, setCloseSessionOpen] = useState(false)
   const [movementOpen, setMovementOpen] = useState(false)
