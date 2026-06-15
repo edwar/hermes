@@ -61,29 +61,21 @@ export function SystemConfigSettings() {
       const configs: any[] = existing.systemConfigs ?? []
       const existingConfig = configs.find((c: any) => c.key === key && c.category === "notification")
 
-      if (existingConfig) {
-        await apiFetch("/api/settings/configs", {
-          method: "PUT",
-          body: { ...existingConfig, value },
-          resource: "settings-configs",
-          entityId: existingConfig.id,
-        })
-      } else {
-        await apiFetch("/api/settings/configs", {
-          method: "PUT",
-          body: {
-            category: "notification",
-            key,
-            value,
-            label: key,
-            description: "",
-            isActive: true,
-            id: "new",
-          },
-          resource: "settings-configs",
-          entityId: "new",
-        })
-      }
+      await apiFetch("/api/settings/configs", {
+        method: "PUT",
+        body: {
+          type: "systemConfig",
+          id: existingConfig?.id ?? null,
+          category: "notification",
+          key,
+          value,
+          label: key,
+          description: "",
+          isActive: true,
+        } as any,
+        resource: "settings-configs",
+        entityId: existingConfig?.id ?? "new",
+      })
       success("Configuración guardada")
     } catch {
       error("Error al guardar")
