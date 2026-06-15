@@ -43,7 +43,7 @@ export function LoginForm() {
       return
     }
 
-    router.push("/")
+    router.push("/dashboard")
     router.refresh()
   }
 
