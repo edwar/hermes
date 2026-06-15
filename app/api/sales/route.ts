@@ -177,12 +177,15 @@ export async function POST(req: NextRequest) {
         where: { id: companyId },
         select: {
           factusEnabled: true,
+          factusBlocked: true,
           factusCreditBalance: true,
         },
       })
 
       if (!company?.factusEnabled) {
         console.error("Factus not enabled for company")
+      } else if (company.factusBlocked) {
+        console.warn("Factus: facturación bloqueada para esta empresa. La venta se creó sin FE.")
       } else if ((company.factusCreditBalance ?? 0) <= 0) {
         console.warn("Factus: saldo de créditos insuficiente. La venta se creó sin FE.")
       } else {

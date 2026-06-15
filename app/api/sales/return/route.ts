@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
   const companyId = session.user.companyId!
   const company = await prisma.company.findUnique({
     where: { id: companyId },
-    select: { factusEnabled: true },
+    select: { factusEnabled: true, factusBlocked: true },
   })
 
   const returnSubtotal = items.reduce((acc: number, i: { subtotal: number }) => acc + i.subtotal, 0)
@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
   if (
     createCreditNote &&
     company?.factusEnabled &&
+    !company.factusBlocked &&
     originalSale.electronicInvoice
   ) {
     try {

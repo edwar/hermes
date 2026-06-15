@@ -77,6 +77,7 @@ model Company {
   factusDv                String?
   factusCreditBalance     Int     @default(0)
   factusCreditTotal       Int     @default(0)
+  factusBlocked           Boolean @default(false)
 
   numberingRanges      CompanyNumberingRange[]
   cashDenominations    CashDenomination[]
