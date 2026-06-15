@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
 import {
   Card, CardContent, CardHeader, CardTitle,
 } from "@/components/ui/card"
@@ -13,7 +14,8 @@ import {
 } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Coins, ShoppingCart, History, AlertTriangle, Eye } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
+import { ArrowLeft, Coins, ShoppingCart, History, AlertTriangle, Eye, CheckCircle, Loader2 } from "lucide-react"
 import { formatCOP } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -23,8 +25,11 @@ export default function GodCompanyDetailPage() {
   const router = useRouter()
   const params = useParams()
   const companyId = params.id as string
+  const toast = useToast()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [activating, setActivating] = useState(false)
+  const [activateAmount, setActivateAmount] = useState<number>(0)
 
   useEffect(() => {
     if (session?.user?.role !== "GOD") return
@@ -34,6 +39,32 @@ export default function GodCompanyDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [session, companyId])
+
+  async function handleActivate() {
+    if (!activateAmount || activateAmount <= 0) return
+    setActivating(true)
+    try {
+      const res = await fetch("/api/factus/credits/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, amount: activateAmount }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        toast.success(`${activateAmount} créditos activados`)
+        setActivateAmount(0)
+        fetch(`/api/god/companies/${companyId}`)
+          .then((r) => r.json())
+          .then(setData)
+      } else {
+        toast.error(result.error || "Error al activar")
+      }
+    } catch {
+      toast.error("Error al activar créditos")
+    } finally {
+      setActivating(false)
+    }
+  }
 
   if (!session || loading) {
     return (
@@ -169,6 +200,41 @@ export default function GodCompanyDetailPage() {
               </CardContent>
             </Card>
           </div>
+
+          {company.factusCreditPending > 0 && (
+            <Card className="border-amber-200 dark:border-amber-800">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <AlertTriangle className="size-3.5 text-amber-500" />
+                  Créditos pendientes de activación
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-3 text-sm">
+                  Hay <strong>{company.factusCreditPending}</strong> créditos pendientes por activar.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={company.factusCreditPending}
+                    value={activateAmount || ""}
+                    onChange={(e) => setActivateAmount(parseInt(e.target.value) || 0)}
+                    placeholder="Cantidad"
+                    className="w-32"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleActivate}
+                    disabled={activating || !activateAmount || activateAmount <= 0}
+                  >
+                    {activating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <CheckCircle className="mr-2 size-4" />}
+                    Activar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm">Últimos Movimientos de Créditos</CardTitle></CardHeader>

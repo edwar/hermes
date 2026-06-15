@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         select: {
           id: true, name: true, nit: true, address: true, phone: true, email: true,
           isActive: true, createdAt: true, updatedAt: true,
-          factusEnabled: true, factusCreditBalance: true, factusCreditTotal: true, factusBlocked: true,
+          factusEnabled: true, factusCreditBalance: true, factusCreditPending: true, factusCreditTotal: true, factusBlocked: true,
           _count: { select: { users: true } },
         },
       }),

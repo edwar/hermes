@@ -76,6 +76,7 @@ model Company {
   factusEconomicActivity  String?
   factusDv                String?
   factusCreditBalance     Int     @default(0)
+  factusCreditPending     Int     @default(0)
   factusCreditTotal       Int     @default(0)
   factusBlocked           Boolean @default(false)
 
