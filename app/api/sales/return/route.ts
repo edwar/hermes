@@ -4,6 +4,7 @@ import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { listNumberingRanges, getInvoice, factusRequest } from "@/lib/factus/client"
 import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
+import { logAudit } from "@/lib/audit"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -191,7 +192,7 @@ export async function POST(req: NextRequest) {
         responseData.status === "validated" ||
         factusResponse.status === "accepted";
 
-      await prisma.electronicInvoice.create({
+      const electronicInvoice = await prisma.electronicInvoice.create({
         data: {
           companyId,
           saleId: returnSale.id,
@@ -203,6 +204,11 @@ export async function POST(req: NextRequest) {
           taxTotal: returnSale.tax,
         },
       });
+
+      await logAudit({
+        userId: session.user.id, companyId: session.user.companyId, action: "FACTUS_CREDIT_NOTE_CREATED",
+        entity: "ElectronicInvoice", entityId: electronicInvoice.id, req,
+      })
     } catch (error: any) {
       console.error("Error preparando nota crédito:", error?.message || error);
       if (error?.factusData) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { compare } from "bcryptjs"
+import { logAudit } from "@/lib/audit"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -86,6 +87,11 @@ export async function POST(req: NextRequest) {
       }),
     "cash-movements:create"
   )
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "CASH_MOVEMENT_CREATED",
+    entity: "CashMovement", entityId: movement.id, metadata: { type, amount, reason: reason.trim() }, req,
+  })
 
   return NextResponse.json(movement, { status: 201 })
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -69,6 +70,11 @@ export async function POST(req: NextRequest) {
     "invites:create"
   )
 
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "INVITE_CREATED",
+    entity: "CompanyInvite", entityId: invite.id, metadata: { companyName: invite.companyName }, req,
+  })
+
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/register?token=${token}${email ? `&email=${encodeURIComponent(email)}` : ""}`
 
   if (email && process.env.RESEND_API_KEY) {
@@ -115,6 +121,11 @@ export async function DELETE(req: NextRequest) {
     () => prisma.companyInvite.delete({ where: { id } }),
     "invites:delete"
   )
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "INVITE_DELETED",
+    entity: "CompanyInvite", entityId: id, req,
+  })
 
   return NextResponse.json({ message: "Invitación eliminada" })
 }

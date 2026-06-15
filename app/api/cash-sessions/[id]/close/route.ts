@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 function isAdminOrGod(role: string) {
   return role === "OWNER" || role === "ADMIN" || role === "GOD"
@@ -87,6 +88,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }),
     "cash-sessions:close-update"
   )
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "CASH_SESSION_CLOSED",
+    entity: "CashSession", entityId: id, req,
+  })
 
   return NextResponse.json(updated)
 }

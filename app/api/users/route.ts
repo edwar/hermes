@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { logAudit } from "@/lib/audit"
 import { z } from "zod"
 
 const createUserSchema = z.object({
@@ -91,6 +92,17 @@ export async function POST(req: NextRequest) {
       }),
     "users:create"
   )
+
+  await logAudit({
+    userId: session.user.id,
+    companyId: session.user.companyId,
+    action: "USER_CREATED",
+    entity: "User",
+    entityId: user.id,
+    metadata: { role: user.role },
+    req,
+  })
+
   return NextResponse.json(user, { status: 201 })
 }
 
@@ -111,6 +123,15 @@ export async function PUT(req: NextRequest) {
     }
   }
 
+  const existingUser = await withPrismaRetry(
+    () => prisma.user.findUnique({ where: { id }, select: { role: true, isActive: true } }),
+    "users:fetch-existing"
+  )
+
+  if (!existingUser) {
+    return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
+  }
+
   const updateData: Record<string, unknown> = {}
   if (data.name) updateData.name = data.name
   if (data.role) updateData.role = data.role
@@ -126,5 +147,43 @@ export async function PUT(req: NextRequest) {
       }),
     "users:update"
   )
+
+  if (data.role && data.role !== existingUser.role) {
+    await logAudit({
+      userId: session.user.id, companyId: session.user.companyId, action: "USER_ROLE_CHANGED",
+      entity: "User", entityId: user.id, metadata: { from: existingUser.role, to: data.role }, req,
+    })
+  }
+
+  if (data.password) {
+    await logAudit({
+      userId: session.user.id, companyId: session.user.companyId, action: "USER_PASSWORD_RESET",
+      entity: "User", entityId: user.id, req,
+    })
+  }
+
+  if (data.isActive !== undefined && !data.isActive && existingUser.isActive) {
+    await logAudit({
+      userId: session.user.id, companyId: session.user.companyId, action: "USER_DEACTIVATED",
+      entity: "User", entityId: user.id, req,
+    })
+  }
+
+  if (data.isActive !== undefined && data.isActive && !existingUser.isActive) {
+    await logAudit({
+      userId: session.user.id, companyId: session.user.companyId, action: "USER_REACTIVATED",
+      entity: "User", entityId: user.id, req,
+    })
+  }
+
+  const changedFields: Record<string, unknown> = {}
+  if (data.name) changedFields.name = data.name
+  if (data.role) changedFields.role = data.role
+  if (data.isActive !== undefined) changedFields.isActive = data.isActive
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "USER_UPDATED",
+    entity: "User", entityId: user.id, metadata: changedFields, req,
+  })
+
   return NextResponse.json(user)
 }
