@@ -49,7 +49,9 @@ interface UserForm {
   role: string
 }
 
-const emptyForm: UserForm = { name: "", email: "", password: "", role: "CASHIER" }
+function createEmptyForm(): UserForm {
+  return { name: "", email: "", password: "", role: "CASHIER" }
+}
 
 async function fetchUsers() {
   const res = await fetch("/api/users")
@@ -57,12 +59,18 @@ async function fetchUsers() {
   return res.json()
 }
 
+async function fetchCompany() {
+  const res = await fetch("/api/settings")
+  if (!res.ok) throw new Error("Error al cargar datos de la empresa")
+  return res.json() as Promise<{ companyName: string }>
+}
+
 export default function UsersPage() {
   const queryClient = useQueryClient()
   const toast = useToast()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<UserForm | null>(null)
-  const [form, setForm] = useState<UserForm>(emptyForm)
+  const [form, setForm] = useState<UserForm>(createEmptyForm)
   const [loading, setLoading] = useState(false)
 
   const { data: users, isLoading } = useQuery({
@@ -70,9 +78,15 @@ export default function UsersPage() {
     queryFn: fetchUsers,
   })
 
+  const { data: company } = useQuery({
+    queryKey: ["company-settings"],
+    queryFn: fetchCompany,
+    staleTime: 1000 * 60 * 5,
+  })
+
   function openCreate() {
     setEditing(null)
-    setForm(emptyForm)
+    setForm(createEmptyForm())
     setFormOpen(true)
   }
 
@@ -207,7 +221,7 @@ export default function UsersPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="u-email">Email *</Label>
-              <Input id="u-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
+              <Input id="u-email" type="email" placeholder={company?.companyName ? `user@${company.companyName.toLowerCase().replace(/\s+/g, "")}.com` : "correo@empresa.com"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="u-pass">{editing ? "Nueva contraseña (dejar vacío para mantener)" : "Contraseña *"}</Label>

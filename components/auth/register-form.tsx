@@ -158,20 +158,6 @@ export function RegisterForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Correo electrónico
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="juan@empresa.com"
-                autoComplete="email"
-                required
-                className="h-11 border-pos-border focus-visible:ring-primary"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
                 Contraseña
               </Label>
