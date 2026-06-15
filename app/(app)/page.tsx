@@ -43,7 +43,7 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    if (session?.user?.role === "GOD") router.replace("/system-settings")
+    if (session?.user?.role === "GOD") router.replace("/god-dashboard")
   }, [session, router])
 
   useEffect(() => { setMounted(true) }, [])
