@@ -30,7 +30,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-gradient-to-br from-background via-background to-pos-bg">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background">
         <LoginForm />
       </div>
     </div>
