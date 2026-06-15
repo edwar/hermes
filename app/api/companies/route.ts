@@ -14,8 +14,13 @@ export async function GET(req: NextRequest) {
     () =>
       prisma.company.findMany({
         where: search ? { name: { contains: search, mode: "insensitive" } } : {},
-        include: { _count: { select: { users: true } } },
         orderBy: { createdAt: "desc" },
+        select: {
+          id: true, name: true, nit: true, address: true, phone: true, email: true,
+          isActive: true, createdAt: true, updatedAt: true,
+          factusEnabled: true, factusCreditBalance: true, factusCreditTotal: true, factusBlocked: true,
+          _count: { select: { users: true } },
+        },
       }),
     "companies:list"
   )
@@ -29,15 +34,18 @@ export async function PUT(req: NextRequest) {
   if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD puede editar empresas" }, { status: 403 })
 
   const body = await req.json()
-  const { id, name, nit, address, phone, email, isActive } = body
+  const { id, name, nit, address, phone, email, isActive, factusBlocked } = body
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
+
+  const updateData: Record<string, unknown> = { name, nit, address, phone, email, isActive }
+  if (typeof factusBlocked === "boolean") updateData.factusBlocked = factusBlocked
 
   const company = await withPrismaRetry(
     () =>
       prisma.company.update({
         where: { id },
-        data: { name, nit, address, phone, email, isActive },
+        data: updateData,
       }),
     "companies:update"
   )

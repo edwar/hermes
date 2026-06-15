@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { apiFetch } from "@/lib/api-client"
 import { Building2, Pencil, Search, Trash2 } from "lucide-react"
@@ -70,6 +71,7 @@ export default function CompaniesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editing, setEditing] = useState<any | null>(null)
   const [form, setForm] = useState<CompanyForm>(emptyForm)
+  const [factusBlocked, setFactusBlocked] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const { data: companies, isLoading } = useQuery({
@@ -79,6 +81,7 @@ export default function CompaniesPage() {
 
   function openEdit(company: any) {
     setEditing(company)
+    setFactusBlocked(company.factusBlocked ?? false)
     setForm({
       id: company.id,
       name: company.name,
@@ -96,7 +99,7 @@ export default function CompaniesPage() {
     try {
       const result = await apiFetch<Record<string, unknown>>("/api/companies", {
         method: "PUT",
-        body: form,
+        body: { ...form, factusBlocked },
         resource: "companies",
         entityId: form.id,
       })
@@ -161,7 +164,7 @@ export default function CompaniesPage() {
                   <TableHead>Empresa</TableHead>
                   <TableHead>NIT</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Teléfono</TableHead>
+                  <TableHead>Factus</TableHead>
                   <TableHead>Usuarios</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Creada</TableHead>
@@ -190,7 +193,17 @@ export default function CompaniesPage() {
                       <TableCell className="font-medium">{company.name}</TableCell>
                       <TableCell className="text-muted-foreground">{company.nit || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{company.email || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{company.phone || "—"}</TableCell>
+                      <TableCell>
+                        {company.factusEnabled ? (
+                          company.factusBlocked ? (
+                            <Badge variant="destructive" className="text-[10px]">Bloqueado</Badge>
+                          ) : (
+                            <Badge variant="default" className="text-[10px] bg-green-600">Activo</Badge>
+                          )
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary">{company._count?.users || 0}</Badge>
                       </TableCell>
@@ -251,6 +264,15 @@ export default function CompaniesPage() {
             <div className="space-y-2">
               <Label htmlFor="c-address">Dirección</Label>
               <Input id="c-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border p-3">
+              <Switch id="factus-blocked" checked={factusBlocked} onCheckedChange={setFactusBlocked} />
+              <Label htmlFor="factus-blocked" className="leading-tight">
+                <span className="font-medium">Bloquear facturación electrónica</span>
+                <p className="text-xs text-muted-foreground font-normal">
+                  {factusBlocked ? "No se emitirán facturas electrónicas para esta empresa" : "La empresa puede emitir facturas electrónicas normalmente"}
+                </p>
+              </Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>Cancelar</Button>

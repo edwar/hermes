@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
       where: { id: companyId },
       select: {
         factusEnabled: true,
+        factusBlocked: true,
       },
     });
 
@@ -93,6 +94,10 @@ export async function POST(req: NextRequest) {
 
     if (!company.factusEnabled) {
       return NextResponse.json({ error: 'Facturación electrónica no habilitada' }, { status: 400 });
+    }
+
+    if (company.factusBlocked) {
+      return NextResponse.json({ error: 'Facturación electrónica bloqueada para esta empresa' }, { status: 403 });
     }
 
     const documentType = isReturn ? '22' : '21';
