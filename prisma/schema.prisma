@@ -79,8 +79,10 @@ model Company {
   factusCreditTotal       Int     @default(0)
   factusBlocked           Boolean @default(false)
 
-  numberingRanges      CompanyNumberingRange[]
-  cashDenominations    CashDenomination[]
+  numberingRanges              CompanyNumberingRange[]
+  cashDenominations            CashDenomination[]
+  factusCreditTransactions     FactusCreditTransaction[]
+  auditLogs                    AuditLog[]
 }
 
 model CompanyNumberingRange {
@@ -121,11 +123,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  company       Company?        @relation(fields: [companyId], references: [id])
-  sales         Sale[]
-  cashSessions  CashSession[]
-  invitesCreated CompanyInvite[]
-  purchaseOrders PurchaseOrder[]
+  company         Company?        @relation(fields: [companyId], references: [id])
+  sales           Sale[]
+  cashSessions    CashSession[]
+  invitesCreated  CompanyInvite[]
+  purchaseOrders  PurchaseOrder[]
+  auditLogs       AuditLog[]
 
   @@unique([email, companyId])
 }
@@ -236,6 +239,7 @@ model Sale {
   items      SaleItem[]
   session    CashSession? @relation(fields: [sessionId], references: [id])
   electronicInvoice ElectronicInvoice?
+  factusCreditTransactions FactusCreditTransaction[]
 
   @@unique([localId, companyId])
 }
@@ -444,4 +448,41 @@ model ProcessedSyncRequest {
   @@unique([clientId, method, url])
   @@index([companyId])
   @@index([createdAt])
+}
+
+model FactusCreditTransaction {
+  id           String   @id @default(cuid())
+  companyId    String
+  type         String   // "PURCHASE" | "CONSUMPTION"
+  amount       Int      // siempre positivo
+  balanceAfter Int
+  saleId       String?
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  sale    Sale?   @relation(fields: [saleId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  companyId  String?
+  action     String
+  entity     String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
 }

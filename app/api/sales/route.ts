@@ -4,6 +4,7 @@ import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
 import { factusRequest, getNumberingRangeByDocumentType, listPendingBills, sendRadianEvent } from "@/lib/factus/client"
+import { logAudit } from "@/lib/audit"
 
 interface FactusResponse {
   id?: number
@@ -297,6 +298,35 @@ export async function POST(req: NextRequest) {
           await prisma.company.update({
             where: { id: companyId },
             data: { factusCreditBalance: { decrement: 1 } },
+          })
+
+          await prisma.factusCreditTransaction.create({
+            data: {
+              companyId,
+              type: "CONSUMPTION",
+              amount: 1,
+              balanceAfter: (company.factusCreditBalance ?? 0) - 1,
+              saleId: sale.id,
+              notes: `FE ${billNumber}`,
+            },
+          })
+
+          await logAudit({
+            userId: session.user.id,
+            companyId,
+            action: "FACTUS_CREDITS_CONSUMED",
+            entity: "Sale",
+            entityId: sale.id,
+            metadata: { billNumber, balanceAfter: (company.factusCreditBalance ?? 0) - 1 },
+          })
+
+          await logAudit({
+            userId: session.user.id,
+            companyId,
+            action: "FACTUS_INVOICE_CREATED",
+            entity: "ElectronicInvoice",
+            entityId: sale.id,
+            metadata: { billNumber, cufe: responseData.cufe || factusResponse.cufe },
           })
 
           electronicInvoiceResult = factusResponse

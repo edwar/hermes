@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { logAudit } from "@/lib/audit"
 
 export async function GET() {
   const session = await auth()
@@ -52,6 +53,11 @@ export async function POST(req: NextRequest) {
       }),
     "cash-registers:create"
   )
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "CASH_REGISTER_CREATED",
+    entity: "CashRegister", entityId: register.id, req,
+  })
 
   return NextResponse.json(register, { status: 201 })
 }

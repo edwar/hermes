@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -38,6 +39,15 @@ export async function PUT(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 })
 
+  const existingCompany = await withPrismaRetry(
+    () => prisma.company.findUnique({ where: { id }, select: { factusBlocked: true } }),
+    "companies:fetch-existing"
+  )
+
+  if (!existingCompany) {
+    return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+  }
+
   const updateData: Record<string, unknown> = { name, nit, address, phone, email, isActive }
   if (typeof factusBlocked === "boolean") updateData.factusBlocked = factusBlocked
 
@@ -49,6 +59,33 @@ export async function PUT(req: NextRequest) {
       }),
     "companies:update"
   )
+
+  const changedFields: Record<string, unknown> = {}
+  if (name !== undefined) changedFields.name = name
+  if (nit !== undefined) changedFields.nit = nit
+  if (address !== undefined) changedFields.address = address
+  if (phone !== undefined) changedFields.phone = phone
+  if (email !== undefined) changedFields.email = email
+  if (isActive !== undefined) changedFields.isActive = isActive
+
+  if (factusBlocked !== undefined) {
+    if (factusBlocked && !existingCompany.factusBlocked) {
+      await logAudit({
+        userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_FACTUS_BLOCKED",
+        entity: "Company", entityId: id, req,
+      })
+    } else if (!factusBlocked && existingCompany.factusBlocked) {
+      await logAudit({
+        userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_FACTUS_UNBLOCKED",
+        entity: "Company", entityId: id, req,
+      })
+    }
+  }
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_UPDATED",
+    entity: "Company", entityId: id, metadata: changedFields, req,
+  })
 
   return NextResponse.json(company)
 }
@@ -67,6 +104,11 @@ export async function DELETE(req: NextRequest) {
     () => prisma.company.update({ where: { id }, data: { isActive: false } }),
     "companies:deactivate"
   )
+
+  await logAudit({
+    userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_DEACTIVATED",
+    entity: "Company", entityId: id, req,
+  })
 
   return NextResponse.json({ message: "Empresa desactivada" })
 }

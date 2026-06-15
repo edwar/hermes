@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { hash } from "bcryptjs"
+import { logAudit } from "@/lib/audit"
 import { UserRole } from "@prisma/client"
 
 export async function POST(req: NextRequest) {
@@ -45,6 +46,11 @@ export async function POST(req: NextRequest) {
         }),
       "register:company-create"
     )
+
+    await logAudit({
+      userId: undefined, companyId: company.id, action: "COMPANY_CREATED",
+      entity: "Company", entityId: company.id,
+    })
   }
 
   const existingUser = await withPrismaRetry(
@@ -75,6 +81,11 @@ export async function POST(req: NextRequest) {
     "register:user-create"
   )
 
+  await logAudit({
+    userId: undefined, companyId: company.id, action: "USER_CREATED",
+    entity: "User", entityId: user.id, metadata: { role: user.role },
+  })
+
   await withPrismaRetry(
     () =>
       prisma.companyInvite.update({
@@ -83,6 +94,11 @@ export async function POST(req: NextRequest) {
       }),
     "register:invite-mark-used"
   )
+
+  await logAudit({
+    userId: undefined, companyId: company.id, action: "INVITE_USED",
+    entity: "CompanyInvite", entityId: invite.id,
+  })
 
   await withPrismaRetry(
     () =>
