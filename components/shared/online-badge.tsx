@@ -38,7 +38,7 @@ export function OnlineBadge() {
       className={`gap-1.5 px-2.5 py-0.5 text-[11px] font-medium cursor-pointer select-none ${
         pendingCount > 0
           ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900"
-          : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-900"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
       }`}
       onClick={pendingCount > 0 ? handleSync : undefined}
     >
