@@ -50,7 +50,7 @@ interface UserForm {
 }
 
 function createEmptyForm(): UserForm {
-  return { name: "", email: "", password: "", role: "CASHIER" }
+  return { name: "", email: "", password: "", role: "" }
 }
 
 async function fetchUsers() {
@@ -217,21 +217,28 @@ export default function UsersPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="u-name">Nombre *</Label>
-              <Input id="u-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Input id="u-name" placeholder="Nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="u-email">Email *</Label>
-              <Input id="u-email" type="email" placeholder={company?.companyName ? `user@${company.companyName.toLowerCase().replace(/\s+/g, "")}.com` : "correo@empresa.com"} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="u-email">Email *</Label>
+                {company?.companyName && (
+                  <span className="text-xs text-muted-foreground">
+                    ej. user@{company.companyName.toLowerCase().replace(/\s+/g, "")}.com
+                  </span>
+                )}
+              </div>
+              <Input id="u-email" type="email" placeholder="correo@empresa.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="u-pass">{editing ? "Nueva contraseña (dejar vacío para mantener)" : "Contraseña *"}</Label>
-              <Input id="u-pass" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
+              <Input id="u-pass" type="password" placeholder="********" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
             </div>
             <div className="space-y-2">
               <Label>Rol *</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? "" })}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OWNER">Dueño</SelectItem>
