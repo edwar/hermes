@@ -4,7 +4,7 @@ import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
 function isAdminOrGod(role: string) {
-  return role === "ADMIN" || role === "GOD"
+  return role === "OWNER" || role === "ADMIN" || role === "GOD"
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

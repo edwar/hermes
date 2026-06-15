@@ -49,8 +49,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
-    return NextResponse.json({ error: "No autorizado para crear pedidos" }, { status: 403 })
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
   if (!session.user.companyId) {
     return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })

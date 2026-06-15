@@ -5,7 +5,7 @@ import { PurchaseOrdersTable } from "@/components/purchase-orders/purchase-order
 export default async function PurchaseOrdersPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
-  if (session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
     redirect("/")
   }
   return (

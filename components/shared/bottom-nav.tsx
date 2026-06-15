@@ -32,22 +32,22 @@ interface NavItem {
 }
 
 const allItems: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER", "CASHIER"] },
-  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["ADMIN", "CASHIER"] },
-  { href: "/sales", label: "Ventas", icon: Receipt, roles: ["ADMIN", "CASHIER"] },
-  { href: "/inventory", label: "Inventario", icon: Package, roles: ["ADMIN", "MANAGER"] },
-  { href: "/categories", label: "Categorías", icon: Tags, roles: ["ADMIN", "MANAGER"] },
-  { href: "/reports", label: "Reportes", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
-  { href: "/customers", label: "Clientes", icon: CircleUser, roles: ["ADMIN", "CASHIER"] },
-  { href: "/suppliers", label: "Proveedores", icon: Truck, roles: ["ADMIN"] },
-  { href: "/purchase-orders", label: "Compras", icon: PackageSearch, roles: ["ADMIN", "MANAGER"] },
-  { href: "/cajas", label: "Cajas", icon: Wallet, roles: ["ADMIN"] },
-  { href: "/settings", label: "Configuración", icon: Settings, roles: ["ADMIN"] },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["OWNER", "ADMIN", "MANAGER", "CASHIER"] },
+  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["OWNER", "ADMIN", "CASHIER"] },
+  { href: "/sales", label: "Ventas", icon: Receipt, roles: ["OWNER", "ADMIN", "CASHIER"] },
+  { href: "/inventory", label: "Inventario", icon: Package, roles: ["OWNER", "ADMIN", "MANAGER"] },
+  { href: "/categories", label: "Categorías", icon: Tags, roles: ["OWNER", "ADMIN", "MANAGER"] },
+  { href: "/reports", label: "Reportes", icon: BarChart3, roles: ["OWNER", "ADMIN", "MANAGER"] },
+  { href: "/customers", label: "Clientes", icon: CircleUser, roles: ["OWNER", "ADMIN", "CASHIER"] },
+  { href: "/suppliers", label: "Proveedores", icon: Truck, roles: ["OWNER", "ADMIN"] },
+  { href: "/purchase-orders", label: "Compras", icon: PackageSearch, roles: ["OWNER", "ADMIN", "MANAGER"] },
+  { href: "/cajas", label: "Cajas", icon: Wallet, roles: ["OWNER", "ADMIN"] },
+  { href: "/settings", label: "Configuración", icon: Settings, roles: ["OWNER", "ADMIN"] },
   { href: "/system-settings", label: "Config. Sistema", icon: Settings2, roles: ["GOD"] },
-  { href: "/users", label: "Usuarios", icon: Users, roles: ["ADMIN"] },
+  { href: "/users", label: "Usuarios", icon: Users, roles: ["OWNER", "ADMIN"] },
   { href: "/invites", label: "Invitaciones", icon: Mail, roles: ["GOD"] },
   { href: "/companies", label: "Empresas", icon: Building2, roles: ["GOD"] },
-  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: ["ADMIN", "MANAGER", "CASHIER"] },
+  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: ["OWNER", "ADMIN", "MANAGER", "CASHIER"] },
 ]
 
 interface BottomNavProps {

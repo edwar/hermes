@@ -5,7 +5,7 @@ import { SuppliersTable } from "@/components/suppliers/suppliers-table"
 export default async function SuppliersPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
-  if (session.user.role !== "ADMIN") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
     redirect("/")
   }
   return (

@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const role = session.user.role
-  if (role !== "GOD" && role !== "ADMIN") {
-    return NextResponse.json({ error: "Solo ADMIN/GOD pueden comprar créditos" }, { status: 403 })
+  if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") {
+    return NextResponse.json({ error: "Solo ADMIN/OWNER/GOD pueden comprar créditos" }, { status: 403 })
   }
 
   const companyId = session.user.companyId

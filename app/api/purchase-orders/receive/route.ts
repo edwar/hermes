@@ -7,7 +7,7 @@ import { companyScope } from "@/lib/company-scope"
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
     return NextResponse.json({ error: "No autorizado para recibir pedidos" }, { status: 403 })
   }
   if (!session.user.companyId) {

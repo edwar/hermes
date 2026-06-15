@@ -8,7 +8,7 @@ const createUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(["ADMIN", "MANAGER", "CASHIER"]),
+  role: z.enum(["OWNER", "ADMIN", "MANAGER", "CASHIER"]),
 })
 
 export async function GET() {
@@ -31,7 +31,7 @@ export async function GET() {
     return NextResponse.json(users)
   }
 
-  if (session.user.role === "ADMIN") {
+  if (session.user.role === "OWNER" || session.user.role === "ADMIN") {
     const users = await withPrismaRetry(
       () =>
         prisma.user.findMany({
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD" && session.user.role !== "ADMIN") {
+  if (session.user.role !== "GOD" && session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
@@ -63,8 +63,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  if (session.user.role === "ADMIN" && parsed.data.role === "ADMIN") {
-    return NextResponse.json({ error: "No tienes permiso para crear usuarios ADMIN" }, { status: 403 })
+  if (session.user.role === "ADMIN" && (parsed.data.role === "OWNER" || parsed.data.role === "ADMIN")) {
+    return NextResponse.json({ error: "No tienes permiso para crear usuarios OWNER o ADMIN" }, { status: 403 })
   }
 
   const existing = await withPrismaRetry(
@@ -98,7 +98,7 @@ export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD" && session.user.role !== "ADMIN") {
+  if (session.user.role !== "GOD" && session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
@@ -106,8 +106,8 @@ export async function PUT(req: NextRequest) {
   const { id, ...data } = body
 
   if (session.user.role === "ADMIN") {
-    if (data.role === "ADMIN") {
-      return NextResponse.json({ error: "No tienes permiso para asignar rol ADMIN" }, { status: 403 })
+    if (data.role === "OWNER" || data.role === "ADMIN") {
+      return NextResponse.json({ error: "No tienes permiso para asignar rol OWNER o ADMIN" }, { status: 403 })
     }
   }
 

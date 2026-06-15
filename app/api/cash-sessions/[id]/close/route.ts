@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 function isAdminOrGod(role: string) {
-  return role === "ADMIN" || role === "GOD"
+  return role === "OWNER" || role === "ADMIN" || role === "GOD"
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

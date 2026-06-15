@@ -7,7 +7,7 @@ import { companyScope } from "@/lib/company-scope"
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
     return NextResponse.json({ error: "No autorizado para ver proveedores" }, { status: 403 })
   }
 
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD") {
     return NextResponse.json({ error: "Solo administradores pueden crear proveedores" }, { status: 403 })
   }
 
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD") {
     return NextResponse.json({ error: "Solo administradores pueden actualizar proveedores" }, { status: 403 })
   }
 
@@ -116,7 +116,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD") {
+  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD") {
     return NextResponse.json({ error: "Solo administradores pueden eliminar proveedores" }, { status: 403 })
   }
 

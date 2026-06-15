@@ -21,7 +21,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (!session?.user || (session.user.role !== "ADMIN" && session.user.role !== "GOD")) {
+  if (!session?.user || (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD")) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
   if (!session.user.companyId) {

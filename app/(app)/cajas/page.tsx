@@ -22,7 +22,7 @@ async function fetchActiveSession() {
 
 export default function CajasPage() {
   const { data: sessionData } = useSession()
-  const isAdmin = sessionData?.user?.role === "ADMIN"
+  const isAdmin = sessionData?.user?.role === "OWNER" || sessionData?.user?.role === "ADMIN"
   const [openDialog, setOpenDialog] = useState(false)
   const [closeDialog, setCloseDialog] = useState(false)
   const [movementDialog, setMovementDialog] = useState(false)
