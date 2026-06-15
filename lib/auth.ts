@@ -67,6 +67,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async redirect({ url, baseUrl }) {
       const siteUrl = resolveSiteUrl()
       const target = siteUrl ?? baseUrl
+      // Si no hay url especifica, redirigir al dashboard
+      if (url === baseUrl || url === `${baseUrl}/` || url === `${baseUrl}/login`) {
+        return `${baseUrl}/dashboard`
+      }
       try {
         const parsed = new URL(url, baseUrl)
         const targetOrigin = new URL(target).origin

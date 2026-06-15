@@ -1,5 +1,5 @@
 {
-  "name": "Hermes POS",
+  "name": "Hermes",
   "short_name": "Hermes",
   "description": "Sistema POS y gestión de inventarios para tu negocio",
   "start_url": "/",
@@ -8,7 +8,10 @@
   "theme_color": "#18181b",
   "orientation": "portrait-primary",
   "lang": "es-CO",
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/icon.svg",

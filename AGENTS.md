@@ -33,7 +33,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 15. **Skeleton Loading States**: Cada ruta protegida debe tener su propio `loading.tsx` con un skeleton que **calque exactamente** la estructura visual de la página (grid cols, nº de cards, columnas de tabla, dimensiones). Al modificar el layout de cualquier página (cambiar título, añadir/quitar stat cards, modificar columnas de tabla, reordenar secciones), el `loading.tsx` correspondiente debe actualizarse para reflejar los cambios y evitar CLS (Cumulative Layout Shift). Usar únicamente el componente `Skeleton` de `@components/ui/skeleton` con clases de ancho (`w-*`) y alto (`h-*`) que coincidan con los elementos reales.
 
 <!-- BEGIN:business-model -->
-# Modelo de Negocio — Hermes POS
+# Modelo de Negocio — Hermes
 
 ## Propuesta de Valor
 - **Gratuito para el core del negocio**: POS, inventario, clientes, cajas, reportes, usuarios.

@@ -82,13 +82,13 @@ export async function POST(req: NextRequest) {
       const { Resend } = await import("resend")
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: process.env.EMAIL_FROM || "Hermes POS <noreply@hermespos.com>",
+        from: process.env.EMAIL_FROM || "Hermes <noreply@hermespos.com>",
         to: email,
-        subject: `Invitación para unirte a ${companyName.trim()} en Hermes POS`,
+        subject: `Invitación para unirte a ${companyName.trim()} en Hermes`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #c2410c;">¡Has sido invitado!</h2>
-            <p>Has sido invitado a unirte a <strong>${companyName.trim()}</strong> en Hermes POS.</p>
+            <p>Has sido invitado a unirte a <strong>${companyName.trim()}</strong> en Hermes.</p>
             <p>Para crear tu cuenta, haz clic en el siguiente enlace:</p>
             <p><a href="${inviteUrl}" style="display: inline-block; background-color: #c2410c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px;">Crear mi cuenta</a></p>
             <p>Este enlace expira en ${expiryHours} horas.</p>

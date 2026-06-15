@@ -22,7 +22,7 @@ import { LogOut, User, Menu } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
-  "/": "Dashboard",
+  "/dashboard": "Dashboard",
   "/pos": "Punto de Venta",
   "/inventory": "Inventario",
   "/categories": "Categorías",
@@ -61,7 +61,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     if (active) {
       setShowCloseDialog(true)
     } else {
-      signOut({ callbackUrl: "/login" })
+      signOut({ callbackUrl: "/" })
     }
   }
 
@@ -134,7 +134,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
       <CloseSessionDialog
         open={showCloseDialog}
         onOpenChange={setShowCloseDialog}
-        onSessionClosed={() => signOut({ callbackUrl: "/login" })}
+        onSessionClosed={() => signOut({ callbackUrl: "/" })}
       />
     </>
   )
