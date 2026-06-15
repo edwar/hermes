@@ -25,6 +25,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Zap, Download, Mail, RefreshCw, FileText, Loader2 } from "lucide-react"
 import { sileo } from "sileo"
+import { ExportCSVButton } from "@/components/shared/export-csv-button"
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   PENDING: { label: "Pendiente", variant: "secondary" },
@@ -187,6 +188,7 @@ export function ElectronicInvoicesTable() {
           <RefreshCw className="mr-2 size-4" />
           Actualizar
         </Button>
+        <ExportCSVButton report="electronic-invoices" />
       </div>
 
       {loading ? (
