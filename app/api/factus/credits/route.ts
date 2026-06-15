@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { notifyCreditRequested } from "@/lib/notifications"
 
 export async function GET() {
   const session = await auth()
@@ -47,10 +48,10 @@ export async function POST(req: NextRequest) {
         const company = await tx.company.update({
           where: { id: companyId },
           data: {
-            factusCreditBalance: { increment: quantity },
+            factusCreditPending: { increment: quantity },
             factusCreditTotal: { increment: quantity },
           },
-          select: { factusCreditBalance: true, factusCreditTotal: true },
+          select: { factusCreditPending: true, factusCreditTotal: true, factusCreditBalance: true },
         })
 
         await tx.factusCreditTransaction.create({
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
             type: "PURCHASE",
             amount: quantity,
             balanceAfter: company.factusCreditBalance,
-            notes: `Compra de ${quantity} créditos`,
+            notes: `Compra de ${quantity} créditos (pendiente de activación)`,
           },
         })
 
@@ -74,13 +75,15 @@ export async function POST(req: NextRequest) {
     action: "FACTUS_CREDITS_PURCHASED",
     entity: "Company",
     entityId: companyId,
-    metadata: { amount: quantity, balanceAfter: result.factusCreditBalance },
+    metadata: { amount: quantity, pending: result.factusCreditPending },
     req,
   })
 
+  notifyCreditRequested(companyId, quantity)
+
   return NextResponse.json({
-    message: `${quantity} crédito(s) agregado(s)`,
-    balance: result.factusCreditBalance,
+    message: `${quantity} crédito(s) agregado(s) a la cola de activación`,
+    pending: result.factusCreditPending,
     total: result.factusCreditTotal,
   })
 }

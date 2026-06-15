@@ -29,15 +29,14 @@ export default function GodDashboardPage() {
 
   useEffect(() => {
     if (session?.user?.role === "GOD") {
-      Promise.all([
-        fetch("/api/god/overview").then((r) => r.json()),
-        fetch("/api/companies").then((r) => r.json()),
+      Promise.allSettled([
+        fetch("/api/god/overview").then((r) => r.ok ? r.json() : null),
+        fetch("/api/companies").then((r) => r.ok ? r.json() : null),
       ])
-        .then(([ov, comps]) => {
-          setOverview(ov)
-          setCompanies(comps)
+        .then(([ovResult, compsResult]) => {
+          if (ovResult.status === "fulfilled") setOverview(ovResult.value)
+          if (compsResult.status === "fulfilled") setCompanies(compsResult.value ?? [])
         })
-        .catch(console.error)
         .finally(() => setLoading(false))
     } else if (session && session.user.role !== "GOD") {
       router.replace("/")
@@ -71,6 +70,33 @@ export default function GodDashboardPage() {
         <StatCard title="Créditos Vendidos" value={overview?.totalCreditsSold ?? 0} subtitle={`${overview?.totalCreditsRemaining ?? 0} disponibles`} icon={Coins} />
         <StatCard title="Ventas del Mes" value={formatCOP(overview?.monthSales?.total ?? 0)} subtitle={`${overview?.monthSales?.count ?? 0} tickets`} icon={ShoppingCart} />
       </div>
+
+      {companies.filter((c: any) => (c.factusCreditPending ?? 0) > 0).length > 0 && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Coins className="size-4 text-blue-500" />
+              Créditos pendientes de activación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {companies.filter((c: any) => (c.factusCreditPending ?? 0) > 0).map((c: any) => (
+              <div key={c.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                <div>
+                  <span className="font-medium">{c.name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">{c.nit || ""}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary">{c.factusCreditPending} pendientes</Badge>
+                  <Button size="sm" variant="outline" onClick={() => router.push(`/god-companies/${c.id}`)}>
+                    Revisar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {overview?.lowCreditCompanies?.length > 0 && (
         <Card className="border-amber-200 dark:border-amber-800">

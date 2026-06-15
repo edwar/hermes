@@ -33,10 +33,11 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role === "GOD") return NextResponse.json({ error: "GOD no puede modificar configuraciones" }, { status: 403 })
 
   const companyId = session.user.companyId ?? "default"
   const body = await req.json()
+
+  if (session.user.role === "GOD" && body.type !== "systemConfig") return NextResponse.json({ error: "GOD no puede modificar configuraciones de empresa" }, { status: 403 })
 
   if (body.type === "paymentMethod") {
     const { id, internalCode, name, factusPaymentForm, factusPaymentMethodCode, isActive } = body

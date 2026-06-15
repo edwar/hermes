@@ -24,6 +24,7 @@ import {
   Coins,
   History,
   Eye,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -50,6 +51,7 @@ const allItems: NavItem[] = [
   { href: "/system-settings", label: "Config. Sistema", icon: Settings2, roles: ["GOD"] },
   { href: "/factus/transactions", label: "Transacciones Factus", icon: Coins, roles: ["GOD"] },
   { href: "/audit-log", label: "Auditoría", icon: History, roles: ["GOD"] },
+  { href: "/notifications", label: "Notificaciones", icon: Bell, roles: ["GOD", "OWNER", "ADMIN"] },
   { href: "/users", label: "Usuarios", icon: Users, roles: ["OWNER", "ADMIN"] },
   { href: "/invites", label: "Invitaciones", icon: Mail, roles: ["GOD"] },
   { href: "/companies", label: "Empresas", icon: Building2, roles: ["GOD"] },

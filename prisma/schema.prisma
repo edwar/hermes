@@ -76,6 +76,7 @@ model Company {
   factusEconomicActivity  String?
   factusDv                String?
   factusCreditBalance     Int     @default(0)
+  factusCreditPending     Int     @default(0)
   factusCreditTotal       Int     @default(0)
   factusBlocked           Boolean @default(false)
 
@@ -129,6 +130,7 @@ model User {
   invitesCreated  CompanyInvite[]
   purchaseOrders  PurchaseOrder[]
   auditLogs       AuditLog[]
+  notifications   Notification[]
 
   @@unique([email, companyId])
 }
@@ -485,4 +487,20 @@ model AuditLog {
   @@index([createdAt])
   @@index([userId, createdAt])
   @@index([entity, entityId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String?
+  metadata  Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt, createdAt])
+  @@index([createdAt])
 }
