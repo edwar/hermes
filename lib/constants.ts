@@ -1,5 +1,5 @@
 export const TAX_RATE = 0.19
-export const APP_NAME = "Hermes POS"
+export const APP_NAME = "Hermes"
 export const STORE_NAME = "Mi Tienda"
 export const STORE_ADDRESS = "Dirección de la tienda"
 export const STORE_PHONE = "Teléfono"

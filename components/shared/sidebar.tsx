@@ -104,7 +104,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
               <Store className="size-5 text-white" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-sans text-sm font-bold text-sidebar-foreground">Hermes POS</span>
+              <span className="font-sans text-sm font-bold text-sidebar-foreground">Hermes</span>
               <span className="text-[11px] text-muted-foreground">Sistema de gestión</span>
             </div>
           </div>
@@ -144,7 +144,7 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
         </nav>
         <div className="border-t border-zinc-800 p-4">
           <p className="text-xs text-muted-foreground/40 leading-relaxed">
-            &copy; {new Date().getFullYear()} Hermes POS
+            &copy; {new Date().getFullYear()} Hermes
           </p>
         </div>
       </aside>

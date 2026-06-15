@@ -2,8 +2,8 @@ import Link from "next/link"
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-[#0B1120] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,79,110,0.12),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(245,158,11,0.06),transparent_50%)]" />
+    <div className="relative min-h-dvh overflow-hidden bg-primary text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-linear(ellipse_at_top_right,rgba(0,79,110,0.12),transparent_50%),radial-linear(ellipse_at_bottom_left,rgba(245,158,11,0.06),transparent_50%)]" />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.02]"
         style={{
@@ -18,26 +18,18 @@ export default function LandingPage() {
       `}</style>
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-12">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-[#004F6E] text-[10px] font-black text-white shadow-lg shadow-[#004F6E]/30">H</div>
+        <div className="flex items-center gap-1">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-[24px] font-black text-white shadow-lg shadow-secondary/30">H</div>
           <span className="text-sm font-bold tracking-tight text-white/90">ermes</span>
         </div>
-        <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white">Iniciar sesi&oacute;n</Link>
+        <Link href="/login" className="group relative rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white">Iniciar sesi&oacute;n</Link>
       </header>
 
       <main className="relative z-10 mx-auto flex min-h-[calc(100dvh-200px)] max-w-6xl flex-col items-center justify-center px-6 pb-20 pt-10 text-center sm:px-12">
         <div className="animate-slide-up max-w-3xl">
-          <div className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-[#004F6E]/30 bg-[#004F6E]/10 px-4 py-1.5 text-xs font-medium text-[#4A9EBD]">
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#4A9EBD]/40" />
-              <span className="relative inline-flex size-2 rounded-full bg-[#4A9EBD]" />
-            </span>
-            Sistema de facturaci&oacute;n electr&oacute;nica
-          </div>
-
           <h1 className="mb-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Tu negocio{" "}
-            <span className="bg-gradient-to-r from-[#004F6E] via-[#1A7A9E] to-[#4A9EBD] bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-secondary/80 via-tertiary to-secondary/90 bg-clip-text text-transparent">
               vuela
             </span>
             <br />
@@ -48,7 +40,7 @@ export default function LandingPage() {
             Punto de venta, facturaci&oacute;n electr&oacute;nica, inventario y m&aacute;s. Todo en un solo lugar, sin complicaciones.
           </p>
 
-          <Link href="/login" className="group relative inline-flex items-center gap-2 rounded-xl bg-[#004F6E] px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-[#004F6E]/30 transition-all hover:brightness-125">
+          <Link href="https://wa.me/573175227672?text=Hola,%20quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20Hermes" target="_blank" className="group relative inline-flex items-center gap-2 rounded-xl bg-secondary px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/30 transition-all hover:brightness-125">
             Comenzar
             <svg className="size-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -60,7 +52,7 @@ export default function LandingPage() {
           {[
             { value: "Gratis", label: "Core del negocio" },
             { value: "100%", label: "Online / Offline" },
-            { value: "DIAN", label: "Facturaci&oacute;n electr&oacute;nica" },
+            { value: "DIAN", label: "Facturación electrónica" },
             { value: "1 clic", label: "Puesta en marcha" },
           ].map((item) => (
             <div key={item.label}>
@@ -72,7 +64,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="relative z-10 border-t border-white/5 px-6 py-6 text-center text-xs text-white/30 sm:px-12">
-        Hermes POS &mdash; Hecho en Colombia
+        Hermes &mdash; Hecho en Colombia
       </footer>
     </div>
   )

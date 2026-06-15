@@ -33,7 +33,7 @@ export default function SystemSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Configuración del Sistema</h1>
-        <p className="text-sm text-muted-foreground">Ajustes globales para el sistema Hermes POS</p>
+        <p className="text-sm text-muted-foreground">Ajustes globales para el sistema Hermes</p>
       </div>
 
       <SystemConfigSettings />
