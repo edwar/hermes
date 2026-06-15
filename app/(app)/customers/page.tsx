@@ -5,6 +5,6 @@ import { CustomersTable } from "@/components/inventory/customers-table"
 export default async function CustomersPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
-  if (session.user.role === "GOD") redirect("/system-settings")
+  if (session.user.role === "GOD") redirect("/god-dashboard")
   return <CustomersTable />
 }

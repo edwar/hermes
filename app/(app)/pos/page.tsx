@@ -81,7 +81,7 @@ export default function POSPage() {
   const [returnSaleId, setReturnSaleId] = useState<string | undefined>()
 
   useEffect(() => {
-    if (posSession?.user?.role === "GOD") router.replace("/system-settings")
+    if (posSession?.user?.role === "GOD") router.replace("/god-dashboard")
   }, [posSession, router])
 
   if (posSession?.user?.role === "GOD") return null
