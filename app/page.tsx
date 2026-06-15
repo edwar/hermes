@@ -1,0 +1,155 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+
+const GRADIENT = "bg-gradient-to-r from-[#F59E0B] via-[#D97706] to-[#B45309] bg-clip-text text-transparent"
+
+export default function LandingPage() {
+  const router = useRouter()
+  const { data: session } = useSession()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (session?.user) {
+      router.replace("/dashboard")
+    }
+  }, [session, router])
+
+  if (session?.user) return null
+
+  return (
+    <div className="relative min-h-dvh overflow-hidden bg-[#0B1120] text-white selection:bg-amber-500/30">
+      {/* Fondo con gradiente animado */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(245,158,11,0.08),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(0,150,136,0.06),transparent_50%)]" />
+
+      {/* Patrón geométrico sutil */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Círculos decorativos flotantes */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className={`absolute -top-40 -right-40 size-96 rounded-full border border-amber-500/10 ${mounted ? "opacity-100" : "opacity-0"} transition-opacity duration-1000`}
+          style={{ animation: "float 20s ease-in-out infinite" }}
+        />
+        <div
+          className={`absolute -bottom-60 -left-60 size-[500px] rounded-full border border-teal-500/10 ${mounted ? "opacity-100" : "opacity-0"} transition-opacity duration-1000 delay-300`}
+          style={{ animation: "float 25s ease-in-out infinite reverse" }}
+        />
+        <div
+          className={`absolute top-1/3 left-1/4 size-2 rounded-full bg-amber-400/20 ${mounted ? "opacity-100" : "opacity-0"} transition-opacity duration-1000 delay-500`}
+          style={{ animation: "pulse 4s ease-in-out infinite" }}
+        />
+        <div
+          className={`absolute top-1/2 right-1/4 size-1.5 rounded-full bg-teal-400/20 ${mounted ? "opacity-100" : "opacity-0"} transition-opacity duration-1000 delay-700`}
+          style={{ animation: "pulse 5s ease-in-out infinite 1s" }}
+        />
+      </div>
+
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0) rotate(0deg); }
+          25% { transform: translate(30px, -30px) rotate(3deg); }
+          50% { transform: translate(-20px, -40px) rotate(-2deg); }
+          75% { transform: translate(40px, 20px) rotate(4deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.2; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.5); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.8s ease-out forwards;
+        }
+      `}</style>
+
+      {/* Header */}
+      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-12">
+        <div className="flex items-center gap-2">
+          <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-[10px] font-black text-white shadow-lg shadow-amber-500/20">
+            H
+          </div>
+          <span className="text-sm font-bold tracking-tight text-white/90">ermes</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <a
+            href="/login"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white"
+          >
+            Iniciar sesión
+          </a>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <main className="relative z-10 mx-auto flex min-h-[calc(100dvh-200px)] max-w-6xl flex-col items-center justify-center px-6 pb-20 pt-10 text-center sm:px-12">
+        <div className={`max-w-3xl ${mounted ? "animate-slide-up" : "opacity-0"}`}>
+          <div className="mb-8 inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/5 px-4 py-1.5 text-xs font-medium text-amber-400/80">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-400/40" />
+              <span className="relative inline-flex size-2 rounded-full bg-amber-400" />
+            </span>
+            Sistema de facturación electrónica
+          </div>
+
+          <h1 className="mb-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
+            Tu negocio{" "}
+            <span className={GRADIENT}>vuela</span>
+            <br />
+            con Hermes
+          </h1>
+
+          <p className="mx-auto mb-10 max-w-xl text-base leading-relaxed text-white/50 sm:text-lg">
+            Punto de venta, facturación electrónica, inventario y más.
+            Todo en un solo lugar, sin complicaciones.
+          </p>
+
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <a
+              href="/login"
+              className="group relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:brightness-110"
+            >
+              Comenzar
+              <svg className="size-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Métricas */}
+        <div className={`mt-20 grid w-full max-w-3xl grid-cols-2 gap-6 border-t border-white/5 pt-10 text-center sm:grid-cols-4 ${mounted ? "animate-slide-up" : "opacity-0"}`} style={{ animationDelay: "0.3s" }}>
+          {[
+            { value: "Gratis", label: "Core del negocio" },
+            { value: "100%", label: "Online / Offline" },
+            { value: "DIAN", label: "Facturación electrónica" },
+            { value: "1 clic", label: "Puesta en marcha" },
+          ].map((item) => (
+            <div key={item.label}>
+              <p className="text-lg font-bold text-white/90">{item.value}</p>
+              <p className="mt-0.5 text-xs text-white/40">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/5 px-6 py-6 text-center text-xs text-white/30 sm:px-12">
+        Hermes POS &mdash; Hecho en Colombia
+      </footer>
+    </div>
+  )
+}

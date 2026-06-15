@@ -6,7 +6,7 @@ export default async function PurchaseOrdersPage() {
   const session = await auth()
   if (!session?.user) redirect("/login")
   if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
-    redirect("/")
+    redirect("/dashboard")
   }
   return (
     <div className="space-y-6">

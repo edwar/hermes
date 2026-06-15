@@ -22,7 +22,7 @@ import { LogOut, User, Menu } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
-  "/": "Dashboard",
+  "/dashboard": "Dashboard",
   "/pos": "Punto de Venta",
   "/inventory": "Inventario",
   "/categories": "Categorías",

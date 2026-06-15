@@ -10,7 +10,7 @@ export default async function InvitesPage() {
   }
 
   if (session.user.role !== "GOD") {
-    redirect("/")
+    redirect("/dashboard")
   }
 
   return <InvitesClient />
