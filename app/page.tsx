@@ -29,7 +29,7 @@ export default function LandingPage() {
         <div className="animate-slide-up max-w-3xl">
           <h1 className="mb-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Tu negocio{" "}
-            <span className="bg-linear-to-r from-secondary/80 via-tertiary to-secondary/90 bg-clip-text text-transparent">
+            <span className="text-secondary">
               vuela
             </span>
             <br />
