@@ -3,8 +3,8 @@ import { ThemeToggle } from "@/components/shared/theme-toggle"
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-primary text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-linear(ellipse_at_top_right,rgba(0,79,110,0.12),transparent_50%),radial-linear(ellipse_at_bottom_left,rgba(245,158,11,0.06),transparent_50%)]" />
+    <div className="relative min-h-dvh overflow-hidden bg-[#0B1120] text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,79,110,0.12),transparent_50%),radial-gradient(ellipse_at_bottom_left,rgba(245,158,11,0.06),transparent_50%)]" />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.02]"
         style={{
@@ -20,7 +20,7 @@ export default function LandingPage() {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-12">
         <div className="flex items-center gap-1">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-[24px] font-black text-white shadow-lg shadow-secondary/30">H</div>
+          <div className="flex size-8 items-center justify-center rounded-lg bg-[#004F6E] text-[10px] font-black text-white shadow-lg shadow-[#004F6E]/30">H</div>
           <span className="text-sm font-bold tracking-tight text-white/90">ermes</span>
         </div>
         <div className="flex items-center gap-2">
@@ -33,7 +33,7 @@ export default function LandingPage() {
         <div className="animate-slide-up max-w-3xl">
           <h1 className="mb-6 text-4xl font-black leading-[1.1] tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Tu negocio{" "}
-            <span className="text-secondary">
+            <span className="bg-gradient-to-r from-[#004F6E] via-[#1A7A9E] to-[#4A9EBD] bg-clip-text text-transparent">
               vuela
             </span>
             <br />
@@ -44,7 +44,7 @@ export default function LandingPage() {
             Punto de venta, facturaci&oacute;n electr&oacute;nica, inventario y m&aacute;s. Todo en un solo lugar, sin complicaciones.
           </p>
 
-          <Link href="https://wa.me/573175227672?text=Hola,%20quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20Hermes" target="_blank" className="group relative inline-flex items-center gap-2 rounded-xl bg-secondary px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-primary/30 transition-all hover:brightness-125">
+          <Link href="https://wa.me/573175227672?text=Hola,%20quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20Hermes" target="_blank" className="group relative inline-flex items-center gap-2 rounded-xl bg-[#004F6E] px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-[#004F6E]/30 transition-all hover:brightness-125">
             Comenzar
             <svg className="size-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
