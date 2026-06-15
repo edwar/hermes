@@ -49,6 +49,14 @@ interface UserForm {
   role: string
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  OWNER: "Dueño",
+  ADMIN: "Gerente",
+  MANAGER: "Gestor",
+  CASHIER: "Cajero",
+  GOD: "Super Admin",
+}
+
 function createEmptyForm(): UserForm {
   return { name: "", email: "", password: "", role: "" }
 }
@@ -217,7 +225,7 @@ export default function UsersPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="u-name">Nombre *</Label>
-              <Input id="u-name" placeholder="Nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+              <Input id="u-name" placeholder="Nombre completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required autoComplete="hermes-name" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -228,17 +236,19 @@ export default function UsersPage() {
                   </span>
                 )}
               </div>
-              <Input id="u-email" type="email" placeholder="correo@empresa.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} />
+              <Input id="u-email" type="email" placeholder="correo@empresa.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required disabled={!!editing} autoComplete="hermes-email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="u-pass">{editing ? "Nueva contraseña (dejar vacío para mantener)" : "Contraseña *"}</Label>
-              <Input id="u-pass" type="password" placeholder="********" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
+              <Input id="u-pass" type="password" placeholder="********" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} autoComplete="new-password" />
             </div>
             <div className="space-y-2">
               <Label>Rol *</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? "" })}>
+              <Select key={editing ? `edit-${editing.id}` : "create"} value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? "" })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar rol" />
+                  <SelectValue placeholder="Seleccionar rol">
+                    {form.role ? ROLE_LABELS[form.role] ?? form.role : null}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OWNER">Dueño</SelectItem>
