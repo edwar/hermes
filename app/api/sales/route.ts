@@ -5,6 +5,7 @@ import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
 import { factusRequest, getNumberingRangeByDocumentType, listPendingBills, sendRadianEvent } from "@/lib/factus/client"
 import { logAudit } from "@/lib/audit"
+import { notifyLowCredit } from "@/lib/notifications"
 
 interface FactusResponse {
   id?: number
@@ -310,6 +311,8 @@ export async function POST(req: NextRequest) {
               notes: `FE ${billNumber}`,
             },
           })
+
+          await notifyLowCredit(companyId, (company.factusCreditBalance ?? 0) - 1)
 
           await logAudit({
             userId: session.user.id,

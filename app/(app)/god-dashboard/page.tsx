@@ -29,15 +29,14 @@ export default function GodDashboardPage() {
 
   useEffect(() => {
     if (session?.user?.role === "GOD") {
-      Promise.all([
-        fetch("/api/god/overview").then((r) => r.json()),
-        fetch("/api/companies").then((r) => r.json()),
+      Promise.allSettled([
+        fetch("/api/god/overview").then((r) => r.ok ? r.json() : null),
+        fetch("/api/companies").then((r) => r.ok ? r.json() : null),
       ])
-        .then(([ov, comps]) => {
-          setOverview(ov)
-          setCompanies(comps)
+        .then(([ovResult, compsResult]) => {
+          if (ovResult.status === "fulfilled") setOverview(ovResult.value)
+          if (compsResult.status === "fulfilled") setCompanies(compsResult.value ?? [])
         })
-        .catch(console.error)
         .finally(() => setLoading(false))
     } else if (session && session.user.role !== "GOD") {
       router.replace("/")

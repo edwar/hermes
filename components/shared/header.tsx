@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { OnlineBadge } from "@/components/shared/online-badge"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
+import { NotificationBell } from "@/components/shared/notification-bell"
 import { CloseSessionDialog } from "@/components/cajas/close-session-dialog"
 import { LogOut, User, Menu } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
@@ -80,6 +81,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         </div>
         <div className="flex items-center gap-1 sm:gap-4">
           <OnlineBadge />
+          <NotificationBell />
           <div className="hidden sm:block">
             <ThemeToggle />
           </div>
