@@ -92,9 +92,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="hidden sm:flex flex-col items-start leading-tight max-w-36">
-                <span className="text-sm font-medium truncate">{session?.user?.name}</span>
-                <span className="text-[11px] text-muted-foreground capitalize">{session?.user?.role?.toLowerCase()}</span>
+              <div className="hidden sm:flex flex-col items-start leading-tight max-w-36 min-w-0 w-full">
+                <span className="block w-full text-sm font-medium truncate">{session?.user?.name}</span>
+                <span className="block w-full text-left text-[11px] text-muted-foreground capitalize truncate">{session?.user?.role?.toLowerCase()}</span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -106,9 +106,9 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                         {initials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium">{session?.user?.name}</span>
-                      <span className="text-xs text-muted-foreground">{session?.user?.email}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium truncate">{session?.user?.name}</span>
+                      <span className="text-xs text-muted-foreground truncate">{session?.user?.email}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
