@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 
 export default function LandingPage() {
   return (
@@ -22,7 +23,10 @@ export default function LandingPage() {
           <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-[24px] font-black text-white shadow-lg shadow-secondary/30">H</div>
           <span className="text-sm font-bold tracking-tight text-white/90">ermes</span>
         </div>
-        <Link href="/login" className="group relative rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white">Iniciar sesi&oacute;n</Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link href="/login" className="group relative rounded-lg px-4 py-2 text-sm font-medium text-white/70 transition-colors hover:text-white">Iniciar sesi&oacute;n</Link>
+        </div>
       </header>
 
       <main className="relative z-10 mx-auto flex min-h-[calc(100dvh-200px)] max-w-6xl flex-col items-center justify-center px-6 pb-20 pt-10 text-center sm:px-12">

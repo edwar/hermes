@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/auth/login-form"
+import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { APP_NAME } from "@/lib/constants"
 import { Store } from "lucide-react"
 
@@ -30,7 +31,10 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-background relative">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
         <LoginForm />
       </div>
     </div>
