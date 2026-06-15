@@ -80,11 +80,12 @@ export async function POST(req: NextRequest) {
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12)
+  const { password: _, ...userData } = parsed.data
   const user = await withPrismaRetry(
     () =>
       prisma.user.create({
         data: {
-          ...parsed.data,
+          ...userData,
           passwordHash,
           companyId: session.user.companyId ?? undefined,
         },

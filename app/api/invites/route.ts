@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     entity: "CompanyInvite", entityId: invite.id, metadata: { companyName: invite.companyName }, req,
   })
 
-  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/register?token=${token}${email ? `&email=${encodeURIComponent(email)}` : ""}`
+  const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/register?token=${token}${email ? `&email=${encodeURIComponent(email)}` : ""}`
 
   if (email && process.env.RESEND_API_KEY) {
     try {
