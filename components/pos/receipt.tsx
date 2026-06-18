@@ -20,6 +20,7 @@ interface ReceiptProps {
       unitPrice: number
       subtotal: number
       product: { name: string; barcode?: string | null }
+      weightInGrams?: number | null
     }>
   }
   customerName?: string
@@ -95,8 +96,17 @@ export function Receipt({ sale, customerName }: ReceiptProps) {
           {sale.items.map((item, i) => (
             <tr key={i}>
               <td className="pr-2">{item.product.name}</td>
-              <td className="px-1 text-right font-mono">{item.quantity}</td>
-              <td className="px-1 text-right font-mono">{formatCOP(Number(item.unitPrice))}</td>
+              <td className="px-1 text-right font-mono">
+                {item.weightInGrams
+                  ? item.weightInGrams >= 1000
+                    ? (item.weightInGrams / 1000).toFixed(3).replace(/\.?0+$/, "") + " kg"
+                    : item.weightInGrams + " g"
+                  : item.quantity
+                }
+              </td>
+              <td className="px-1 text-right font-mono">
+                {item.weightInGrams ? formatCOP(Number(item.unitPrice)) + "/kg" : formatCOP(Number(item.unitPrice))}
+              </td>
               <td className="pl-1 text-right font-mono">{formatCOP(Number(item.subtotal))}</td>
             </tr>
           ))}

@@ -124,7 +124,14 @@ export function SaleDetail({ open, onOpenChange, sale }: SaleDetailProps) {
                 {(sale.items ?? []).map((item: any) => (
                   <tr key={item.id} className="border-b last:border-0">
                     <td className="px-3 py-2">{item.product.name}</td>
-                    <td className="px-3 py-2 text-right font-mono tabular-nums">{item.quantity}</td>
+                    <td className="px-3 py-2 text-right font-mono tabular-nums">
+                      {item.weightInGrams
+                        ? item.weightInGrams >= 1000
+                          ? (item.weightInGrams / 1000).toFixed(3).replace(/\.?0+$/, "") + " kg"
+                          : item.weightInGrams + " g"
+                        : item.quantity
+                      }
+                    </td>
                     <td className="px-3 py-2 text-right font-mono tabular-nums font-medium">
                       {new Intl.NumberFormat("es-CO", {
                         style: "currency",

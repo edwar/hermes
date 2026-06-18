@@ -14,6 +14,7 @@ interface ReceiptData {
     quantity: number
     unitPrice: number
     subtotal: number
+    weightInGrams?: number | null
   }>
   customerName?: string
   storeSettings?: {
@@ -136,7 +137,9 @@ export function buildEscposReceipt(data: ReceiptData): Uint8Array {
 
   for (const item of data.items) {
     const name = item.name.slice(0, 16).padEnd(16)
-    const qty = String(item.quantity).padStart(4)
+    const qty = item.weightInGrams
+      ? (item.weightInGrams >= 1000 ? (item.weightInGrams / 1000).toFixed(2) + "kg" : item.weightInGrams + "g").padStart(4)
+      : String(item.quantity).padStart(4)
     const total = formatCOP(Number(item.subtotal)).padStart(8)
     bytes.push(...line(`${name} ${qty} ${total}`))
   }
