@@ -526,15 +526,15 @@ El orden sigue el flujo natural de uso del sistema:
 
 ## 🧹 Cleanup por Clip (Volver a Grabar)
 
-Si un clip sale mal y necesitas volver a grabarlo, ejecuta el cleanup correspondiente para borrar los datos creados en ese clip. Los comandos usan `curl` contra la API local (`http://localhost:3000`). Ajusta la URL si tu entorno es otro.
+Si un clip sale mal y necesitas volver a grabarlo, ejecuta el cleanup correspondiente para borrar los datos creados en ese clip. Los comandos usan `curl` contra la API de producción (`https://hermes.cognilab.dev`).
 
 ### Antes de empezar: datos base necesarios
 Crea un producto y un cliente de prueba que usarás en múltiples clips:
 ```bash
 # Cliente de prueba (para clips 6, 9, 10, 11, 12)
-curl -s -X POST http://localhost:3000/api/customers \
+curl -s -X POST https://hermes.cognilab.dev/api/customers \
   -H "Content-Type: application/json" \
-  -b <(curl -s -c - http://localhost:3000/api/auth/session) \
+  -b <(curl -s -c - https://hermes.cognilab.dev/api/auth/session) \
   -d '{"name":"Cliente Demo","phone":"3001234567"}'
 
 # Producto unitario de prueba (para clips 5, 9, 11)
