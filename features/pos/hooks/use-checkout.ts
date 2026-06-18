@@ -14,7 +14,7 @@ export function useCheckout() {
 
   return useMutation({
     mutationFn: async (data: CreateSaleInput) => {
-      const localId = `offline-${crypto.randomUUID()}`
+      const localId = crypto.randomUUID()
 
       const result = await apiFetch<Record<string, unknown>>("/api/sales", {
         method: "POST",

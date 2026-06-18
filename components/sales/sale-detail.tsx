@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Printer } from "lucide-react"
+import { Printer, Copy } from "lucide-react"
 
 interface SaleDetailProps {
   open: boolean
@@ -56,8 +56,18 @@ export function SaleDetail({ open, onOpenChange, sale }: SaleDetailProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {sale.isReturn ? "Devolución" : "Venta"} #{sale.localId ?? sale.id.slice(0, 8)}
+          <DialogTitle className="flex items-center gap-2 min-w-0">
+            <span className="truncate">
+              {sale.isReturn ? "Devolución" : "Venta"} #{sale.localId ?? sale.id.slice(0, 8)}
+            </span>
+            <button
+              type="button"
+              className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+              title="Copiar ID completo"
+              onClick={() => navigator.clipboard.writeText(sale.localId ?? sale.id)}
+            >
+              <Copy className="size-3.5" />
+            </button>
           </DialogTitle>
           <DialogDescription>
             {new Date(sale.createdAt).toLocaleDateString("es", {
