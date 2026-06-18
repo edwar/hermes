@@ -8,6 +8,7 @@ import { formatCOP } from "@/lib/utils"
 import { TAX_RATE } from "@/lib/constants"
 import { Trash2, Minus, Plus, ShoppingCart, Scale } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
+import { ScaleInput } from "@/components/pos/scale-input"
 
 interface CartProps {
   items: CartItem[]
@@ -177,20 +178,12 @@ function CartItemRow({
       </div>
       <div className="flex items-center justify-between gap-2">
         {item.sellByWeight && onUpdateWeight ? (
-          <div className="flex items-center gap-1.5">
-            <Input
-              type="number"
-              min="1"
-              step={item.weightUnit === "g" ? "1" : "0.1"}
-              value={item.weightUnit === "kg" ? Math.round((item.weightInGrams ?? 0) / 10) / 100 : item.weightInGrams ?? 0}
-              onChange={(e) => {
-                const val = parseFloat(e.target.value) || 0
-                const grams = item.weightUnit === "kg" ? Math.round(val * 1000) : Math.round(val)
-                onUpdateWeight(item.productId, grams)
-              }}
-              className="h-8 w-20 text-sm text-center font-mono"
+          <div className="flex-1">
+            <ScaleInput
+              weightUnit={item.weightUnit ?? "g"}
+              weightInGrams={item.weightInGrams ?? 0}
+              onWeightChange={(grams) => onUpdateWeight(item.productId, grams)}
             />
-            <span className="text-xs text-muted-foreground">{item.weightUnit}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1">
