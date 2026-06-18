@@ -198,8 +198,14 @@ export function SalesTable() {
             <TableBody>
               {sales.map((s: any) => (
                 <TableRow key={s.id} className={s.isSynced === false ? "opacity-70" : undefined}>
-                  <TableCell className="font-mono text-xs text-muted-foreground">
-                    {s.localId?.startsWith("offline-") ? s.localId.slice(0, 12) : (s.localId ?? s.id.slice(0, 8))}
+                  <TableCell className="font-mono text-xs text-muted-foreground max-w-24">
+                    <span
+                      className="block truncate cursor-pointer hover:text-foreground transition-colors"
+                      title="Copiar ID"
+                      onClick={() => navigator.clipboard.writeText(s.localId ?? s.id)}
+                    >
+                      {s.localId ?? s.id.slice(0, 8)}
+                    </span>
                     {s.isSynced === false && (
                       <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-normal">
                         Pendiente

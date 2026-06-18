@@ -29,6 +29,9 @@ export async function GET(
           user: true,
           customer: true,
           electronicInvoice: includeElectronicInvoice || false,
+          returns: {
+            include: { items: true },
+          },
         },
       }),
     "sales:get-by-id"

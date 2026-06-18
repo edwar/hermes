@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatCOP } from "@/lib/utils"
 import { apiFetch } from "@/lib/api-client"
-import { Search, RotateCcw, Minus, Plus, Loader2, Zap } from "lucide-react"
+import { Search, RotateCcw, Minus, Plus, Loader2, Zap, AlertTriangle } from "lucide-react"
 import { sileo } from "sileo"
 
 interface ReturnItem {
@@ -53,15 +53,27 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
       }
       setSelectedSale(sale)
       setSearchError("")
+
+      const returnedQtyPerProduct: Record<string, number> = {}
+      for (const ret of sale.returns ?? []) {
+        for (const retItem of ret.items ?? []) {
+          returnedQtyPerProduct[retItem.productId] = (returnedQtyPerProduct[retItem.productId] ?? 0) + retItem.quantity
+        }
+      }
+
       setReturnItems(
-        sale.items.map((item: any) => ({
-          productId: item.productId,
-          productName: item.product.name,
-          quantity: 0,
-          maxQuantity: item.quantity,
-          unitPrice: item.unitPrice,
-          subtotal: 0,
-        }))
+        sale.items.map((item: any) => {
+          const alreadyReturned = returnedQtyPerProduct[item.productId] ?? 0
+          const available = Math.max(0, item.quantity - alreadyReturned)
+          return {
+            productId: item.productId,
+            productName: item.product.name,
+            quantity: 0,
+            maxQuantity: available,
+            unitPrice: item.unitPrice,
+            subtotal: 0,
+          }
+        })
       )
     },
     onError: (err: Error) => {
@@ -193,12 +205,27 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
 
             <div className="flex-shrink-0 max-h-48 overflow-y-auto border rounded-lg">
               <div className="p-2 space-y-2">
-                {returnItems.map((item) => (
-                  <div key={item.productId} className="flex items-center gap-3 rounded-lg border p-2">
+                {returnItems.map((item) => {
+                  const exhausted = item.maxQuantity === 0
+                  return (
+                  <div key={item.productId} className={`flex items-center gap-3 rounded-lg border p-2 ${exhausted ? "opacity-40 bg-muted/30" : ""}`}>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.productName}</p>
+                      <div className="flex items-center gap-1.5">
+                        {exhausted && <AlertTriangle className="size-3 text-muted-foreground shrink-0" />}
+                        <p className={`text-sm font-medium truncate ${exhausted ? "text-muted-foreground line-through" : ""}`}>
+                          {item.productName}
+                        </p>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         <span className="font-mono">{formatCOP(item.unitPrice)}</span> c/u
+                        {!exhausted && (
+                          <span className="ml-2 text-[10px] text-muted-foreground/60">
+                            ({item.maxQuantity} disponible{item.maxQuantity !== 1 ? "s" : ""})
+                          </span>
+                        )}
+                        {exhausted && (
+                          <span className="ml-2 text-[10px] text-destructive/70">agotado</span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
@@ -206,6 +233,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
                         variant="ghost"
                         size="icon"
                         className="size-6"
+                        disabled={item.quantity === 0 || exhausted}
                         onClick={() => updateQuantity(item.productId, -1)}
                       >
                         <Minus className="size-2.5" />
@@ -217,6 +245,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
                         variant="ghost"
                         size="icon"
                         className="size-6"
+                        disabled={item.quantity >= item.maxQuantity || exhausted}
                         onClick={() => updateQuantity(item.productId, 1)}
                       >
                         <Plus className="size-2.5" />
@@ -226,7 +255,8 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
                       {formatCOP(item.subtotal)}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
