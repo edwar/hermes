@@ -17,6 +17,7 @@ export interface PrintData {
     quantity: number
     unitPrice: number
     subtotal: number
+    weightInGrams?: number | null
   }>
   customerName?: string
   storeSettings?: {
@@ -218,13 +219,23 @@ function buildBrowserReceiptHtml(data: PrintData): string {
 
   const itemsHtml = data.items
     .map(
-      (item) => `
+      (item) => {
+        const qtyDisplay = item.weightInGrams
+          ? item.weightInGrams >= 1000
+            ? (item.weightInGrams / 1000).toFixed(3).replace(/\.?0+$/, "") + " kg"
+            : item.weightInGrams + " g"
+          : item.quantity
+        const priceDisplay = item.weightInGrams
+          ? formatCopUtil(Number(item.unitPrice)) + "/kg"
+          : formatCopUtil(Number(item.unitPrice))
+        return `
     <tr>
       <td>${escapeHtml(item.name)}</td>
-      <td class="text-right font-mono">${item.quantity}</td>
-      <td class="text-right font-mono">${formatCopUtil(Number(item.unitPrice))}</td>
+      <td class="text-right font-mono">${qtyDisplay}</td>
+      <td class="text-right font-mono">${priceDisplay}</td>
       <td class="text-right font-mono">${formatCopUtil(Number(item.subtotal))}</td>
     </tr>`
+      }
     )
     .join("")
 
