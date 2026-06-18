@@ -50,14 +50,29 @@ Rápido, limpio y sin complicaciones."
 
 ---
 
-## Clip 4 — Inventario y Categorías
+## Clip 4 — Productos por Peso
+
+**Visual:** POS mostrando un producto por peso (ej. arroz, tomates), input de peso, báscula conectada
+
+**Audio:**
+"¿Vendes arroz, frutas o verduras? Hermes también los maneja.
+
+Marca un producto como 'Vender por peso' en el inventario. En el POS, en vez de cantidad, verás un campo de peso.
+
+Escribe el peso directamente o conecta una báscula por USB. El sistema lee el peso automáticamente y calcula el total.
+
+Productos por peso con control de stock en gramos. Así de fácil."
+
+---
+
+## Clip 5 — Inventario y Categorías
 
 **Visual:** Pantalla de inventario + categorías
 
 **Audio:**
 "Gestiona tu inventario al detalle.
 
-Crea productos con nombre, código de barras, precio de compra, margen de ganancia y stock mínimo.
+Crea productos unitarios o por peso, con código de barras, precio de compra y margen de ganancia.
 
 Organízalos por categorías y recibe alertas cuando un producto esté por debajo del mínimo.
 
@@ -65,7 +80,7 @@ Todo sincronizado con el POS para que nunca vendas algo sin stock."
 
 ---
 
-## Clip 5 — Ventas e Historial
+## Clip 6 — Ventas e Historial
 
 **Visual:** Lista de ventas + detalle de venta
 
@@ -74,13 +89,13 @@ Todo sincronizado con el POS para que nunca vendas algo sin stock."
 
 Filtra por fecha, método de pago o cliente. Ve el detalle de cada venta: productos, subtotales, impuestos.
 
-¿Necesitas reimprimir un ticket? Un clic y listo.
+Si vendiste por peso, ves exactamente los gramos o kilos vendidos.
 
-Perfecto para cuadrar caja al final del día."
+¿Necesitas reimprimir un ticket? Un clic y listo."
 
 ---
 
-## Clip 6 — Facturación Electrónica
+## Clip 7 — Facturación Electrónica
 
 **Visual:** Pantalla de facturas electrónicas + detalle
 
@@ -95,7 +110,7 @@ Olvídate del papeleo y cumple con la DIAN automáticamente."
 
 ---
 
-## Clip 7 — Clientes
+## Clip 8 — Clientes
 
 **Visual:** Lista de clientes + formulario de creación
 
@@ -110,7 +125,7 @@ Ideal para negocios B2B que necesitan facturación con todos los datos fiscales.
 
 ---
 
-## Clip 8 — Compras y Proveedores
+## Clip 9 — Compras y Proveedores
 
 **Visual:** Lista de proveedores + orden de compra
 
@@ -125,7 +140,7 @@ No más hojas de cálculo ni pedidos perdidos."
 
 ---
 
-## Clip 9 — Cajas
+## Clip 10 — Cajas
 
 **Visual:** Pantalla de cajas + apertura/cierre de sesión
 
@@ -140,7 +155,7 @@ Perfecto para tener pista de auditoría clara y evitar desviaciones."
 
 ---
 
-## Clip 10 — Reportes
+## Clip 11 — Reportes
 
 **Visual:** Pantalla de reportes (ventas, productos, métodos de pago)
 
@@ -155,22 +170,25 @@ Datos claros para hacer crecer tu negocio."
 
 ---
 
-## Clip 11 — Usuarios y Roles
+## Clip 12 — Usuarios y Roles
 
 **Visual:** Pantalla de usuarios + formulario de creación
 
 **Audio:**
 "Define quién hace qué en tu negocio.
 
-Crea usuarios con roles específicos: Dueño, Gerente, Administrador o Cajero.
+Crea usuarios con roles específicos. Cada rol ve solo lo que necesita:
 
-Cada rol tiene acceso solo a lo que necesita. ¿Tu cajero no debe ver compras? Hecho.
+— El Cajero usa el POS, ve ventas y clientes. Nada más.
+— El Gestor ve reportes, inventario y compras. Sin caja ni usuarios.
+— El Gerente administra el negocio. Acceso a casi todo.
+— El Dueño tiene control total sobre su empresa.
 
-Control de acceso granular para mantener tu negocio seguro."
+Control de acceso granular para mantener tu negocio seguro y ordenado."
 
 ---
 
-## Clip 12 — Configuración
+## Clip 13 — Configuración
 
 **Visual:** Pantalla de configuración de la empresa
 
@@ -185,7 +203,7 @@ Todo configurable en minutos."
 
 ---
 
-## Clip 13 — Stock y Movimientos
+## Clip 14 — Stock y Movimientos
 
 **Visual:** Pantalla de movimientos de stock
 
@@ -200,27 +218,79 @@ Sabrás exactamente qué pasó y cuándo."
 
 ---
 
-## Clip 14 — Multi-empresa (GOD)
+## Clip 15 — Panel GOD: Empresas
 
-**Visual:** Panel GOD con lista de empresas
+**Visual:** Lista de empresas en el panel GOD
 
 **Audio:**
-"¿Manejas varios negocios? El panel GOD te da visión global.
+"¿Manejas varios negocios? El rol GOD te da visión global.
 
-Ve todas las empresas registradas, sus usuarios, facturación electrónica y consumo de créditos.
+Ve todas las empresas registradas, sus datos, estado y configuración.
 
 Ideal para contadores, administradores multi-negocio o dueños de varias cadenas."
 
 ---
 
-## Clip 15 — Cierre: ¿Por qué Hermes?
+## Clip 16 — Panel GOD: Invitaciones
+
+**Visual:** Pantalla de invitaciones
+
+**Audio:**
+"Desde el panel GOD puedes invitar nuevas empresas a Hermes.
+
+Ingresa el nombre de la empresa y el correo del dueño. El sistema envía un enlace de registro automáticamente.
+
+La invitación expira en horas configurables. Todo controlado."
+
+---
+
+## Clip 17 — Panel GOD: Transacciones Factus
+
+**Visual:** Pantalla de transacciones Factus
+
+**Audio:**
+"Controla los créditos de facturación electrónica desde el panel GOD.
+
+Ve el historial de compras y consumos de cada empresa.
+
+Recarga créditos cuando sea necesario. Sin salir de Hermes."
+
+---
+
+## Clip 18 — Panel GOD: Auditoría
+
+**Visual:** Pantalla de auditoría del sistema
+
+**Audio:**
+"Cada acción importante queda registrada: quién, qué, cuándo.
+
+El log de auditoría te permite rastrear cualquier cambio en el sistema.
+
+Seguridad y transparencia para tu plataforma."
+
+---
+
+## Clip 19 — Panel GOD: Configuración Global
+
+**Visual:** Pantalla de configuración del sistema
+
+**Audio:**
+"Configuraciones globales del sistema.
+
+Ajusta parámetros que aplican a todas las empresas.
+
+El centro de control definitivo para administradores del sistema."
+
+---
+
+## Clip 20 — Cierre: ¿Por qué Hermes?
 
 **Visual:** Montaje rápido de todas las pantallas + landing page
 
 **Audio:**
-"Eso es Hermes: POS, inventario, facturación electrónica, reportes, cajas, usuarios…
+"Eso es Hermes: POS con báscula, inventario, facturación electrónica, reportes, cajas, usuarios y panel GOD.
 
-Un ecosistema completo para tu negocio.
+Un ecosistema completo para tu negocio, con roles y accesos para cada tipo de usuario.
 
 Gratuito en su core, listo para usar hoy.
 
@@ -236,3 +306,19 @@ Gratuito en su core, listo para usar hoy.
 - **Duración ideal por clip:** 30–45 segundos
 - **Transición entre clips:** " swipe" de derecha a izquierda
 - **Hashtags sugeridos:** #HermesPOS #FacturacionElectronica #POS #GestionEmpresarial #Emprendimiento #DIAN #SoftwareGratuito
+
+## Mapa de Audiencia por Clip
+
+| Clip | Rol Protagonista | ¿A quién va dirigido? |
+|------|-----------------|----------------------|
+| 3 (POS) | CASHIER | Cajeros, tenderos |
+| 4 (Peso) | CASHIER | Dueños de graneros, fruver, carnicerías |
+| 5 (Inventario) | MANAGER | Encargados de bodega |
+| 6 (Ventas) | CASHIER/ADMIN | Todos los roles |
+| 7 (Facturación) | ADMIN | Dueños, contadores |
+| 8 (Clientes) | CASHIER | Cajeros, vendedores |
+| 9 (Compras) | MANAGER | Jefes de compras |
+| 10 (Cajas) | ADMIN | Dueños, admins |
+| 11 (Reportes) | OWNER/MANAGER | Toma de decisiones |
+| 12 (Usuarios) | OWNER | Dueños de negocio |
+| 15-19 (GOD) | GOD | Administradores multi-empresa, contadores |
