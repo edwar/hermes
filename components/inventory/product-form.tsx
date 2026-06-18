@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { CurrencyInput } from "@/components/ui/currency-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -36,6 +37,8 @@ interface Product {
   minStock: number
   categoryId: string
   imageUrl?: string | null
+  sellByWeight?: boolean
+  weightUnit?: string
 }
 
 interface ProductFormProps {
@@ -61,6 +64,8 @@ export function ProductForm({
   const [stock, setStock] = useState("")
   const [minStock, setMinStock] = useState("5")
   const [categoryId, setCategoryId] = useState("")
+  const [sellByWeight, setSellByWeight] = useState(false)
+  const [weightUnit, setWeightUnit] = useState("g")
   const [loading, setLoading] = useState(false)
 
   const calculatedSalePrice = (() => {
@@ -81,6 +86,8 @@ export function ProductForm({
         setStock(String(product.stock))
         setMinStock(String(product.minStock))
         setCategoryId(product.categoryId)
+        setSellByWeight(product.sellByWeight ?? false)
+        setWeightUnit(product.weightUnit ?? "g")
       } else {
         setName("")
         setBarcode("")
@@ -90,6 +97,8 @@ export function ProductForm({
         setStock("")
         setMinStock("5")
         setCategoryId("")
+        setSellByWeight(false)
+        setWeightUnit("g")
       }
     }
   }, [open, product])
@@ -107,6 +116,8 @@ export function ProductForm({
       stock: parseInt(stock) || 0,
       minStock: parseInt(minStock) || 5,
       categoryId,
+      sellByWeight,
+      weightUnit: (sellByWeight ? weightUnit : "g") as "g" | "kg" | "lb",
     }
 
     try {
@@ -191,7 +202,7 @@ export function ProductForm({
             </div>
             <div className="rounded-lg bg-muted p-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Precio de venta calculado:</span>
+                <span className="text-sm text-muted-foreground">{sellByWeight ? "Precio por " + (weightUnit === "kg" ? "kg" : weightUnit === "lb" ? "libra" : "gramo") : "Precio de venta"} calculado:</span>
                 <span className="font-mono tabular-nums font-semibold">
                   {calculatedSalePrice !== null ? formatCOP(calculatedSalePrice) : "--"}
                 </span>
@@ -202,18 +213,18 @@ export function ProductForm({
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="stock">Stock actual</Label>
+                <Label htmlFor="stock">Stock actual {sellByWeight ? "(gramos)" : ""}</Label>
                 <Input
                   id="stock"
                   type="number"
                   min="0"
                   value={stock}
                   onChange={(e) => setStock(e.target.value)}
-                  placeholder="100"
+                  placeholder={sellByWeight ? "5000" : "100"}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="minStock">Stock mínimo</Label>
+                <Label htmlFor="minStock">Stock mínimo {sellByWeight ? "(gramos)" : ""}</Label>
                 <Input
                   id="minStock"
                   type="number"
@@ -239,6 +250,36 @@ export function ProductForm({
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div>
+                <Label htmlFor="sellByWeight" className="text-sm font-medium">
+                  Vender por peso
+                </Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  El precio será por unidad de peso (gramos, kg, etc.)
+                </p>
+              </div>
+              <Switch
+                id="sellByWeight"
+                checked={sellByWeight}
+                onCheckedChange={setSellByWeight}
+              />
+            </div>
+            {sellByWeight && (
+              <div className="space-y-2">
+                <Label>Unidad de peso</Label>
+                <Select value={weightUnit} onValueChange={(v) => setWeightUnit(v ?? "g")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">Gramos (g)</SelectItem>
+                    <SelectItem value="kg">Kilogramos (kg)</SelectItem>
+                    <SelectItem value="lb">Libras (lb)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
             <Button

@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
 import { formatCOP } from "@/lib/utils"
 import { TAX_RATE } from "@/lib/constants"
-import { Trash2, Minus, Plus, ShoppingCart } from "lucide-react"
+import { Trash2, Minus, Plus, ShoppingCart, Scale } from "lucide-react"
 import type { CartItem } from "@/features/pos/types"
 
 interface CartProps {
@@ -16,6 +17,7 @@ interface CartProps {
   isEmpty: boolean
   itemCount: number
   onUpdateQuantity: (productId: string, quantity: number) => void
+  onUpdateWeight?: (productId: string, weightInGrams: number) => void
   onRemoveItem: (productId: string) => void
   onCheckout: () => void
   variant?: "panel" | "sheet"
@@ -30,6 +32,7 @@ export function Cart({
   isEmpty,
   itemCount,
   onUpdateQuantity,
+  onUpdateWeight,
   onRemoveItem,
   onCheckout,
   variant = "panel",
@@ -69,6 +72,7 @@ export function Cart({
                 key={item.productId}
                 item={item}
                 onUpdateQuantity={onUpdateQuantity}
+                onUpdateWeight={onUpdateWeight}
                 onRemove={onRemoveItem}
                 compact
               />
@@ -85,6 +89,7 @@ export function Cart({
                 key={item.productId}
                 item={item}
                 onUpdateQuantity={onUpdateQuantity}
+                onUpdateWeight={onUpdateWeight}
                 onRemove={onRemoveItem}
               />
             ))}</div>
@@ -135,11 +140,13 @@ function EmptyCart() {
 function CartItemRow({
   item,
   onUpdateQuantity,
+  onUpdateWeight,
   onRemove,
   compact = false,
 }: {
   item: CartItem
   onUpdateQuantity: (productId: string, quantity: number) => void
+  onUpdateWeight?: (productId: string, weightInGrams: number) => void
   onRemove: (productId: string) => void
   compact?: boolean
 }) {
@@ -153,9 +160,13 @@ function CartItemRow({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{item.name}</p>
+          <div className="flex items-center gap-1.5">
+            {item.sellByWeight && <Scale className="size-3.5 text-muted-foreground shrink-0" />}
+            <p className="text-sm font-medium truncate">{item.name}</p>
+          </div>
           <p className="text-xs text-muted-foreground">
-            <span className="font-mono">{formatCOP(item.price)}</span> c/u
+            <span className="font-mono">{formatCOP(item.price)}</span>
+            {item.sellByWeight ? "/kg" : " c/u"}
           </p>
         </div>
         {!compact && (
@@ -165,29 +176,47 @@ function CartItemRow({
         )}
       </div>
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 touch-target"
-            onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
-            aria-label="Disminuir cantidad"
-          >
-            <Minus className="size-3" />
-          </Button>
-          <span className="flex h-8 w-9 items-center justify-center text-sm font-medium font-mono tabular-nums">
-            {item.quantity}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 touch-target"
-            onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}
-            aria-label="Aumentar cantidad"
-          >
-            <Plus className="size-3" />
-          </Button>
-        </div>
+        {item.sellByWeight && onUpdateWeight ? (
+          <div className="flex items-center gap-1.5">
+            <Input
+              type="number"
+              min="1"
+              step={item.weightUnit === "g" ? "1" : "0.1"}
+              value={item.weightUnit === "kg" ? Math.round((item.weightInGrams ?? 0) / 10) / 100 : item.weightInGrams ?? 0}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value) || 0
+                const grams = item.weightUnit === "kg" ? Math.round(val * 1000) : Math.round(val)
+                onUpdateWeight(item.productId, grams)
+              }}
+              className="h-8 w-20 text-sm text-center font-mono"
+            />
+            <span className="text-xs text-muted-foreground">{item.weightUnit}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 touch-target"
+              onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}
+              aria-label="Disminuir cantidad"
+            >
+              <Minus className="size-3" />
+            </Button>
+            <span className="flex h-8 w-9 items-center justify-center text-sm font-medium font-mono tabular-nums">
+              {item.quantity}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 touch-target"
+              onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}
+              aria-label="Aumentar cantidad"
+            >
+              <Plus className="size-3" />
+            </Button>
+          </div>
+        )}
         {compact && (
           <p className="text-sm font-medium font-mono tabular-nums whitespace-nowrap">
             {formatCOP(item.subtotal)}

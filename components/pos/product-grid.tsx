@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { usePosProducts } from "@/features/pos/hooks/use-pos-products"
 import { formatCOP } from "@/lib/utils"
-import { Search, Package } from "lucide-react"
+import { Search, Package, Scale } from "lucide-react"
 
 interface ProductGridProps {
   onAddProduct: (product: {
@@ -14,6 +14,8 @@ interface ProductGridProps {
     barcode?: string | null
     price: number
     stock: number
+    sellByWeight?: boolean
+    weightUnit?: string
   }) => void
 }
 
@@ -77,23 +79,29 @@ export function ProductGrid({ onAddProduct }: ProductGridProps) {
                   ...product,
                   price: getSalePrice(product),
                 })}
-                disabled={product.stock === 0}
+                disabled={!product.sellByWeight && product.stock === 0}
                 className="flex flex-col items-start gap-1 rounded-lg border p-2.5 md:p-3 text-left transition-colors hover:border-primary hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-40 touch-target"
               >
-                <span className="line-clamp-2 text-xs md:text-sm font-medium leading-tight">
-                  {product.name}
-                </span>
+                <div className="flex items-center gap-1.5 w-full">
+                  {product.sellByWeight && <Scale className="size-3.5 text-muted-foreground shrink-0" />}
+                  <span className="line-clamp-2 text-xs md:text-sm font-medium leading-tight">
+                    {product.name}
+                  </span>
+                </div>
                 <span className="text-base md:text-lg font-bold text-primary font-mono tabular-nums">
                   {formatCOP(getSalePrice(product))}
                 </span>
                 <Badge
                   variant="outline"
-                  className={`text-[10px] md:text-xs ${product.stock <= product.minStock
+                  className={`text-[10px] md:text-xs ${!product.sellByWeight && product.stock <= product.minStock
                     ? "border-amber-200 bg-amber-50 text-amber-700"
                     : ""
                     }`}
                 >
-                  Stock: {product.stock}
+                  {product.sellByWeight
+                    ? `${(product.stock / 1000).toFixed(2)} kg`
+                    : `Stock: ${product.stock}`
+                  }
                 </Badge>
               </button>
             ))}

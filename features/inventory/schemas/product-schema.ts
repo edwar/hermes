@@ -10,6 +10,8 @@ export const createProductSchema = z.object({
   minStock: z.number().int().min(0).default(5),
   categoryId: z.string().min(1, "La categoría es requerida"),
   imageUrl: z.string().optional(),
+  sellByWeight: z.boolean().optional().default(false),
+  weightUnit: z.enum(["g", "kg", "lb"]).optional().default("g"),
 })
 
 export const updateProductSchema = createProductSchema.partial()

@@ -37,6 +37,7 @@ export function useCheckout() {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               subtotal: item.subtotal,
+              weightInGrams: item.weightInGrams ?? null,
             })),
             createdAt: new Date().toISOString(),
             user: { name: session?.user?.name ?? "Offline" },

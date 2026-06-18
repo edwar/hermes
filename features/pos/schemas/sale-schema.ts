@@ -5,6 +5,7 @@ export const saleItemSchema = z.object({
   quantity: z.number().int().min(1),
   unitPrice: z.number().min(0),
   subtotal: z.number().min(0),
+  weightInGrams: z.number().int().optional(),
 })
 
 export const createSaleSchema = z.object({

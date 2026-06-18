@@ -116,7 +116,7 @@ export default function POSPage() {
   }, [searchParams])
 
   const handleAddProduct = useCallback(
-    (product: { id: string; name: string; barcode?: string | null; price: number; stock: number }) => {
+    (product: { id: string; name: string; barcode?: string | null; price: number; stock: number; sellByWeight?: boolean; weightUnit?: string }) => {
       cart.addItem(product)
     },
     [cart]
@@ -160,6 +160,7 @@ export default function POSPage() {
           quantity: item.quantity,
           unitPrice: item.price,
           subtotal: item.subtotal,
+          weightInGrams: item.sellByWeight ? item.weightInGrams : undefined,
         })),
         subtotal: data.subtotal,
         tax: data.tax,
@@ -327,6 +328,7 @@ export default function POSPage() {
         isEmpty={cart.isEmpty}
         itemCount={cart.itemCount}
         onUpdateQuantity={cart.updateQuantity}
+        onUpdateWeight={cart.updateWeight}
         onRemoveItem={cart.removeItem}
         onCheckout={handleCheckout}
       />
@@ -365,11 +367,9 @@ export default function POSPage() {
             isEmpty={cart.isEmpty}
             itemCount={cart.itemCount}
             onUpdateQuantity={cart.updateQuantity}
+            onUpdateWeight={cart.updateWeight}
             onRemoveItem={cart.removeItem}
-            onCheckout={() => {
-              setCartSheetOpen(false)
-              handleCheckout()
-            }}
+            onCheckout={handleCheckout}
             variant="sheet"
             onClose={() => setCartSheetOpen(false)}
           />
