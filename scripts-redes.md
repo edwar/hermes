@@ -3,13 +3,13 @@
 Serie de videos cortos para redes sociales. Cada clip explica una sección de la app.
 Duración estimada por clip: 30–60 segundos. Formato vertical (9:16).
 
-**Orden de grabación:** sigue el flujo real de uso: registro → configuración → datos → operación → cierre → administración global.
+**🎬 Orden de grabación:** registro → configuración → datos → operación → cierre → administración global.
 
 ---
 
-## Clip 1 — Intro: ¿Qué es Hermes?
+## 🎬 Clip 1 — Intro: ¿Qué es Hermes?
 
-**Audio:**
+**🎙️ Audio:**
 "Conoce Hermes — el sistema POS que transforma la gestión de tu negocio.
 
 Facturación electrónica, inventario en tiempo real, control de caja, reportes y más.
@@ -18,9 +18,9 @@ Todo en un solo lugar, desde cualquier dispositivo.
 
 Y lo mejor: el core del negocio es completamente gratis."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Landing page estática (hero completo: logo, título, subtítulo). |
 | 5s–10s | Hacer zoom al título "Tu negocio vuela con Hermes". |
 | 10s–15s | Hacer zoom al subtítulo "Punto de venta, facturación electrónica..." |
@@ -28,22 +28,22 @@ Y lo mejor: el core del negocio es completamente gratis."
 | 20s–25s | Hover sobre el botón "Comenzar" (mostrar efecto brillo). |
 | 25s–30s | Zoom out al hero completo. |
 
-**CTA:** Síguenos para ver cada módulo en acción.
+**📢 CTA:** Síguenos para ver cada módulo en acción.
 
 ---
 
-## Clip 2 — Registro e Invitación
+## 🎬 Clip 2 — Registro e Invitación
 
-**Audio:**
+**🎙️ Audio:**
 "Para empezar, el administrador del sistema crea una invitación con el nombre de tu empresa y tu correo.
 
 Recibes un enlace mágico. Abres el formulario, creas tu cuenta y listo.
 
 En segundos ya tienes tu empresa configurada en Hermes."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Abrir menú de navegación (sidebar). |
 | 3s–7s | Hacer clic en "Invitaciones". Mostrar lista vacía. |
 | 7s–12s | Hacer clic en "Crear invitación". Llenar formulario: nombre empresa + email. Clic en guardar. |
@@ -55,9 +55,9 @@ En segundos ya tienes tu empresa configurada en Hermes."
 
 ---
 
-## Clip 3 — Configuración de la Empresa
+## 🎬 Clip 3 — Configuración de la Empresa
 
-**Audio:**
+**🎙️ Audio:**
 "Apenas te registras, configura tu negocio.
 
 Nombre de empresa, NIT, dirección, teléfono, moneda y pie de ticket.
@@ -66,9 +66,9 @@ Sube tu logo y aparecerá en todos los tickets de venta.
 
 Todo listo en menos de 5 minutos."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Navegar a Configuración desde el sidebar. |
 | 3s–8s | Mostrar formulario con campos: nombre empresa, NIT, dirección, teléfono. |
 | 8s–12s | Hacer clic en "Subir logo". Seleccionar imagen. Mostrar logo cargado. |
@@ -78,9 +78,9 @@ Todo listo en menos de 5 minutos."
 
 ---
 
-## Clip 4 — Usuarios y Roles
+## 🎬 Clip 4 — Usuarios y Roles
 
-**Audio:**
+**🎙️ Audio:**
 "Invita a tu equipo. Crea usuarios con roles específicos:
 
 — El Cajero usa el POS, ve ventas y clientes. Nada más.
@@ -90,9 +90,9 @@ Todo listo en menos de 5 minutos."
 
 Cada rol ve solo lo que necesita. Control de acceso granular."
 
-**Storyboard (40s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (40s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Navegar a Usuarios desde el sidebar. |
 | 3s–6s | Mostrar lista de usuarios (solo el dueño). |
 | 6s–10s | Hacer clic en "Nuevo Usuario". |
@@ -102,9 +102,9 @@ Cada rol ve solo lo que necesita. Control de acceso granular."
 
 ---
 
-## Clip 5 — Inventario y Categorías
+## 🎬 Clip 5 — Inventario y Categorías
 
-**Audio:**
+**🎙️ Audio:**
 "Prepara tu inventario.
 
 Crea categorías para organizar tus productos. Luego agrega productos con nombre, código de barras, precio de compra y margen de ganancia.
@@ -113,9 +113,9 @@ Define stock mínimo y el sistema te alertará cuando falte producto.
 
 Todo sincronizado con el POS."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Navegar a Inventario. |
 | 3s–6s | Ir a la pestaña de categorías. Hacer clic en "Nueva categoría". Escribir "Lácteos". Guardar. |
 | 6s–10s | Crear otra categoría: "Granos". Mostrar ambas en la lista. |
@@ -126,18 +126,18 @@ Todo sincronizado con el POS."
 
 ---
 
-## Clip 6 — Clientes
+## 🎬 Clip 6 — Clientes
 
-**Audio:**
+**🎙️ Audio:**
 "Registra tus clientes con nombre, teléfono, dirección y datos de facturación electrónica.
 
 Asocia cada venta a un cliente para tener trazabilidad completa.
 
 Ideal para negocios B2B que necesitan facturación con todos los datos fiscales."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Navegar a Clientes desde el sidebar. |
 | 3s–8s | Hacer clic en "Nuevo Cliente". Llenar: nombre, teléfono, dirección. |
 | 8s–14s | Desplazarse a datos fiscales: NIT, DV, tipo de documento. Llenar. |
@@ -147,18 +147,18 @@ Ideal para negocios B2B que necesitan facturación con todos los datos fiscales.
 
 ---
 
-## Clip 7 — Cajas (Apertura)
+## 🎬 Clip 7 — Cajas (Apertura)
 
-**Audio:**
+**🎙️ Audio:**
 "Antes de vender, abre una sesión de caja.
 
 Indica el monto inicial con el que arrancas. El sistema registra todo lo que pasa durante el turno.
 
 Sin sesión abierta, el POS no funciona. Así garantizas control total sobre el dinero."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar a Cajas. Mostrar lista de cajas registradoras. |
 | 5s–8s | Hacer clic en la caja "Principal" o en "Abrir sesión". |
 | 8s–13s | Ingresar monto inicial: $200,000. Clic en "Abrir". |
@@ -167,18 +167,18 @@ Sin sesión abierta, el POS no funciona. Así garantizas control total sobre el 
 
 ---
 
-## Clip 8 — Dashboard
+## 🎬 Clip 8 — Dashboard
 
-**Audio:**
+**🎙️ Audio:**
 "Arranca tu jornada revisando el Dashboard.
 
 Aquí ves en un vistazo: ventas del día, productos más vendidos, métodos de pago y el histórico de ingresos.
 
 Todo actualizado en tiempo real para que tomes decisiones al instante."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar al Dashboard. Mostrar la pantalla completa. |
 | 5s–10s | Hacer zoom a las tarjetas de métricas: ventas hoy, ticket promedio, productos vendidos. |
 | 10s–15s | Hacer zoom al gráfico de ventas diarias del mes. Mover el mouse sobre las barras. |
@@ -188,9 +188,9 @@ Todo actualizado en tiempo real para que tomes decisiones al instante."
 
 ---
 
-## Clip 9 — POS (Punto de Venta)
+## 🎬 Clip 9 — POS (Punto de Venta)
 
-**Audio:**
+**🎙️ Audio:**
 "El corazón de Hermes: el Punto de Venta.
 
 Agrega productos por código de barras con un escáner o búscalos al instante. Define descuentos, selecciona método de pago y genera la venta en segundos.
@@ -199,9 +199,9 @@ Agrega productos por código de barras con un escáner o búscalos al instante. 
 
 Rápido, limpio y sin complicaciones."
 
-**Storyboard (40s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (40s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–3s | Navegar al POS. Mostrar grilla de productos. |
 | 3s–7s | Escribir en el buscador: "Leche". Mostrar resultados filtrados. |
 | 7s–12s | Hacer clic en el producto para agregarlo al carrito (lado derecho). |
@@ -214,9 +214,9 @@ Rápido, limpio y sin complicaciones."
 
 ---
 
-## Clip 10 — Productos por Peso
+## 🎬 Clip 10 — Productos por Peso
 
-**Audio:**
+**🎙️ Audio:**
 "¿Vendes arroz, frutas o verduras? Hermes también los maneja.
 
 Marca un producto como 'Vender por peso' en el inventario. En el POS, en vez de cantidad, verás un campo de peso.
@@ -225,9 +225,9 @@ Escribe el peso directamente o conecta una báscula por USB. El sistema lee el p
 
 Productos por peso con control de stock en gramos."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Ir a Inventario → crear un producto nuevo. Marcar el switch "Vender por peso". Seleccionar unidad "kg". |
 | 5s–10s | Llenar nombre "Tomate", precio compra, margen. Guardar. Mostrar icono de báscula en la tabla. |
 | 10s–13s | Ir al POS. Buscar "Tomate". Mostrar icono de báscula en la tarjeta del producto. |
@@ -239,9 +239,9 @@ Productos por peso con control de stock en gramos."
 
 ---
 
-## Clip 11 — Ventas e Historial
+## 🎬 Clip 11 — Ventas e Historial
 
-**Audio:**
+**🎙️ Audio:**
 "Revisa el historial completo de ventas.
 
 Filtra por fecha, método de pago o cliente. Ve el detalle de cada venta: productos, subtotales, impuestos.
@@ -250,9 +250,9 @@ Si vendiste por peso, ves exactamente los gramos o kilos vendidos.
 
 ¿Necesitas reimprimir un ticket? Un clic y listo."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Navegar a Ventas. Mostrar lista de ventas realizadas. |
 | 4s–8s | Hacer clic en filtro de fechas: seleccionar "Este mes". |
 | 8s–12s | Hacer clic en filtro de método de pago: seleccionar "Efectivo". Mostrar lista filtrada. |
@@ -263,9 +263,9 @@ Si vendiste por peso, ves exactamente los gramos o kilos vendidos.
 
 ---
 
-## Clip 12 — Facturación Electrónica
+## 🎬 Clip 12 — Facturación Electrónica
 
-**Audio:**
+**🎙️ Audio:**
 "Facturación electrónica sin dolor de cabeza.
 
 Hermes se integra con Factus para emitir facturas electrónicas válidas ante la DIAN.
@@ -274,9 +274,9 @@ Cada factura exitosa descuenta un crédito. Puedes comprar créditos directament
 
 Olvídate del papeleo y cumple con la DIAN automáticamente."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar a Facturas Electrónicas. Mostrar lista de facturas. |
 | 5s–10s | Hacer clic en detalle de una factura. Mostrar CUFE, número de factura, estado "Aceptada". |
 | 10s–15s | Mostrar el PDF de la factura descargada. |
@@ -287,9 +287,9 @@ Olvídate del papeleo y cumple con la DIAN automáticamente."
 
 ---
 
-## Clip 13 — Reportes
+## 🎬 Clip 13 — Reportes
 
-**Audio:**
+**🎙️ Audio:**
 "Toma decisiones basadas en datos.
 
 Ventas por día, productos más rentables, métodos de pago más usados, rentabilidad por período.
@@ -298,9 +298,9 @@ Exporta a CSV y analiza en tu herramienta favorita.
 
 Datos claros para hacer crecer tu negocio."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Navegar a Reportes. Mostrar pantalla completa. |
 | 4s–8s | Hacer zoom al gráfico de ventas por día. Mover mouse sobre barras. |
 | 8s–12s | Hacer zoom al ranking de productos más vendidos. |
@@ -311,9 +311,9 @@ Datos claros para hacer crecer tu negocio."
 
 ---
 
-## Clip 14 — Compras y Proveedores
+## 🎬 Clip 14 — Compras y Proveedores
 
-**Audio:**
+**🎙️ Audio:**
 "Gestiona tus compras y proveedores desde un solo lugar.
 
 Crea órdenes de compra, asígnalas a un proveedor y recibe el inventario cuando llegue.
@@ -322,9 +322,9 @@ Cada recepción de compra actualiza automáticamente tu stock.
 
 No más hojas de cálculo ni pedidos perdidos."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Navegar a Proveedores. Mostrar lista. |
 | 4s–8s | Hacer clic en "Nuevo proveedor". Llenar: nombre, teléfono, email. Guardar. |
 | 8s–12s | Navegar a Órdenes de Compra. Hacer clic en "Nueva orden". |
@@ -336,9 +336,9 @@ No más hojas de cálculo ni pedidos perdidos."
 
 ---
 
-## Clip 15 — Stock y Movimientos
+## 🎬 Clip 15 — Stock y Movimientos
 
-**Audio:**
+**🎙️ Audio:**
 "Lleva la trazabilidad completa de tu inventario.
 
 Cada entrada, salida o ajuste queda registrado con fecha, tipo y responsable.
@@ -347,9 +347,9 @@ Cada entrada, salida o ajuste queda registrado con fecha, tipo y responsable.
 
 Sabrás exactamente qué pasó y cuándo."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Ir a Inventario → pestaña "Movimientos". |
 | 4s–8s | Mostrar lista de movimientos: entradas por compra, salidas por venta. |
 | 8s–12s | Hacer clic en "Nuevo movimiento". Seleccionar tipo "Salida". |
@@ -360,18 +360,18 @@ Sabrás exactamente qué pasó y cuándo."
 
 ---
 
-## Clip 16 — Cajas (Cierre)
+## 🎬 Clip 16 — Cajas (Cierre)
 
-**Audio:**
+**🎙️ Audio:**
 "Al final del turno, cierra la caja.
 
 El sistema calcula automáticamente lo que debería haber versus lo que hay. Si hay diferencia, la registra.
 
 Auditoría clara, sin sorpresas."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Navegar a Cajas. Mostrar sesión abierta con badge verde. |
 | 4s–8s | Hacer clic en "Cerrar sesión". |
 | 8s–14s | Mostrar resumen: ventas del turno, monto esperado, monto real. Ingresar monto real. |
@@ -381,18 +381,18 @@ Auditoría clara, sin sorpresas."
 
 ---
 
-## Clip 17 — Panel GOD: Invitaciones
+## 🎬 Clip 17 — Panel GOD: Invitaciones
 
-**Audio:**
+**🎙️ Audio:**
 "Desde el panel GOD puedes invitar nuevas empresas a Hermes.
 
 Ingresa el nombre de la empresa y el correo del dueño. El sistema envía un enlace de registro automáticamente.
 
 La invitación expira en horas configurables. Todo controlado."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–4s | Iniciar sesión como GOD. Mostrar sidebar con opciones GOD. |
 | 4s–8s | Navegar a Invitaciones. Mostrar lista de invitaciones enviadas y su estado. |
 | 8s–15s | Hacer clic en "Crear invitación". Llenar: nombre empresa + email. Clic en guardar. |
@@ -402,18 +402,18 @@ La invitación expira en horas configurables. Todo controlado."
 
 ---
 
-## Clip 18 — Panel GOD: Empresas
+## 🎬 Clip 18 — Panel GOD: Empresas
 
-**Audio:**
+**🎙️ Audio:**
 "¿Manejas varios negocios? El panel GOD te da visión global.
 
 Ve todas las empresas registradas, sus datos, configuración y estado.
 
 Ideal para contadores, administradores multi-negocio o dueños de varias cadenas."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar a Empresas desde el panel GOD. |
 | 5s–10s | Mostrar lista de empresas con nombre, NIT, fecha de creación. |
 | 10s–15s | Hacer clic en una empresa para ver detalle. |
@@ -423,18 +423,18 @@ Ideal para contadores, administradores multi-negocio o dueños de varias cadenas
 
 ---
 
-## Clip 19 — Panel GOD: Transacciones Factus
+## 🎬 Clip 19 — Panel GOD: Transacciones Factus
 
-**Audio:**
+**🎙️ Audio:**
 "Controla los créditos de facturación electrónica desde el panel GOD.
 
 Ve el historial de compras y consumos de cada empresa.
 
 Recarga créditos cuando sea necesario. Sin salir de Hermes."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar a Transacciones Factus desde el panel GOD. |
 | 5s–10s | Mostrar historial: compras de créditos (verde) y consumos (rojo). |
 | 10s–15s | Hacer clic en "Comprar créditos". Ingresar cantidad. |
@@ -444,18 +444,18 @@ Recarga créditos cuando sea necesario. Sin salir de Hermes."
 
 ---
 
-## Clip 20 — Panel GOD: Auditoría y Configuración Global
+## 🎬 Clip 20 — Panel GOD: Auditoría y Configuración Global
 
-**Audio:**
+**🎙️ Audio:**
 "El panel GOD también incluye auditoría completa del sistema: cada acción importante queda registrada con quién, qué y cuándo.
 
 Y la configuración global para ajustar parámetros que aplican a todas las empresas.
 
 El centro de control definitivo."
 
-**Storyboard (35s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (35s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Navegar a Auditoría. Mostrar lista de eventos. |
 | 5s–10s | Hacer zoom a una entrada: mostrar acción, usuario, fecha, detalles. |
 | 10s–15s | Mostrar filtros: por acción, por usuario, por fecha. |
@@ -465,9 +465,9 @@ El centro de control definitivo."
 
 ---
 
-## Clip 21 — Cierre: ¿Por qué Hermes?
+## 🎬 Clip 21 — Cierre: ¿Por qué Hermes?
 
-**Audio:**
+**🎙️ Audio:**
 "Eso es Hermes: registro, configuración, usuarios, inventario, POS con báscula, facturación electrónica, reportes, cajas, compras y panel GOD.
 
 Un ecosistema completo para tu negocio, con roles y accesos para cada tipo de usuario.
@@ -476,9 +476,9 @@ Gratuito en su core, listo para usar hoy.
 
 ¿Listo para probarlo? El enlace está en nuestra bio."
 
-**Storyboard (30s):**
-| Tiempo | Acción en pantalla |
-|--------|-------------------|
+**📋 Storyboard (30s):**
+| ⏱️ Tiempo | 🖱️ Acción en pantalla |
+|-----------|----------------------|
 | 0s–5s | Montaje rápido: logo + landing page. |
 | 5s–10s | Cuts rápidos (1s cada uno) de: registro, configuración, inventario, POS, facturación. |
 | 10s–15s | Más cuts de: reportes, cajas, compras, panel GOD. |
@@ -487,7 +487,7 @@ Gratuito en su core, listo para usar hoy.
 
 ---
 
-## Notas de Producción
+## 🎥 Notas de Producción
 
 - **Estilo visual:** Capturas de pantalla reales de la app, con zoom suave a las áreas clave
 - **Música:** Electrónica suave / lo-fi, volumen bajo
@@ -496,12 +496,12 @@ Gratuito en su core, listo para usar hoy.
 - **Transición entre clips:** "swipe" de derecha a izquierda
 - **Hashtags sugeridos:** #HermesPOS #FacturacionElectronica #POS #GestionEmpresarial #Emprendimiento #DIAN #SoftwareGratuito
 
-## Orden de Grabación (Flujo Real)
+## 📋 Orden de Grabación (Flujo Real)
 
 El orden sigue el flujo natural de uso del sistema:
 
-| # | Clip | ¿Qué necesitas tener listo antes? |
-|---|------|----------------------------------|
+| 🏁 # | 🎬 Clip | ✅ ¿Qué necesitas tener listo antes? |
+|------|---------|-------------------------------------|
 | 1 | Intro | Nada (solo landing page) |
 | 2 | Registro e Invitación | Sesión GOD abierta |
 | 3 | Configuración | Empresa registrada |
@@ -526,19 +526,28 @@ El orden sigue el flujo natural de uso del sistema:
 
 ## 🧹 Cleanup por Clip (Volver a Grabar)
 
-Si un clip sale mal y necesitas volver a grabarlo, ejecuta el cleanup correspondiente para borrar los datos creados en ese clip. Los comandos usan `curl` contra la API de producción (`https://hermes.cognilab.dev`).
+Si un clip sale mal y necesitas volver a grabarlo, ejecuta el cleanup correspondiente para borrar los datos creados en ese clip. Los comandos usan Prisma directamente (necesitas tener `DATABASE_URL` configurada).
 
 ### Antes de empezar: datos base necesarios
-Crea un producto y un cliente de prueba que usarás en múltiples clips:
+Algunos clips comparten datos. El Clip 5 crea categorías y productos. El Clip 6 crea clientes. Pero si necesitas precargar datos rápidamente:
+
 ```bash
 # Cliente de prueba (para clips 6, 9, 10, 11, 12)
-curl -s -X POST https://hermes.cognilab.dev/api/customers \
-  -H "Content-Type: application/json" \
-  -b <(curl -s -c - https://hermes.cognilab.dev/api/auth/session) \
-  -d '{"name":"Cliente Demo","phone":"3001234567"}'
-
-# Producto unitario de prueba (para clips 5, 9, 11)
-# Se crea en el Clip 5, no necesita precarga
+# Edita companyId con el ID de tu empresa (sácalo de la URL del dashboard)
+npx tsx -e "
+import { PrismaClient } from '@prisma/client';
+const p = new PrismaClient();
+const company = await p.company.findFirst();
+if (company) {
+  await p.customer.upsert({
+    where: { cedula_companyId: { cedula: '123456789', companyId: company.id } },
+    update: {},
+    create: { name: 'Cliente Demo', phone: '3001234567', cedula: '123456789', companyId: company.id },
+  });
+  console.log('Cliente Demo creado.');
+}
+await p.\$disconnect();
+"
 ```
 
 ### Clip 2 — Registro e Invitación
@@ -715,10 +724,10 @@ await p.\$disconnect();
 
 ---
 
-## Mapa de Audiencia por Clip
+## 👥 Mapa de Audiencia por Clip
 
-| Clip | Rol Protagonista | ¿A quién va dirigido? |
-|------|-----------------|----------------------|
+| 🎬 Clip | 👤 Rol Protagonista | 🎯 ¿A quién va dirigido? |
+|---------|---------------------|---------------------------|
 | 2 (Registro) | GOD/OWNER | Nuevos usuarios |
 | 4 (Usuarios) | OWNER | Dueños de negocio |
 | 5 (Inventario) | MANAGER | Encargados de bodega |
