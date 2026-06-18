@@ -41,10 +41,13 @@ export function useCart() {
     barcode?: string | null
     price: number
     stock: number
+    sellByWeight?: boolean
+    weightUnit?: string
   }) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.productId === product.id)
       if (existing) {
+        if (existing.sellByWeight) return prev
         if (existing.quantity >= product.stock) return prev
         return prev.map((i) =>
           i.productId === product.id
@@ -52,6 +55,11 @@ export function useCart() {
             : i
         )
       }
+      const isWeight = product.sellByWeight
+      const defaultWeightG = 500
+      const subtotal = isWeight
+        ? Math.round((defaultWeightG / 1000) * Number(product.price))
+        : Number(product.price)
       return [
         ...prev,
         {
@@ -59,12 +67,30 @@ export function useCart() {
           name: product.name,
           barcode: product.barcode,
           price: Number(product.price),
-          quantity: 1,
-          subtotal: Number(product.price),
+          quantity: isWeight ? 1 : 1,
+          subtotal,
           stock: product.stock,
+          sellByWeight: isWeight,
+          weightUnit: product.weightUnit ?? "g",
+          weightInGrams: isWeight ? defaultWeightG : undefined,
         },
       ]
     })
+  }, [])
+
+  const updateWeight = useCallback((productId: string, weightInGrams: number) => {
+    setItems((prev) =>
+      weightInGrams <= 0
+        ? prev.filter((i) => i.productId !== productId)
+        : prev.map((i) => {
+            if (i.productId !== productId || !i.sellByWeight) return i
+            return {
+              ...i,
+              weightInGrams,
+              subtotal: Math.round((weightInGrams / 1000) * i.price),
+            }
+          })
+    )
   }, [])
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
@@ -112,6 +138,7 @@ export function useCart() {
     setRequestElectronicInvoice,
     addItem,
     updateQuantity,
+    updateWeight,
     removeItem,
     clearCart,
     subtotal,

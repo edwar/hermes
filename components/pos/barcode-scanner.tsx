@@ -12,6 +12,8 @@ interface BarcodeScannerProps {
     barcode?: string | null
     price: number
     stock: number
+    sellByWeight?: boolean
+    weightUnit?: string
   }) => void
 }
 

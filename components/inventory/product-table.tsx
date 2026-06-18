@@ -43,6 +43,7 @@ import {
   Trash2,
   AlertTriangle,
   Package,
+  Scale,
 } from "lucide-react"
 
 export function ProductTable() {
@@ -175,7 +176,12 @@ export function ProductTable() {
                 const salePrice = Math.round(product.purchasePrice * (1 + product.profitMargin))
                 return (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-1.5">
+                      {product.sellByWeight && <Scale className="size-3.5 text-muted-foreground shrink-0" />}
+                      <span className="truncate">{product.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell font-mono text-xs text-muted-foreground">
                     {product.barcode ?? "—"}
                   </TableCell>
@@ -193,6 +199,8 @@ export function ProductTable() {
                     <StockBadge
                       stock={product.stock}
                       minStock={product.minStock}
+                      sellByWeight={product.sellByWeight}
+                      weightUnit={product.weightUnit}
                     />
                   </TableCell>
                   <TableCell className="text-right">

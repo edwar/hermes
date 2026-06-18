@@ -6,6 +6,9 @@ export interface CartItem {
   quantity: number
   subtotal: number
   stock: number
+  sellByWeight?: boolean
+  weightUnit?: string
+  weightInGrams?: number
 }
 
 export interface CartState {

@@ -103,9 +103,16 @@ export async function POST(req: NextRequest) {
 
   for (const item of items) {
     const product = products.find((p) => p.id === item.productId)
-    if (!product || product.stock < item.quantity) {
+    if (!product) {
       return NextResponse.json(
-        { error: `Stock insuficiente para ${product?.name ?? item.productId}` },
+        { error: `Producto no encontrado: ${item.productId}` },
+        { status: 400 }
+      )
+    }
+    const decrementQty = item.weightInGrams ?? item.quantity
+    if (product.stock < decrementQty) {
+      return NextResponse.json(
+        { error: `Stock insuficiente para ${product.name}` },
         { status: 400 }
       )
     }
@@ -134,6 +141,7 @@ export async function POST(req: NextRequest) {
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               subtotal: item.subtotal,
+              weightInGrams: item.weightInGrams ?? null,
             })),
           },
         },
@@ -142,21 +150,24 @@ export async function POST(req: NextRequest) {
     "sale:create"
   )
 
-  const stockOps = items.flatMap((item) => [
-    prisma.product.update({
-      where: { id: item.productId },
-      data: { stock: { decrement: item.quantity } },
-    }),
-    prisma.stockMovement.create({
-      data: {
-        type: "OUT",
-        quantity: item.quantity,
-        reason: `Venta #${sale.id.slice(0, 8)}`,
-        productId: item.productId,
-        companyId,
-      },
-    }),
-  ])
+  const stockOps = items.flatMap((item) => {
+    const decrementQty = item.weightInGrams ?? item.quantity
+    return [
+      prisma.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: decrementQty } },
+      }),
+      prisma.stockMovement.create({
+        data: {
+          type: "OUT",
+          quantity: decrementQty,
+          reason: `Venta #${sale.id.slice(0, 8)}`,
+          productId: item.productId,
+          companyId,
+        },
+      }),
+    ]
+  })
 
   const stockResults = await Promise.allSettled(stockOps)
 
