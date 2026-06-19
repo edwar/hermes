@@ -18,15 +18,18 @@ Todo en un solo lugar, desde cualquier dispositivo.
 
 Y lo mejor: el core del negocio es completamente gratis."
 
-**📋 Storyboard (30s):**
+**📋 Storyboard (40s):**
 | ⏱️ Tiempo | 🖱️ Acción en pantalla |
 |-----------|----------------------|
-| 0s–5s | Landing page estática (hero completo: logo, título, subtítulo). |
-| 5s–10s | Hacer zoom al título "Tu negocio vuela con Hermes". |
-| 10s–15s | Hacer zoom al subtítulo "Punto de venta, facturación electrónica..." |
-| 15s–20s | Hacer zoom a las 4 tarjetas de abajo: Gratis, 100% Online/Offline, DIAN, 1 clic. |
-| 20s–25s | Hover sobre el botón "Comenzar" (mostrar efecto brillo). |
-| 25s–30s | Zoom out al hero completo. |
+| 0s–4s | Landing page completa: hero + highlights + secciones visibles al hacer scroll. |
+| 4s–8s | Hacer zoom al badge "Sistema POS moderno para Colombia". |
+| 8s–13s | Hacer zoom al título "Tu negocio vuela con Hermes". |
+| 13s–17s | Hacer zoom al subtítulo "Punto de venta, facturación electrónica DIAN..." |
+| 17s–22s | Hacer scroll hacia abajo para mostrar los 4 highlights con iconos (sin instalación, offline, DIAN, gratis). Pausar en cada uno. |
+| 22s–26s | Hover sobre el botón "Comenzar gratis" (mostrar efecto brillo). |
+| 26s–30s | Seguir scrolleando para mostrar la sección de funcionalidades (6 cards con iconos). |
+| 30s–34s | Hacer zoom a las 3 columnas de "Empieza en 3 pasos" (crear cuenta, configurar, vender). |
+| 34s–40s | Hacer zoom a los planes de precios (Core gratis $0 vs Facturación por créditos). |
 
 **📢 CTA:** Síguenos para ver cada módulo en acción.
 
@@ -479,11 +482,11 @@ Gratuito en su core, listo para usar hoy.
 **📋 Storyboard (30s):**
 | ⏱️ Tiempo | 🖱️ Acción en pantalla |
 |-----------|----------------------|
-| 0s–5s | Montaje rápido: logo + landing page. |
+| 0s–5s | Montaje rápido: logo + landing page completa. |
 | 5s–10s | Cuts rápidos (1s cada uno) de: registro, configuración, inventario, POS, facturación. |
 | 10s–15s | Más cuts de: reportes, cajas, compras, panel GOD. |
-| 15s–20s | Landing page de nuevo. Texto superpuesto: "Gratuito. Listo para usar." |
-| 20s–30s | Pantalla final: logo + "Descarga Hermes" + enlace en la bio. |
+| 15s–20s | Landing page de nuevo: mostrar secciones de highlights y funcionalidades. Texto superpuesto: "Gratuito. Listo para usar." |
+| 20s–30s | Pantalla final: logo + "Hermes POS — el enlace está en nuestra bio." |
 
 ---
 
