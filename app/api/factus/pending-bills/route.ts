@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { factusRequest, FactusApiError } from "@/lib/factus/client"
+import { HTTP_METHOD } from "@/lib/constants"
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function DELETE(req: NextRequest) {
     try {
       await factusRequest(
         `/v2/bills/destroy/reference/${encodeURIComponent(referenceCode)}`,
-        { method: "DELETE" },
+        { method: HTTP_METHOD.DELETE },
         companyId
       )
     } catch (error) {

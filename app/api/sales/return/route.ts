@@ -1,3 +1,12 @@
+// =============================================================================
+// ENDPOINT: POST /api/sales/return — DEVOLUCIÓN DE VENTA + NOTA CRÉDITO
+// Este endpoint maneja la devolución de productos. Hace 4 cosas clave:
+//   1. Valida la venta original y las cantidades a devolver
+//   2. Crea una venta con isReturn=true en nuestra DB (total negativo)
+//   3. Reintegra el inventario (StockMovement tipo "IN")
+//   4. Si se solicita, genera Nota Crédito Electrónica en Factus (DIAN)
+// =============================================================================
+
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
@@ -5,6 +14,7 @@ import { companyScope } from "@/lib/company-scope"
 import { listNumberingRanges, getInvoice, factusRequest } from "@/lib/factus/client"
 import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
 import { logAudit } from "@/lib/audit"
+import { STOCK_MOVEMENT_TYPE, AUDIT_ACTION, FE_STATUS, FACTUS_DOCUMENT_TYPE, HTTP_METHOD } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -23,6 +33,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Faltan datos requeridos" }, { status: 400 })
   }
 
+  // ===========================================================================
+  // PASO 1: VALIDAR VENTA ORIGINAL
+  // Buscamos la venta original en nuestra DB. Rechazamos si:
+  //   - No existe
+  //   - Ya es una devolución (no se pueden anidar)
+  // ===========================================================================
+
   const scope = companyScope(session)
   const originalSale = await prisma.sale.findFirst({
     where: { id: saleId, ...scope },
@@ -40,6 +57,13 @@ export async function POST(req: NextRequest) {
   if (originalSale.isReturn) {
     return NextResponse.json({ error: "No se puede devolver una devolución" }, { status: 400 })
   }
+
+  // ===========================================================================
+  // PASO 2: VALIDAR CANTIDADES CONTRA DEVOLUCIONES PREVIAS
+  // Un producto no se puede devolver más veces de las que se vendió.
+  // Acumulamos todas las devoluciones previas y verificamos que la suma
+  // de cantidades devueltas no exceda la cantidad original vendida.
+  // ===========================================================================
 
   const previousReturns = await prisma.sale.findMany({
     where: {
@@ -80,6 +104,14 @@ export async function POST(req: NextRequest) {
 
   const returnSubtotal = items.reduce((acc: number, i: { subtotal: number }) => acc + i.subtotal, 0)
 
+  // ===========================================================================
+  // PASO 3: CREAR LA VENTA DE DEVOLUCIÓN EN NUESTRA DB
+  //   - isReturn = true (identifica que es una devolución)
+  //   - parentSaleId = ID de la venta original
+  //   - total = negativo (representa una reducción en el valor)
+  //   - returnReason = motivo de la devolución
+  // ===========================================================================
+
   const returnSale = await withPrismaRetry(
     () =>
       prisma.sale.create({
@@ -111,6 +143,13 @@ export async function POST(req: NextRequest) {
     "return-sale:create"
   )
 
+  // ===========================================================================
+  // PASO 4: REINTEGRAR INVENTARIO
+  // Por cada producto devuelto:
+  //   - Incrementamos el stock del producto
+  //   - Creamos StockMovement con tipo "IN" para auditoría
+  // ===========================================================================
+
   const stockOps = items.flatMap((item) => [
     prisma.product.update({
       where: { id: item.productId },
@@ -118,7 +157,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.stockMovement.create({
       data: {
-        type: "IN",
+        type: STOCK_MOVEMENT_TYPE.IN,
         quantity: item.quantity,
         reason: `Devolución venta #${saleId}`,
         productId: item.productId,
@@ -139,6 +178,25 @@ export async function POST(req: NextRequest) {
     }
   })
 
+  // ===========================================================================
+  // PASO 5: (OPCIONAL) CREAR NOTA CRÉDITO EN FACTUS
+  // Solo si:
+  //   - createCreditNote = true (el usuario lo solicitó en el modal)
+  //   - Factus está habilitado y no bloqueado
+  //   - La venta original tiene factura electrónica asociada
+  //
+  // Una Nota Crédito es el documento electrónico que anula parcial o
+  // totalmente una factura electrónica ante DIAN.
+  //
+  // Flujo:
+  //   a) Obtenemos rango de numeración activo para notas crédito (doc "22")
+  //   b) Buscamos la factura original en Factus para obtener su ID interno
+  //   c) Mapeamos la devolución al payload de nota crédito de Factus/DIAN
+  //   d) Enviamos a POST /v2/credit-notes/validate
+  //   e) Guardamos el resultado (CUFE, consecutivo) en ElectronicInvoice
+  //   f) Auditamos
+  // ===========================================================================
+
   if (
     createCreditNote &&
     company?.factusEnabled &&
@@ -146,17 +204,19 @@ export async function POST(req: NextRequest) {
     originalSale.electronicInvoice
   ) {
     try {
-      const rawRanges = await listNumberingRanges(companyId, { document: "22" });
+      // --- Obtener rango de numeración activo para notas crédito ---
+      const rawRanges = await listNumberingRanges(companyId, { document: FACTUS_DOCUMENT_TYPE.CREDIT_NOTE });
       const inner = (rawRanges as any)?.data;
       const allRanges = Array.isArray(inner) ? inner : (inner as any)?.data ?? [];
       const activeRange = allRanges.find((r: any) => r.is_active === true || r.is_active === 1);
 
       if (!activeRange) {
         throw new Error(
-          "No se encontró un rango de numeración activo para notas crédito (documento 22) en Factus."
+          `No se encontró un rango de numeración activo para notas crédito (documento ${FACTUS_DOCUMENT_TYPE.CREDIT_NOTE}) en Factus.`
         );
       }
 
+      // --- Verificar que la factura original tenga un número válido en Factus ---
       const originalInvoice = originalSale.electronicInvoice;
       const billIdentifier = originalInvoice.consecutive || originalInvoice.factusBillId;
       if (!billIdentifier || billIdentifier === 'unknown') {
@@ -166,10 +226,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // --- Obtener la factura original desde Factus para referenciarla en la nota crédito ---
       const factusInvoice = await getInvoice(billIdentifier, companyId) as any;
       const factusId = Number(factusInvoice?.data?.id ?? factusInvoice?.id);
       const billId = isNaN(factusId) ? undefined : factusId;
 
+      // --- Mapear la devolución al formato de nota crédito de Factus/DIAN ---
       const creditNotePayload = await mapSaleToFactusCreditNote(
         returnSale as any,
         billIdentifier,
@@ -179,12 +241,13 @@ export async function POST(req: NextRequest) {
         billId
       );
 
+      // --- Enviar la nota crédito a Factus (POST /v2/credit-notes/validate) ---
       const factusResponse = await factusRequest<{
         id: number;
         consecutive: string;
         cufe: string;
         status: string;
-      }>("/v2/credit-notes/validate", { method: "POST", body: creditNotePayload as any }, companyId);
+      }>("/v2/credit-notes/validate", { method: HTTP_METHOD.POST, body: creditNotePayload as any }, companyId);
 
       const responseData = (factusResponse as any).data || factusResponse;
       const isValidated =
@@ -192,21 +255,23 @@ export async function POST(req: NextRequest) {
         responseData.status === "validated" ||
         factusResponse.status === "accepted";
 
+      // --- Guardar la nota crédito en nuestra DB (misma tabla ElectronicInvoice) ---
       const electronicInvoice = await prisma.electronicInvoice.create({
         data: {
           companyId,
           saleId: returnSale.id,
           cufe: responseData.cufe || factusResponse.cufe || "",
           consecutive: responseData.number || factusResponse.consecutive || String(responseData.id || factusResponse.id),
-          status: isValidated ? "VALIDATED" : "PENDING",
+          status: isValidated ? FE_STATUS.VALIDATED : FE_STATUS.PENDING,
           factusBillId: String(responseData.id || factusResponse.id || responseData.number || factusResponse.consecutive),
           total: returnSale.total,
           taxTotal: returnSale.tax,
         },
       });
 
+      // --- Auditar la creación de la nota crédito ---
       await logAudit({
-        userId: session.user.id, companyId: session.user.companyId, action: "FACTUS_CREDIT_NOTE_CREATED",
+        userId: session.user.id, companyId: session.user.companyId, action: AUDIT_ACTION.FACTUS_CREDIT_NOTE_CREATED,
         entity: "ElectronicInvoice", entityId: electronicInvoice.id, req,
       })
     } catch (error: any) {
@@ -219,5 +284,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // --- Respuesta final: devolvemos la venta de devolución ---
   return NextResponse.json(returnSale, { status: 201 })
 }

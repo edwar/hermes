@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { formatCOP } from "@/lib/utils"
-import { TAX_RATE } from "@/lib/constants"
+import { TAX_RATE, PAYMENT_METHOD } from "@/lib/constants"
 import { Receipt } from "@/components/pos/receipt"
 import { CustomerLookup } from "@/components/pos/customer-lookup"
 import { usePrinter } from "@/hooks/use-printer"
@@ -59,10 +59,10 @@ async function cachedFetchDenominations(companyId: string): Promise<CashDenomina
 }
 
 const paymentMethods = [
-  { value: "CASH", label: "Efectivo", icon: Banknote },
-  { value: "CARD", label: "Tarjeta", icon: CreditCard },
-  { value: "CREDIT", label: "Crédito", icon: Wallet },
-  { value: "TRANSFER", label: "Transferencia", icon: Landmark },
+  { value: PAYMENT_METHOD.CASH, label: "Efectivo", icon: Banknote },
+  { value: PAYMENT_METHOD.CARD, label: "Tarjeta", icon: CreditCard },
+  { value: PAYMENT_METHOD.CREDIT, label: "Crédito", icon: Wallet },
+  { value: PAYMENT_METHOD.TRANSFER, label: "Transferencia", icon: Landmark },
 ]
 
 interface CustomerInfo {
@@ -116,7 +116,7 @@ export function PaymentModal({
   preSelectedCustomer,
   onPreSelectedCustomerConsumed,
 }: PaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState("CASH")
+  const [paymentMethod, setPaymentMethod] = useState<(typeof PAYMENT_METHOD)[keyof typeof PAYMENT_METHOD]>(PAYMENT_METHOD.CASH)
   const [amountReceived, setAmountReceived] = useState("")
   const [showReceipt, setShowReceipt] = useState(false)
   const { data: session } = useSession()
@@ -142,7 +142,7 @@ export function PaymentModal({
   useEffect(() => {
     // Reset state when modal opens for a new sale
     if (open && !saleResult) {
-      setPaymentMethod("CASH")
+      setPaymentMethod(PAYMENT_METHOD.CASH)
       setAmountReceived("")
       setShowReceipt(false)
       setRequestElectronicInvoice(false)
@@ -267,7 +267,7 @@ export function PaymentModal({
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-3 min-w-0">
-              {paymentMethod === "CASH" && (
+              {paymentMethod === PAYMENT_METHOD.CASH && (
                 <>
                   <div className="space-y-1.5">
                     <Label className="text-xs">Monto recibido</Label>
@@ -323,7 +323,7 @@ export function PaymentModal({
                   <span>Total</span>
                   <span className="font-mono tabular-nums">{formatCOP(total)}</span>
                 </div>
-                {paymentMethod === "CASH" && (
+                {paymentMethod === PAYMENT_METHOD.CASH && (
                   <>
                     <Separator />
                     <div className="flex justify-between gap-2 text-muted-foreground">
@@ -376,7 +376,7 @@ export function PaymentModal({
           <Button
             size="sm"
             onClick={handleConfirm}
-            disabled={isProcessing || (paymentMethod === "CASH" && parseFloat(amountReceived || "0") < total)}
+            disabled={isProcessing || (paymentMethod === PAYMENT_METHOD.CASH && parseFloat(amountReceived || "0") < total)}
             className="w-full sm:w-auto"
           >
             {isProcessing ? "Procesando..." : <>Confirmar <span className="font-mono ml-1">{formatCOP(total)}</span></>}

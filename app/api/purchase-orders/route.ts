@@ -3,11 +3,12 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createPurchaseOrderSchema } from "@/features/purchase-orders/schemas/purchase-order-schema"
 import { companyScope } from "@/lib/company-scope"
+import { USER_ROLE, SORT_DIRECTION, PO_STATUS } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
     return NextResponse.json({ error: "Solo administradores pueden ver pedidos" }, { status: 403 })
   }
 
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
 
   const where = {
     ...companyScope(session),
-    ...(status ? { status: status as "PENDING" | "RECEIVED" | "CANCELLED" } : {}),
+    ...(status ? { status: status as (typeof PO_STATUS)[keyof typeof PO_STATUS] } : {}),
   }
 
   const [orders, total] = await Promise.all([
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
             user: { select: { id: true, name: true } },
             items: { include: { product: true } },
           },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: SORT_DIRECTION.DESC },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
@@ -49,7 +50,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
   if (!session.user.companyId) {
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
     return NextResponse.json({ error: "No autorizado para actualizar pedidos" }, { status: 403 })
   }
 

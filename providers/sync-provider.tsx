@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef, ty
 import { useOnlineStatus } from "@/hooks/use-online-status"
 import { db } from "@/lib/db"
 import { sileo } from "sileo"
+import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from "@/lib/constants"
 
 interface SyncContextValue {
   isOnline: boolean
@@ -56,8 +57,8 @@ async function processSyncQueue(): Promise<{ synced: number; failed: number }> {
     let results: BatchResult[] = []
     try {
       const res = await fetch("/api/sync/batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: HTTP_METHOD.POST,
+        headers: { [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.JSON },
         body: JSON.stringify({ items }),
       })
       if (!res.ok) {

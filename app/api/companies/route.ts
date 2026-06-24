@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD puede ver empresas" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD puede ver empresas" }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get("search") || ""
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     () =>
       prisma.company.findMany({
         where: search ? { name: { contains: search, mode: "insensitive" } } : {},
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         select: {
           id: true, name: true, nit: true, address: true, phone: true, email: true,
           isActive: true, createdAt: true, updatedAt: true,
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD puede editar empresas" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD puede editar empresas" }, { status: 403 })
 
   const body = await req.json()
   const { id, name, nit, address, phone, email, isActive, factusBlocked } = body
@@ -71,19 +72,19 @@ export async function PUT(req: NextRequest) {
   if (factusBlocked !== undefined) {
     if (factusBlocked && !existingCompany.factusBlocked) {
       await logAudit({
-        userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_FACTUS_BLOCKED",
+        userId: session.user.id, companyId: session.user.companyId,       action: AUDIT_ACTION.COMPANY_FACTUS_BLOCKED,
         entity: "Company", entityId: id, req,
       })
     } else if (!factusBlocked && existingCompany.factusBlocked) {
       await logAudit({
-        userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_FACTUS_UNBLOCKED",
+        userId: session.user.id, companyId: session.user.companyId,       action: AUDIT_ACTION.COMPANY_FACTUS_UNBLOCKED,
         entity: "Company", entityId: id, req,
       })
     }
   }
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_UPDATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.COMPANY_UPDATED,
     entity: "Company", entityId: id, metadata: changedFields, req,
   })
 
@@ -93,7 +94,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD puede eliminar empresas" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD puede eliminar empresas" }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")
@@ -106,7 +107,7 @@ export async function DELETE(req: NextRequest) {
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "COMPANY_DEACTIVATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.COMPANY_DEACTIVATED,
     entity: "Company", entityId: id, req,
   })
 

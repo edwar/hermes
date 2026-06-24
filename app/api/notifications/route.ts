@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
       () =>
         prisma.notification.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: SORT_DIRECTION.DESC },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),

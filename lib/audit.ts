@@ -1,16 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import type { NextRequest } from "next/server"
+import { AUDIT_ACTION } from "@/lib/constants"
 
-export type AuditAction =
-  | "USER_CREATED" | "USER_UPDATED" | "USER_ROLE_CHANGED"
-  | "USER_DEACTIVATED" | "USER_REACTIVATED" | "USER_PASSWORD_RESET"
-  | "COMPANY_CREATED" | "COMPANY_UPDATED" | "COMPANY_DEACTIVATED"
-  | "COMPANY_FACTUS_BLOCKED" | "COMPANY_FACTUS_UNBLOCKED"
-  | "INVITE_CREATED" | "INVITE_USED" | "INVITE_DELETED"
-  | "FACTUS_CREDITS_PURCHASED" | "FACTUS_CREDITS_CONSUMED"
-  | "FACTUS_INVOICE_CREATED" | "FACTUS_CREDIT_NOTE_CREATED"
-  | "CASH_SESSION_OPENED" | "CASH_SESSION_CLOSED"
-  | "CASH_MOVEMENT_CREATED" | "CASH_REGISTER_CREATED"
+export type AuditAction = typeof AUDIT_ACTION[keyof typeof AUDIT_ACTION]
 
 export async function logAudit(params: {
   userId?: string | null

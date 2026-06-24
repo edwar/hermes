@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getInvoicePdf, getInvoiceXml, factusRequest, FactusApiError, getInvoice } from '@/lib/factus/client';
 import type { InvoiceStatus } from '@prisma/client';
+import { HTTP_METHOD, HEADER_NAME } from '@/lib/constants';
 
 export async function GET(
   req: NextRequest,
@@ -43,8 +44,8 @@ export async function GET(
       const pdfBuffer = await getInvoicePdf(factusIdentifier, companyId, isCreditNote);
       return new NextResponse(pdfBuffer, {
         headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="factura-${invoice.consecutive || invoice.id}.pdf"`,
+          [HEADER_NAME.CONTENT_TYPE]: 'application/pdf',
+          [HEADER_NAME.CONTENT_DISPOSITION]: `attachment; filename="factura-${invoice.consecutive || invoice.id}.pdf"`,
         },
       });
     }
@@ -53,8 +54,8 @@ export async function GET(
       const xmlBuffer = await getInvoiceXml(factusIdentifier, companyId, isCreditNote);
       return new NextResponse(xmlBuffer, {
         headers: {
-          'Content-Type': 'application/xml',
-          'Content-Disposition': `attachment; filename="factura-${invoice.consecutive || invoice.id}.xml"`,
+          [HEADER_NAME.CONTENT_TYPE]: 'application/xml',
+          [HEADER_NAME.CONTENT_DISPOSITION]: `attachment; filename="factura-${invoice.consecutive || invoice.id}.xml"`,
         },
       });
     }
@@ -131,7 +132,7 @@ export async function PATCH(
       }
       await factusRequest(
         `${isCreditNote ? '/v2/credit-notes' : '/v2/bills'}/${factusIdentifier}/send-email`,
-        { method: 'POST', body: JSON.stringify({ email: customerEmail }) },
+        { method: HTTP_METHOD.POST, body: JSON.stringify({ email: customerEmail }) },
         companyId
       );
       return NextResponse.json({ success: true, message: 'Email enviado' });

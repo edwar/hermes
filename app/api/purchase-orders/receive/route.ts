@@ -3,11 +3,12 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { receivePurchaseOrderSchema } from "@/features/purchase-orders/schemas/purchase-order-schema"
 import { companyScope } from "@/lib/company-scope"
+import { USER_ROLE, PO_STATUS } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD" && session.user.role !== "MANAGER") {
+  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
     return NextResponse.json({ error: "No autorizado para recibir pedidos" }, { status: 403 })
   }
   if (!session.user.companyId) {
@@ -32,11 +33,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 })
   }
 
-  if (order.status === "RECEIVED") {
+  if (order.status === PO_STATUS.RECEIVED) {
     return NextResponse.json({ error: "Este pedido ya fue recibido" }, { status: 400 })
   }
 
-  if (order.status === "CANCELLED") {
+  if (order.status === PO_STATUS.CANCELLED) {
     return NextResponse.json({ error: "Este pedido fue cancelado" }, { status: 400 })
   }
 
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
     () =>
       prisma.purchaseOrder.update({
         where: { id },
-        data: { status: "RECEIVED" },
+        data: { status: PO_STATUS.RECEIVED },
         include: {
           supplier: true,
           user: { select: { id: true, name: true } },

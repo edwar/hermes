@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma"
+import { USER_ROLE } from "@/lib/constants"
+import { CONFIG_CATEGORY, CONFIG_KEY } from "@/lib/constants/config"
+import { NOTIFICATION_PRIORITY, NOTIFICATION_TYPE } from "@/lib/constants/notification"
 
-export type NotificationPriority = "high" | "medium" | "low"
+export type NotificationPriority = typeof NOTIFICATION_PRIORITY[keyof typeof NOTIFICATION_PRIORITY]
 
 export async function sendNotification(params: {
   userId: string
@@ -27,8 +30,8 @@ export async function sendNotification(params: {
 async function getThresholds() {
   const configs = await prisma.systemConfig.findMany({
     where: {
-      category: "notification",
-      key: { in: ["threshold_low", "threshold_medium", "threshold_high", "emails"] },
+      category: CONFIG_CATEGORY.NOTIFICATION,
+      key: { in: [CONFIG_KEY.THRESHOLD_LOW, CONFIG_KEY.THRESHOLD_MEDIUM, CONFIG_KEY.THRESHOLD_HIGH, CONFIG_KEY.EMAILS] },
     },
   })
 
@@ -43,37 +46,37 @@ async function getThresholds() {
   }
 
   return {
-    low: getVal("threshold_low", 20),
-    medium: getVal("threshold_medium", 10),
-    high: getVal("threshold_high", 5),
-    emails: getEmail("emails", ""),
+    low: getVal(CONFIG_KEY.THRESHOLD_LOW, 20),
+    medium: getVal(CONFIG_KEY.THRESHOLD_MEDIUM, 10),
+    high: getVal(CONFIG_KEY.THRESHOLD_HIGH, 5),
+    emails: getEmail(CONFIG_KEY.EMAILS, ""),
   }
 }
 
 function getPriority(balance: number, thresholds: { low: number; medium: number; high: number }): { priority: NotificationPriority; title: string; message: string } {
   if (balance <= thresholds.high) {
     return {
-      priority: "high",
+      priority: NOTIFICATION_PRIORITY.HIGH,
       title: "⚠️ Créditos Factus críticos",
       message: `Quedan solo ${balance} créditos. Se agotarán pronto. Solicita una recarga urgentemente.`,
     }
   }
   if (balance <= thresholds.medium) {
     return {
-      priority: "medium",
+      priority: NOTIFICATION_PRIORITY.MEDIUM,
       title: "Créditos Factus por agotarse",
       message: `Quedan ${balance} créditos de facturación electrónica. Considera recargar pronto.`,
     }
   }
   if (balance <= thresholds.low) {
     return {
-      priority: "low",
+      priority: NOTIFICATION_PRIORITY.LOW,
       title: "Créditos Factus bajando",
       message: `Quedan ${balance} créditos de facturación electrónica.`,
     }
   }
   return {
-    priority: "low",
+    priority: NOTIFICATION_PRIORITY.LOW,
     title: "Créditos Factus",
     message: `Saldo actual: ${balance} créditos.`,
   }
@@ -88,14 +91,14 @@ export async function notifyLowCredit(companyId: string, balanceAfter: number) {
   const users = await prisma.user.findMany({
     where: {
       companyId,
-      role: { in: ["GOD", "OWNER", "ADMIN"] },
+      role: { in: [USER_ROLE.GOD, USER_ROLE.OWNER, USER_ROLE.ADMIN] },
       isActive: true,
     },
     select: { id: true },
   })
 
   const gods = await prisma.user.findMany({
-    where: { role: "GOD", isActive: true },
+    where: { role: USER_ROLE.GOD, isActive: true },
     select: { id: true },
   })
 
@@ -104,7 +107,7 @@ export async function notifyLowCredit(companyId: string, balanceAfter: number) {
   for (const userId of allUsers) {
     await sendNotification({
       userId,
-      type: `FACTUS_LOW_CREDIT_${priority.toUpperCase()}`,
+      type: `${NOTIFICATION_TYPE.FACTUS_LOW_CREDIT}_${priority.toUpperCase()}`,
       title,
       message,
       metadata: { companyId, balanceAfter, priority },
@@ -128,14 +131,14 @@ export async function notifyCreditRequested(companyId: string, amount: number) {
   }
 
   const gods = await prisma.user.findMany({
-    where: { role: "GOD", isActive: true },
+    where: { role: USER_ROLE.GOD, isActive: true },
     select: { id: true },
   })
 
   for (const god of gods) {
     await sendNotification({
       userId: god.id,
-      type: "FACTUS_CREDIT_REQUESTED",
+      type: NOTIFICATION_TYPE.FACTUS_CREDIT_REQUESTED,
       title: "Solicitud de activación de créditos",
       message: `Se solicita la activación de ${amount} créditos de facturación electrónica.`,
       metadata: { companyId, amount },

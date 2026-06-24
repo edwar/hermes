@@ -1,10 +1,30 @@
+// =============================================================================
+// FACTUS MAPPERS — TRADUCTORES ENTRE NUESTRA DB Y EL FORMATO DE FACTUS/DIAN
+// Estas funciones convierten los modelos de Prisma (Sale, SaleItem, Customer)
+// en los payloads JSON que entiende la API de Factus.
+//
+// ¿Por qué necesitamos esto?
+// Nuestra base de datos guarda la información en un formato optimizado para
+// nuestra lógica de negocio. Factus (y por ende DIAN) espera un formato
+// específico con códigos de documento, impuestos, unidades de medida, etc.
+// Estos mappers son el "puente" entre ambos mundos.
+// =============================================================================
+
 import {
   DocumentTypeCodes,
   OrganizationTypes,
+  InvoiceTypes,
+  OperationTypes,
+  ProductIdentificationStandards,
+  CustomerTaxTypes,
+  TaxCodes,
 } from './reference-tables';
 import { getPaymentMethodConfig, getSystemConfig } from '@/lib/config/service';
+import { PAYMENT_METHOD } from "@/lib/constants"
 import type { Sale, SaleItem, Customer, Company, Product } from '@prisma/client';
 
+// --- Interfaz del payload que Factus espera para crear una factura electrónica ---
+// Contiene: referencia, cliente, items, impuestos, forma de pago
 export interface FactusInvoicePayload {
   reference_code: string;
   document: string;
@@ -48,6 +68,10 @@ export interface FactusInvoicePayload {
   }[];
 }
 
+// --- Interfaz del payload para Nota Crédito ---
+// Similar a la factura pero con campos adicionales como:
+//   - correction_concept_code: código del concepto de corrección
+//   - bill_number / bill_id: referencia a la factura original que se está anulando
 export interface FactusCreditNotePayload {
   numbering_range_id?: number;
   correction_concept_code: string;
@@ -93,18 +117,23 @@ export interface FactusCreditNotePayload {
   }[];
 }
 
+// --- Mapear método de pago interno al código que entiende Factus ---
+// Ejemplo: "CASH" -> payment_form: 1, payment_method_code: "10"
 async function mapPaymentMethod(method: string, companyId: string): Promise<{ payment_form: number; payment_method_code: string }> {
   const config = await getPaymentMethodConfig(companyId, method)
   return { payment_form: config.factusPaymentForm, payment_method_code: config.factusPaymentMethodCode }
 }
 
+// --- Mapear cliente de nuestra DB al formato de Factus ---
+// Si el cliente tiene cédula/NIT, se usa esa información.
+// Si no, se usa "Consumidor Final" (genérico para facturas sin identificación).
 function mapCustomerToFactus(
   customer: Customer | null,
   company: Company
 ) {
   if (customer?.cedula && customer.cedula.trim()) {
-    const docType = customer.documentType || '13';
-    const isNit = docType === '31';
+    const docType = customer.documentType || DocumentTypeCodes.CC;
+    const isNit = docType === DocumentTypeCodes.NIT;
     return {
       identification_document_code: docType,
       identification: customer.cedula.trim(),
@@ -115,24 +144,27 @@ function mapCustomerToFactus(
       address: customer.address || company.address || 'Sin dirección',
       email: customer.email || undefined,
       phone: customer.phone || undefined,
-      legal_organization_code: isNit ? '1' : '2',
+      legal_organization_code: isNit ? OrganizationTypes.LEGAL_ENTITY : OrganizationTypes.NATURAL_PERSON,
       tribute_code: '01',
       municipality_code: '68679',
     };
   }
 
   return {
-    identification_document_code: '13',
+    identification_document_code: DocumentTypeCodes.CC,
     identification: '222222222222',
     dv: '2',
     company: 'Consumidor Final',
     names: 'Consumidor Final',
     address: 'N/A',
-    legal_organization_code: '2',
-    tribute_code: 'ZZ',
+    legal_organization_code: OrganizationTypes.NATURAL_PERSON,
+    tribute_code: CustomerTaxTypes.NO_APPLIES,
   };
 }
 
+// --- Mapear item de venta al formato de Factus ---
+// Incluye: código de referencia, nombre, cantidad, precio, unidad de medida,
+// código estándar de producto, e impuestos (IVA 19% por defecto)
 async function mapSaleItemToFactus(item: SaleItem & { product: Product }, companyId: string) {
   const unitPrice = Number(item.unitPrice);
 
@@ -148,15 +180,21 @@ async function mapSaleItemToFactus(item: SaleItem & { product: Product }, compan
     discount_rate: '0.00',
     price: unitPrice.toFixed(2),
     unit_measure_code: unitMeasureCode || '94',
-    standard_code: identificationStandard || '999',
+    standard_code: identificationStandard || ProductIdentificationStandards.ADOPTANT,
     taxes: [
       {
-        code: '01',
+        code: TaxCodes.IVA,
         rate: '19.00',
       },
     ],
   };
 }
+
+// =============================================================================
+// MAPPER PRINCIPAL: VENTA -> FACTURA ELECTRÓNICA (documento "01")
+// Convierte una venta completa (con items, cliente, método de pago) en el
+// payload que Factus espera en POST /v2/bills/validate
+// =============================================================================
 
 export async function mapSaleToFactusInvoice(
   sale: Sale & {
@@ -171,7 +209,6 @@ export async function mapSaleToFactusInvoice(
   const items = await Promise.all(sale.items.map((item) => mapSaleItemToFactus(item, sale.companyId)));
 
   const customer = mapCustomerToFactus(sale.customer, sale.company);
-  const saleTotal = Number(sale.total);
   const subtotalFromItems = items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0);
   const taxFromItems = items.reduce((sum, item) => {
     const itemTax = item.taxes[0];
@@ -181,9 +218,9 @@ export async function mapSaleToFactusInvoice(
 
   return {
     reference_code: referenceCode,
-    document: '01',
+    document: InvoiceTypes.ELECTRONIC_INVOICE,
     numbering_range_id: numberingRangeId,
-    operation_type: '10',
+    operation_type: OperationTypes.STANDARD,
     observation: sale.notes || undefined,
     payment_details: [
       {
@@ -191,7 +228,7 @@ export async function mapSaleToFactusInvoice(
         payment_method_code: payment.payment_method_code,
         reference_code: `sale-${sale.id.slice(0, 8)}`,
         amount: String(Math.round(calculatedTotal * 100) / 100),
-        due_date: sale.paymentMethod === 'CREDIT' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
+        due_date: sale.paymentMethod === PAYMENT_METHOD.CREDIT ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
       },
     ],
     cash_rounding_amount: '0.00',
@@ -199,6 +236,15 @@ export async function mapSaleToFactusInvoice(
     items,
   };
 }
+
+// =============================================================================
+// MAPPER PRINCIPAL: DEVOLUCIÓN -> NOTA CRÉDITO (documento "22")
+// Convierte una venta de devolución en el payload de Nota Crédito Electrónica
+// que Factus espera en POST /v2/credit-notes/validate
+//
+// Una Nota Crédito es el documento que anula (parcial o totalmente) una
+// factura electrónica ante DIAN. Debe referenciar la factura original.
+// =============================================================================
 
 export async function mapSaleToFactusCreditNote(
   sale: Sale & {
@@ -229,8 +275,8 @@ export async function mapSaleToFactusCreditNote(
   return {
     ...(numberingRangeId ? { numbering_range_id: numberingRangeId } : {}),
     ...(originalBillId ? { bill_id: originalBillId } : {}),
-    bill_number: originalBillNumber,
-    correction_concept_code: String(correctionConceptCode),
+    bill_number: originalBillNumber,         // Número de la factura original que se anula
+    correction_concept_code: String(correctionConceptCode), // "1" = Devolución total o parcial
     customization_id: '20',
     reference_code: referenceCode,
     observation: sale.returnReason || 'Devolución',
@@ -252,10 +298,10 @@ export async function mapSaleToFactusCreditNote(
       discount_rate: '0.00',
       price: Number(item.unitPrice).toFixed(2),
       unit_measure_code: unitMeasureCode || '94',
-      standard_code: identificationStandard || '999',
+      standard_code: identificationStandard || ProductIdentificationStandards.ADOPTANT,
       taxes: [
         {
-          code: '01',
+          code: TaxCodes.IVA,
           rate: '19.00',
         },
       ],

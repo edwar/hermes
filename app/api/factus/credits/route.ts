@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { notifyLowCredit } from "@/lib/notifications"
 import { logAudit } from "@/lib/audit"
+import { FACTUS_TRANSACTION_TYPE, USER_ROLE, AUDIT_ACTION } from "@/lib/constants"
 import { notifyCreditRequested } from "@/lib/notifications"
 
 export async function GET() {
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
   const role = session.user.role
-  if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") {
+  if (role !== USER_ROLE.GOD && role !== USER_ROLE.OWNER && role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: "Solo ADMIN/OWNER/GOD pueden comprar créditos" }, { status: 403 })
   }
 
@@ -38,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const companyId = body.companyId || session.user.companyId
   if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
-  if (role !== "GOD" && companyId !== session.user.companyId) {
+  if (role !== USER_ROLE.GOD && companyId !== session.user.companyId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   }
 
@@ -57,7 +59,7 @@ export async function POST(req: NextRequest) {
         await tx.factusCreditTransaction.create({
           data: {
             companyId,
-            type: "PURCHASE",
+            type: FACTUS_TRANSACTION_TYPE.PURCHASE,
             amount: quantity,
             balanceAfter: company.factusCreditBalance,
             notes: `Compra de ${quantity} créditos (pendiente de activación)`,
@@ -72,7 +74,7 @@ export async function POST(req: NextRequest) {
   await logAudit({
     userId: session.user.id,
     companyId,
-    action: "FACTUS_CREDITS_PURCHASED",
+    action: AUDIT_ACTION.FACTUS_CREDITS_PURCHASED,
     entity: "Company",
     entityId: companyId,
     metadata: { amount: quantity, pending: result.factusCreditPending },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { CASH_SESSION_STATUS } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No tienes acceso a esta sesión" }, { status: 403 })
     }
 
-    if (cashSession.status !== "OPEN") {
+    if (cashSession.status !== CASH_SESSION_STATUS.OPEN) {
       return NextResponse.json({ error: "La sesión ya está cerrada" }, { status: 400 })
     }
 

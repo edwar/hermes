@@ -26,13 +26,14 @@ import { es } from "date-fns/locale"
 import { Zap, Download, Mail, RefreshCw, FileText, Loader2 } from "lucide-react"
 import { sileo } from "sileo"
 import { ExportCSVButton } from "@/components/shared/export-csv-button"
+import { FE_STATUS, REPORT_TYPE } from "@/lib/constants"
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  PENDING: { label: "Pendiente", variant: "secondary" },
-  VALIDATED: { label: "Validada", variant: "default" },
-  ACCEPTED: { label: "Aceptada", variant: "default" },
-  REJECTED: { label: "Rechazada", variant: "destructive" },
-  CANCELLED: { label: "Cancelada", variant: "destructive" },
+  [FE_STATUS.PENDING]: { label: "Pendiente", variant: "secondary" },
+  [FE_STATUS.VALIDATED]: { label: "Validada", variant: "default" },
+  [FE_STATUS.ACCEPTED]: { label: "Aceptada", variant: "default" },
+  [FE_STATUS.REJECTED]: { label: "Rechazada", variant: "destructive" },
+  [FE_STATUS.CANCELLED]: { label: "Cancelada", variant: "destructive" },
 }
 
 function formatCOP(value: number | string) {
@@ -177,10 +178,10 @@ export function ElectronicInvoicesTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="PENDING">Pendiente</SelectItem>
-              <SelectItem value="VALIDATED">Validada</SelectItem>
-              <SelectItem value="ACCEPTED">Aceptada</SelectItem>
-              <SelectItem value="REJECTED">Rechazada</SelectItem>
+              <SelectItem value={FE_STATUS.PENDING}>Pendiente</SelectItem>
+              <SelectItem value={FE_STATUS.VALIDATED}>Validada</SelectItem>
+              <SelectItem value={FE_STATUS.ACCEPTED}>Aceptada</SelectItem>
+              <SelectItem value={FE_STATUS.REJECTED}>Rechazada</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -188,7 +189,7 @@ export function ElectronicInvoicesTable() {
           <RefreshCw className="mr-2 size-4" />
           Actualizar
         </Button>
-        <ExportCSVButton report="electronic-invoices" />
+        <ExportCSVButton report={REPORT_TYPE.ELECTRONIC_INVOICES} />
       </div>
 
       {loading ? (
@@ -296,7 +297,7 @@ export function ElectronicInvoicesTable() {
                             <Mail className="size-3.5" />
                           )}
                         </Button>
-                        {(inv.status === "PENDING" || inv.status === "REJECTED") && (
+                        {(inv.status === FE_STATUS.PENDING || inv.status === FE_STATUS.REJECTED) && (
                           <Button
                             variant="ghost"
                             size="icon"

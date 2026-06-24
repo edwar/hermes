@@ -27,6 +27,7 @@ import {
   Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { USER_ROLE } from "@/lib/constants"
 
 interface NavItem {
   href: string
@@ -36,26 +37,26 @@ interface NavItem {
 }
 
 const allItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["OWNER", "ADMIN", "MANAGER", "CASHIER"] },
-  { href: "/pos", label: "POS", icon: ShoppingCart, roles: ["OWNER", "ADMIN", "CASHIER"] },
-  { href: "/sales", label: "Ventas", icon: Receipt, roles: ["OWNER", "ADMIN", "CASHIER"] },
-  { href: "/inventory", label: "Inventario", icon: Package, roles: ["OWNER", "ADMIN", "MANAGER"] },
-  { href: "/categories", label: "Categorías", icon: Tags, roles: ["OWNER", "ADMIN", "MANAGER"] },
-  { href: "/reports", label: "Reportes", icon: BarChart3, roles: ["OWNER", "ADMIN", "MANAGER"] },
-  { href: "/customers", label: "Clientes", icon: CircleUser, roles: ["OWNER", "ADMIN", "CASHIER"] },
-  { href: "/suppliers", label: "Proveedores", icon: Truck, roles: ["OWNER", "ADMIN"] },
-  { href: "/purchase-orders", label: "Compras", icon: PackageSearch, roles: ["OWNER", "ADMIN", "MANAGER"] },
-  { href: "/cajas", label: "Cajas", icon: Wallet, roles: ["OWNER", "ADMIN"] },
-  { href: "/settings", label: "Configuración", icon: Settings, roles: ["OWNER", "ADMIN"] },
-  { href: "/god-dashboard", label: "Panel GOD", icon: Eye, roles: ["GOD"] },
-  { href: "/system-settings", label: "Config. Sistema", icon: Settings2, roles: ["GOD"] },
-  { href: "/factus/transactions", label: "Transacciones Factus", icon: Coins, roles: ["GOD"] },
-  { href: "/audit-log", label: "Auditoría", icon: History, roles: ["GOD"] },
-  { href: "/notifications", label: "Notificaciones", icon: Bell, roles: ["GOD", "OWNER", "ADMIN"] },
-  { href: "/users", label: "Usuarios", icon: Users, roles: ["OWNER", "ADMIN"] },
-  { href: "/invites", label: "Invitaciones", icon: Mail, roles: ["GOD"] },
-  { href: "/companies", label: "Empresas", icon: Building2, roles: ["GOD"] },
-  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: ["OWNER", "ADMIN", "MANAGER", "CASHIER"] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
+  { href: "/pos", label: "POS", icon: ShoppingCart, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
+  { href: "/sales", label: "Ventas", icon: Receipt, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
+  { href: "/inventory", label: "Inventario", icon: Package, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
+  { href: "/categories", label: "Categorías", icon: Tags, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
+  { href: "/reports", label: "Reportes", icon: BarChart3, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
+  { href: "/customers", label: "Clientes", icon: CircleUser, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
+  { href: "/suppliers", label: "Proveedores", icon: Truck, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
+  { href: "/purchase-orders", label: "Compras", icon: PackageSearch, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
+  { href: "/cajas", label: "Cajas", icon: Wallet, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
+  { href: "/settings", label: "Configuración", icon: Settings, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
+  { href: "/god-dashboard", label: "Panel GOD", icon: Eye, roles: [USER_ROLE.GOD] },
+  { href: "/system-settings", label: "Config. Sistema", icon: Settings2, roles: [USER_ROLE.GOD] },
+  { href: "/factus/transactions", label: "Transacciones Factus", icon: Coins, roles: [USER_ROLE.GOD] },
+  { href: "/audit-log", label: "Auditoría", icon: History, roles: [USER_ROLE.GOD] },
+  { href: "/notifications", label: "Notificaciones", icon: Bell, roles: [USER_ROLE.GOD, USER_ROLE.OWNER, USER_ROLE.ADMIN] },
+  { href: "/users", label: "Usuarios", icon: Users, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
+  { href: "/invites", label: "Invitaciones", icon: Mail, roles: [USER_ROLE.GOD] },
+  { href: "/companies", label: "Empresas", icon: Building2, roles: [USER_ROLE.GOD] },
+  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
 ]
 
 interface BottomNavProps {

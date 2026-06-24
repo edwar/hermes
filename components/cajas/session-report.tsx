@@ -9,6 +9,7 @@ import { formatCOP } from "@/lib/utils"
 import { Loader2, Printer } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 
 interface SessionReportProps {
@@ -136,9 +137,9 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
             <p className="text-xs font-semibold uppercase text-muted-foreground">Movimientos extras</p>
             {session.cashMovements.map((m: { id: string; type: string; amount: number; reason: string }) => (
               <div key={m.id} className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{m.type === "IN" ? "Ingreso" : "Retiro"}: {m.reason}</span>
-                <span className={`font-mono tabular-nums ${m.type === "IN" ? "text-green-600" : "text-destructive"}`}>
-                  {m.type === "IN" ? "+" : "-"}{formatCOP(Number(m.amount))}
+                <span className="text-muted-foreground">{m.type === STOCK_MOVEMENT_TYPE.IN ? "Ingreso" : "Retiro"}: {m.reason}</span>
+                <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-green-600" : "text-destructive"}`}>
+                  {m.type === STOCK_MOVEMENT_TYPE.IN ? "+" : "-"}{formatCOP(Number(m.amount))}
                 </span>
               </div>
             ))}

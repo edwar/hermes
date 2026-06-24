@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { PAYMENT_METHOD, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -22,9 +23,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           user: { select: { id: true, name: true, email: true } },
           sales: {
             include: { items: { include: { product: true } } },
-            orderBy: { createdAt: "asc" },
+            orderBy: { createdAt: SORT_DIRECTION.ASC },
           },
-          cashMovements: { orderBy: { createdAt: "asc" } },
+          cashMovements: { orderBy: { createdAt: SORT_DIRECTION.ASC } },
         },
       }),
     "cash-sessions:report"
@@ -35,10 +36,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const salesByMethod = {
-    CASH: cashSession.sales.filter((s) => s.paymentMethod === "CASH" && !s.isReturn),
-    CARD: cashSession.sales.filter((s) => s.paymentMethod === "CARD" && !s.isReturn),
-    TRANSFER: cashSession.sales.filter((s) => s.paymentMethod === "TRANSFER" && !s.isReturn),
-    CREDIT: cashSession.sales.filter((s) => s.paymentMethod === "CREDIT" && !s.isReturn),
+    [PAYMENT_METHOD.CASH]: cashSession.sales.filter((s) => s.paymentMethod === PAYMENT_METHOD.CASH && !s.isReturn),
+    [PAYMENT_METHOD.CARD]: cashSession.sales.filter((s) => s.paymentMethod === PAYMENT_METHOD.CARD && !s.isReturn),
+    [PAYMENT_METHOD.TRANSFER]: cashSession.sales.filter((s) => s.paymentMethod === PAYMENT_METHOD.TRANSFER && !s.isReturn),
+    [PAYMENT_METHOD.CREDIT]: cashSession.sales.filter((s) => s.paymentMethod === PAYMENT_METHOD.CREDIT && !s.isReturn),
   }
 
   const returns = cashSession.sales.filter((s) => s.isReturn)

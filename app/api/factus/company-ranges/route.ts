@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { listNumberingRanges, FactusApiError } from '@/lib/factus/client';
+import { SORT_DIRECTION } from '@/lib/constants';
 
 export async function GET() {
   try {
@@ -22,7 +23,7 @@ export async function GET() {
     // Obtener los rangos guardados de la empresa en nuestra base de datos
     const savedRanges = await prisma.companyNumberingRange.findMany({
       where: { companyId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: SORT_DIRECTION.DESC },
     });
 
     // Obtener el estado actual desde la API de Factus

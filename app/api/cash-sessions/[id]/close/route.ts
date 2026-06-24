@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION } from "@/lib/constants"
+import { PAYMENT_METHOD } from "@/lib/constants"
+import { CASH_SESSION_STATUS } from "@/lib/constants"
 
 function isAdminOrGod(role: string) {
-  return role === "OWNER" || role === "ADMIN" || role === "GOD"
+  return role === USER_ROLE.OWNER || role === USER_ROLE.ADMIN || role === USER_ROLE.GOD
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -40,20 +43,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
-  if (session.user.role !== "GOD" && cashSession.cashRegister.companyId !== session.user.companyId) {
+  if (session.user.role !== USER_ROLE.GOD && cashSession.cashRegister.companyId !== session.user.companyId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
-  if (cashSession.status === "CLOSED") {
+  if (cashSession.status === CASH_SESSION_STATUS.CLOSED) {
     return NextResponse.json({ error: "Esta sesión ya está cerrada" }, { status: 400 })
   }
 
   const cashSalesTotal = cashSession.sales
-    .filter((s) => s.paymentMethod === "CASH" && !s.isReturn)
+    .filter((s) => s.paymentMethod === PAYMENT_METHOD.CASH && !s.isReturn)
     .reduce((sum, s) => sum + Number(s.total), 0)
 
   const cashReturnsTotal = cashSession.sales
-    .filter((s) => s.paymentMethod === "CASH" && s.isReturn)
+    .filter((s) => s.paymentMethod === PAYMENT_METHOD.CASH && s.isReturn)
     .reduce((sum, s) => sum + Number(s.total), 0)
 
   const movementsIn = cashSession.cashMovements
@@ -74,7 +77,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       prisma.cashSession.update({
         where: { id },
         data: {
-          status: "CLOSED",
+          status: CASH_SESSION_STATUS.CLOSED,
           closingBalance,
           expectedClosing,
           difference,
@@ -90,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "CASH_SESSION_CLOSED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.CASH_SESSION_CLOSED,
     entity: "CashSession", entityId: id, req,
   })
 

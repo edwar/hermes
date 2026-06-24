@@ -21,6 +21,7 @@ import { formatCOP } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { ExportCSVButton } from "@/components/shared/export-csv-button"
+import { FACTUS_TRANSACTION_TYPE } from "@/lib/constants"
 
 export default function FactusTransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -67,8 +68,8 @@ export default function FactusTransactionsPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="PURCHASE">Compras</SelectItem>
-              <SelectItem value="CONSUMPTION">Consumos</SelectItem>
+              <SelectItem value={FACTUS_TRANSACTION_TYPE.PURCHASE}>Compras</SelectItem>
+              <SelectItem value={FACTUS_TRANSACTION_TYPE.CONSUMPTION}>Consumos</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -109,7 +110,7 @@ export default function FactusTransactionsPage() {
                     </TableCell>
                     <TableCell className="text-sm font-medium">{tx.company?.name ?? "—"}</TableCell>
                     <TableCell>
-                      {tx.type === "PURCHASE" ? (
+                      {tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? (
                         <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border-0 text-[10px]">
                           Compra
                         </Badge>
@@ -120,7 +121,7 @@ export default function FactusTransactionsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums">
-                      {tx.type === "PURCHASE" ? "+" : "-"}{tx.amount}
+                      {tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? "+" : "-"}{tx.amount}
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums text-muted-foreground">
                       {tx.balanceAfter}

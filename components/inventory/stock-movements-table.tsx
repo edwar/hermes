@@ -26,6 +26,7 @@ import { StockMovementForm } from "@/components/inventory/stock-movement-form"
 import { Plus, ArrowDownToLine, ArrowUpFromLine, Search } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 export function StockMovementsTable() {
   const [formOpen, setFormOpen] = useState(false)
@@ -69,8 +70,8 @@ export function StockMovementsTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value=" ">Todos</SelectItem>
-              <SelectItem value="IN">Entradas</SelectItem>
-              <SelectItem value="OUT">Salidas</SelectItem>
+              <SelectItem value={STOCK_MOVEMENT_TYPE.IN}>Entradas</SelectItem>
+              <SelectItem value={STOCK_MOVEMENT_TYPE.OUT}>Salidas</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -114,22 +115,22 @@ export function StockMovementsTable() {
                     <Badge
                       variant="outline"
                       className={
-                        m.type === "IN"
+                        m.type === STOCK_MOVEMENT_TYPE.IN
                           ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
                           : "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400"
                       }
                     >
-                      {m.type === "IN" ? (
+                      {m.type === STOCK_MOVEMENT_TYPE.IN ? (
                         <ArrowDownToLine className="mr-1 size-3" />
                       ) : (
                         <ArrowUpFromLine className="mr-1 size-3" />
                       )}
-                      {m.type === "IN" ? "Entrada" : "Salida"}
+                      {m.type === STOCK_MOVEMENT_TYPE.IN ? "Entrada" : "Salida"}
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">{m.product.name}</TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
-                    {m.type === "IN" ? "+" : "-"}
+                    {m.type === STOCK_MOVEMENT_TYPE.IN ? "+" : "-"}
                     {m.quantity}
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-sm text-muted-foreground">

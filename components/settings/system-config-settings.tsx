@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Clock, AlertTriangle, Mail, Save } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiFetch } from "@/lib/api-client"
+import { CONFIG_CATEGORY, CONFIG_KEY } from "@/lib/constants/config"
 
 export function SystemConfigSettings() {
   const { success, error } = useToast()
@@ -37,13 +38,13 @@ export function SystemConfigSettings() {
         const data = await configsRes.json()
         const configs: any[] = data.systemConfigs ?? []
         const getVal = (key: string, def: number | string) => {
-          const found = configs.find((c: any) => c.key === key && c.category === "notification")
+          const found = configs.find((c: any) => c.key === key && c.category === CONFIG_CATEGORY.NOTIFICATION)
           return found ? (typeof def === "number" ? parseInt(found.value) || Number(def) : found.value) : def
         }
-        setThresholdLow(getVal("threshold_low", 20))
-        setThresholdMedium(getVal("threshold_medium", 10))
-        setThresholdHigh(getVal("threshold_high", 5))
-        setNotificationEmails(getVal("emails", ""))
+        setThresholdLow(getVal(CONFIG_KEY.THRESHOLD_LOW, 20))
+        setThresholdMedium(getVal(CONFIG_KEY.THRESHOLD_MEDIUM, 10))
+        setThresholdHigh(getVal(CONFIG_KEY.THRESHOLD_HIGH, 5))
+        setNotificationEmails(getVal(CONFIG_KEY.EMAILS, ""))
       }
     } catch {
       error("Error al cargar configuración")
@@ -59,14 +60,14 @@ export function SystemConfigSettings() {
     try {
       const existing = await fetch("/api/settings/configs").then((r) => r.json())
       const configs: any[] = existing.systemConfigs ?? []
-      const existingConfig = configs.find((c: any) => c.key === key && c.category === "notification")
+      const existingConfig = configs.find((c: any) => c.key === key && c.category === CONFIG_CATEGORY.NOTIFICATION)
 
       await apiFetch("/api/settings/configs", {
         method: "PUT",
         body: {
           type: "systemConfig",
           id: existingConfig?.id ?? null,
-          category: "notification",
+          category: CONFIG_CATEGORY.NOTIFICATION,
           key,
           value,
           label: key,
@@ -93,10 +94,10 @@ export function SystemConfigSettings() {
           body: { inviteExpiryHours },
           resource: "settings",
         }),
-        saveSystemConfig("threshold_low", String(thresholdLow)),
-        saveSystemConfig("threshold_medium", String(thresholdMedium)),
-        saveSystemConfig("threshold_high", String(thresholdHigh)),
-        saveSystemConfig("emails", notificationEmails),
+        saveSystemConfig(CONFIG_KEY.THRESHOLD_LOW, String(thresholdLow)),
+        saveSystemConfig(CONFIG_KEY.THRESHOLD_MEDIUM, String(thresholdMedium)),
+        saveSystemConfig(CONFIG_KEY.THRESHOLD_HIGH, String(thresholdHigh)),
+        saveSystemConfig(CONFIG_KEY.EMAILS, notificationEmails),
       ])
       success("Todas las configuraciones guardadas")
     } catch {

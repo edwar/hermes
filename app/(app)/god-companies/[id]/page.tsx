@@ -19,6 +19,7 @@ import { ArrowLeft, Coins, ShoppingCart, History, AlertTriangle, Eye, CheckCircl
 import { formatCOP } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { USER_ROLE, FACTUS_TRANSACTION_TYPE } from "@/lib/constants"
 
 export default function GodCompanyDetailPage() {
   const { data: session } = useSession()
@@ -32,7 +33,7 @@ export default function GodCompanyDetailPage() {
   const [activateAmount, setActivateAmount] = useState<number>(0)
 
   useEffect(() => {
-    if (session?.user?.role !== "GOD") return
+    if (session?.user?.role !== USER_ROLE.GOD) return
     fetch(`/api/god/companies/${companyId}`)
       .then((r) => r.json())
       .then(setData)
@@ -254,11 +255,11 @@ export default function GodCompanyDetailPage() {
                     <TableRow key={tx.id}>
                       <TableCell className="text-xs">{format(new Date(tx.createdAt), "dd/MM HH:mm", { locale: es })}</TableCell>
                       <TableCell>
-                        {tx.type === "PURCHASE"
+                        {tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE
                           ? <Badge className="bg-green-600 text-[10px]">Compra</Badge>
                           : <Badge variant="secondary" className="text-[10px]">Consumo</Badge>}
                       </TableCell>
-                      <TableCell className="text-right font-mono">{tx.type === "PURCHASE" ? "+" : "-"}{tx.amount}</TableCell>
+                      <TableCell className="text-right font-mono">{tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? "+" : "-"}{tx.amount}</TableCell>
                       <TableCell className="text-right font-mono text-muted-foreground">{tx.balanceAfter}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{tx.notes ?? "—"}</TableCell>
                     </TableRow>

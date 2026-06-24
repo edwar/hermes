@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { FACTUS_TRANSACTION_TYPE, USER_ROLE, AUDIT_ACTION } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
 
   const body = await req.json()
   const { companyId, amount } = body as { companyId?: string; amount?: number }
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
         await tx.factusCreditTransaction.create({
           data: {
             companyId,
-            type: "PURCHASE",
+            type: FACTUS_TRANSACTION_TYPE.PURCHASE,
             amount,
             balanceAfter: newBalance,
             notes: `${amount} créditos activados por ${session.user.name}`,
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   await logAudit({
     userId: session.user.id,
     companyId,
-    action: "FACTUS_CREDITS_PURCHASED",
+    action: AUDIT_ACTION.FACTUS_CREDITS_PURCHASED,
     entity: "Company",
     entityId: companyId,
     metadata: { activated: amount, remainingPending: result.remainingPending },

@@ -3,25 +3,26 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 import { z } from "zod"
 
 const createUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(["OWNER", "ADMIN", "MANAGER", "CASHIER"]),
+  role: z.enum([USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER]),
 })
 
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role === "GOD") {
+  if (session.user.role === USER_ROLE.GOD) {
     const users = await withPrismaRetry(
       () =>
         prisma.user.findMany({
-          where: { role: { not: "GOD" } },
-          orderBy: { createdAt: "desc" },
+          where: { role: { not: USER_ROLE.GOD } },
+          orderBy: { createdAt: SORT_DIRECTION.DESC },
           select: {
             id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
             company: { select: { id: true, name: true } },
@@ -32,12 +33,12 @@ export async function GET() {
     return NextResponse.json(users)
   }
 
-  if (session.user.role === "OWNER" || session.user.role === "ADMIN") {
+  if (session.user.role === USER_ROLE.OWNER || session.user.role === USER_ROLE.ADMIN) {
     const users = await withPrismaRetry(
       () =>
         prisma.user.findMany({
           where: { companyId: session.user.companyId },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: SORT_DIRECTION.DESC },
           select: {
             id: true, name: true, email: true, role: true, isActive: true, createdAt: true,
           },
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD" && session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  if (session.user.role === "ADMIN" && (parsed.data.role === "OWNER" || parsed.data.role === "ADMIN")) {
+  if (session.user.role === USER_ROLE.ADMIN && (parsed.data.role === USER_ROLE.OWNER || parsed.data.role === USER_ROLE.ADMIN)) {
     return NextResponse.json({ error: "No tienes permiso para crear usuarios OWNER o ADMIN" }, { status: 403 })
   }
 
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
   await logAudit({
     userId: session.user.id,
     companyId: session.user.companyId,
-    action: "USER_CREATED",
+    action: AUDIT_ACTION.USER_CREATED,
     entity: "User",
     entityId: user.id,
     metadata: { role: user.role },
@@ -111,15 +112,15 @@ export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD" && session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
   const body = await req.json()
   const { id, ...data } = body
 
-  if (session.user.role === "ADMIN") {
-    if (data.role === "OWNER" || data.role === "ADMIN") {
+  if (session.user.role === USER_ROLE.ADMIN) {
+    if (data.role === USER_ROLE.OWNER || data.role === USER_ROLE.ADMIN) {
       return NextResponse.json({ error: "No tienes permiso para asignar rol OWNER o ADMIN" }, { status: 403 })
     }
   }
@@ -151,28 +152,28 @@ export async function PUT(req: NextRequest) {
 
   if (data.role && data.role !== existingUser.role) {
     await logAudit({
-      userId: session.user.id, companyId: session.user.companyId, action: "USER_ROLE_CHANGED",
+      userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.USER_ROLE_CHANGED,
       entity: "User", entityId: user.id, metadata: { from: existingUser.role, to: data.role }, req,
     })
   }
 
   if (data.password) {
     await logAudit({
-      userId: session.user.id, companyId: session.user.companyId, action: "USER_PASSWORD_RESET",
+      userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.USER_PASSWORD_RESET,
       entity: "User", entityId: user.id, req,
     })
   }
 
   if (data.isActive !== undefined && !data.isActive && existingUser.isActive) {
     await logAudit({
-      userId: session.user.id, companyId: session.user.companyId, action: "USER_DEACTIVATED",
+      userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.USER_DEACTIVATED,
       entity: "User", entityId: user.id, req,
     })
   }
 
   if (data.isActive !== undefined && data.isActive && !existingUser.isActive) {
     await logAudit({
-      userId: session.user.id, companyId: session.user.companyId, action: "USER_REACTIVATED",
+      userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.USER_REACTIVATED,
       entity: "User", entityId: user.id, req,
     })
   }
@@ -182,7 +183,7 @@ export async function PUT(req: NextRequest) {
   if (data.role) changedFields.role = data.role
   if (data.isActive !== undefined) changedFields.isActive = data.isActive
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "USER_UPDATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.USER_UPDATED,
     entity: "User", entityId: user.id, metadata: changedFields, req,
   })
 
