@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  const isGod = session.user.role === "GOD"
+  const isGod = session.user.role === USER_ROLE.GOD
 
   if (!isGod) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
       prisma.companyInvite.findMany({
         where: isGod && companyId ? {} : { createdById: session.user.id },
         include: { createdBy: { select: { name: true, email: true } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
       }),
     "invites:list"
   )
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD") {
+  if (session.user.role !== USER_ROLE.GOD) {
     return NextResponse.json({ error: "Solo GOD puede crear invitaciones" }, { status: 403 })
   }
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "INVITE_CREATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.INVITE_CREATED,
     entity: "CompanyInvite", entityId: invite.id, metadata: { companyName: invite.companyName }, req,
   })
 
@@ -108,7 +109,7 @@ export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 
-  if (session.user.role !== "GOD") {
+  if (session.user.role !== USER_ROLE.GOD) {
     return NextResponse.json({ error: "Solo GOD puede eliminar invitaciones" }, { status: 403 })
   }
 
@@ -123,7 +124,7 @@ export async function DELETE(req: NextRequest) {
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "INVITE_DELETED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.INVITE_DELETED,
     entity: "CompanyInvite", entityId: id, req,
   })
 

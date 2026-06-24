@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -80,7 +81,7 @@ export async function GET() {
           by: ["productId"],
           where: { sale: { ...scope, createdAt: { gte: startOfMonth } } },
           _sum: { quantity: true, subtotal: true },
-          orderBy: { _sum: { quantity: "desc" } },
+          orderBy: { _sum: { quantity: SORT_DIRECTION.DESC } },
           take: 10,
         }),
       "dashboard:top-products"

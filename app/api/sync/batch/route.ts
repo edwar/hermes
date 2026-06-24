@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { processReplayQueue } from "@/lib/sync-replay"
+import { HTTP_METHOD } from "@/lib/constants"
 
 interface BatchItem {
   clientId: string
-  method: "POST" | "PUT" | "PATCH" | "DELETE"
+  method: typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE
   url: string
   body: string | null
 }

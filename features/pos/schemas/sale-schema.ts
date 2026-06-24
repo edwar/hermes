@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { PAYMENT_METHOD } from "@/lib/constants"
 
 export const saleItemSchema = z.object({
   productId: z.string().min(1),
@@ -14,7 +15,7 @@ export const createSaleSchema = z.object({
   tax: z.number().min(0),
   discount: z.number().min(0).default(0),
   total: z.number().min(0),
-  paymentMethod: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
+  paymentMethod: z.enum([PAYMENT_METHOD.CASH, PAYMENT_METHOD.CARD, PAYMENT_METHOD.TRANSFER, PAYMENT_METHOD.CREDIT] as const),
   sessionId: z.string().optional(),
   customerId: z.string().optional(),
   notes: z.string().optional(),

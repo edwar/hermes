@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { apiFetch } from "@/lib/api-client"
 import { Loader2, ShieldCheck } from "lucide-react"
+import { USER_ROLE, STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 interface CashMovementFormProps {
   open: boolean
@@ -24,8 +25,8 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
   const { data: session } = useSession()
   const queryClient = useQueryClient()
   const toast = useToast()
-  const isCashier = session?.user?.role === "CASHIER"
-  const [type, setType] = useState<"IN" | "OUT">("OUT")
+  const isCashier = session?.user?.role === USER_ROLE.CASHIER
+  const [type, setType] = useState<"IN" | "OUT">(STOCK_MOVEMENT_TYPE.OUT)
   const [amount, setAmount] = useState("")
   const [reason, setReason] = useState("")
   const [adminPassword, setAdminPassword] = useState("")
@@ -139,8 +140,8 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="OUT">Retiro</SelectItem>
-                    <SelectItem value="IN">Ingreso</SelectItem>
+                    <SelectItem value={STOCK_MOVEMENT_TYPE.OUT}>Retiro</SelectItem>
+                    <SelectItem value={STOCK_MOVEMENT_TYPE.IN}>Ingreso</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

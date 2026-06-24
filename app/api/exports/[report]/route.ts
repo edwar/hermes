@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { toCSV } from "@/lib/exporters/csv"
 import { companyScope } from "@/lib/company-scope"
+import { FACTUS_TRANSACTION_TYPE, USER_ROLE, SORT_DIRECTION, CONTENT_TYPE, HEADER_NAME } from "@/lib/constants"
 
 const REPORTS = ["sales", "inventory", "electronic-invoices", "cash-movements", "credit-transactions", "stock-movements"] as const
 type Report = typeof REPORTS[number]
@@ -93,7 +94,7 @@ export async function GET(
       const sales = await prisma.sale.findMany({
         where: { ...scope, ...(from || to ? { createdAt: dateFilter } : {}) },
         include: { customer: { select: { name: true } }, user: { select: { name: true } }, items: true },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         take: 5000,
       })
       rows = sales.map((s) => ({
@@ -116,7 +117,7 @@ export async function GET(
       const products = await prisma.product.findMany({
         where: { ...scope },
         include: { category: { select: { name: true } } },
-        orderBy: { name: "asc" },
+        orderBy: { name: SORT_DIRECTION.ASC },
       })
       rows = products.map((p) => ({
         name: p.name,
@@ -135,7 +136,7 @@ export async function GET(
       const invoices = await prisma.electronicInvoice.findMany({
         where: { ...scope, ...(from || to ? { createdAt: dateFilter } : {}) },
         include: { sale: { include: { customer: { select: { name: true } } } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         take: 5000,
       })
       rows = invoices.map((inv) => ({
@@ -154,7 +155,7 @@ export async function GET(
       const movements = await prisma.cashMovement.findMany({
         where: { ...scope, ...(from || to ? { createdAt: dateFilter } : {}) },
         include: { session: { include: { user: { select: { name: true } } } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         take: 5000,
       })
       rows = movements.map((m) => ({
@@ -168,20 +169,20 @@ export async function GET(
     }
 
     case "credit-transactions": {
-      if (session.user.role !== "GOD") {
+      if (session.user.role !== USER_ROLE.GOD) {
         return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
       }
       const txs = await prisma.factusCreditTransaction.findMany({
         where: { ...(from || to ? { createdAt: dateFilter } : {}) },
         include: { company: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         take: 5000,
       })
       rows = txs.map((tx) => ({
         createdAt: tx.createdAt.toISOString().split("T")[0],
         company: tx.company?.name ?? "",
-        type: tx.type === "PURCHASE" ? "Compra" : "Consumo",
-        amount: tx.type === "PURCHASE" ? `+${tx.amount}` : `-${tx.amount}`,
+        type: tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? "Compra" : "Consumo",
+        amount: tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? `+${tx.amount}` : `-${tx.amount}`,
         balanceAfter: tx.balanceAfter,
         notes: tx.notes ?? "",
       }))
@@ -192,7 +193,7 @@ export async function GET(
       const movements = await prisma.stockMovement.findMany({
         where: { ...scope, ...(from || to ? { createdAt: dateFilter } : {}) },
         include: { product: { select: { name: true } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         take: 5000,
       })
       rows = movements.map((m) => ({
@@ -210,8 +211,8 @@ export async function GET(
 
   return new NextResponse(csv, {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${report}-${new Date().toISOString().split("T")[0]}.csv"`,
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.CSV,
+      [HEADER_NAME.CONTENT_DISPOSITION]: `attachment; filename="${report}-${new Date().toISOString().split("T")[0]}.csv"`,
     },
   })
 }

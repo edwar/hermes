@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(
   _req: NextRequest,
@@ -8,7 +9,7 @@ export async function GET(
 ) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
 
   const { id } = await params
 
@@ -33,18 +34,18 @@ export async function GET(
     }),
     prisma.factusCreditTransaction.findMany({
       where: { companyId: id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: SORT_DIRECTION.DESC },
       take: 10,
     }),
     prisma.sale.findMany({
       where: { companyId: id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: SORT_DIRECTION.DESC },
       take: 5,
       include: { user: { select: { name: true } }, customer: { select: { name: true } } },
     }),
     prisma.auditLog.findMany({
       where: { companyId: id },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: SORT_DIRECTION.DESC },
       take: 10,
       include: { user: { select: { name: true, email: true } } },
     }),

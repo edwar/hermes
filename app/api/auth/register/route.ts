@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { hash } from "bcryptjs"
 import { logAudit } from "@/lib/audit"
-import { UserRole } from "@prisma/client"
+import { USER_ROLE, AUDIT_ACTION } from "@/lib/constants"
+import { CONFIG_CATEGORY, CONFIG_KEY } from "@/lib/constants/config"
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
     )
 
     await logAudit({
-      userId: undefined, companyId: company.id, action: "COMPANY_CREATED",
+      userId: undefined, companyId: company.id,     action: AUDIT_ACTION.COMPANY_CREATED,
       entity: "Company", entityId: company.id,
     })
   }
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
           email,
           name,
           passwordHash,
-          role: "OWNER",
+          role: USER_ROLE.OWNER,
           companyId: company.id,
         },
       }),
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
   )
 
   await logAudit({
-    userId: undefined, companyId: company.id, action: "USER_CREATED",
+    userId: undefined, companyId: company.id,     action: AUDIT_ACTION.USER_CREATED,
     entity: "User", entityId: user.id, metadata: { role: user.role },
   })
 
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
   )
 
   await logAudit({
-    userId: undefined, companyId: company.id, action: "INVITE_USED",
+    userId: undefined, companyId: company.id,     action: AUDIT_ACTION.INVITE_USED,
     entity: "CompanyInvite", entityId: invite.id,
   })
 
@@ -141,10 +142,10 @@ export async function POST(req: NextRequest) {
 
   // Crear configuraciones del sistema por defecto
   const systemConfigs = [
-    { category: "FACTUS", key: "documentType", value: "01", label: "Tipo de documento", description: "Código del tipo de documento DIAN" },
-    { category: "FACTUS", key: "operationType", value: "10", label: "Tipo de operación", description: "Código del tipo de operación" },
-    { category: "FACTUS", key: "unitMeasureCode", value: "94", label: "Código unidad de medida", description: "Código de unidad de medida predeterminada" },
-    { category: "FACTUS", key: "identificationStandard", value: "999", label: "Estándar de identificación", description: "Código del estándar de identificación de productos" },
+    { category: CONFIG_CATEGORY.FACTUS, key: CONFIG_KEY.DOCUMENT_TYPE, value: "01", label: "Tipo de documento", description: "Código del tipo de documento DIAN" },
+    { category: CONFIG_CATEGORY.FACTUS, key: CONFIG_KEY.OPERATION_TYPE, value: "10", label: "Tipo de operación", description: "Código del tipo de operación" },
+    { category: CONFIG_CATEGORY.FACTUS, key: CONFIG_KEY.UNIT_MEASURE_CODE, value: "94", label: "Código unidad de medida", description: "Código de unidad de medida predeterminada" },
+    { category: CONFIG_CATEGORY.FACTUS, key: CONFIG_KEY.IDENTIFICATION_STANDARD, value: "999", label: "Estándar de identificación", description: "Código del estándar de identificación de productos" },
   ]
   for (const config of systemConfigs) {
     await withPrismaRetry(

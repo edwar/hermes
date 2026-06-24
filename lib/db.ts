@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from "dexie"
+import { HTTP_METHOD } from "@/lib/constants"
 
 interface OfflineSale {
   id?: number
@@ -93,7 +94,7 @@ export type MutationStatus = "pending" | "synced" | "failed"
 export interface OfflineMutation {
   id?: number
   clientId: string // UUID generado en cliente; el server lo usa como idempotency key
-  method: "POST" | "PUT" | "PATCH" | "DELETE"
+  method: typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE
   url: string // ej: "/api/products", "/api/products/abc"
   body: string | null // JSON.stringify(body) o null
   resource: string // etiqueta legible: "products", "customers", "sale", etc.

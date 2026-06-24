@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createCategorySchema } from "@/features/inventory/schemas/category-schema"
 import { companyScope } from "@/lib/company-scope"
+import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -14,7 +15,7 @@ export async function GET() {
     () =>
       prisma.category.findMany({
         where,
-        orderBy: { name: "asc" },
+        orderBy: { name: SORT_DIRECTION.ASC },
       }),
     "categories:list"
   )

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -8,13 +9,13 @@ export async function GET() {
 
   const companyId = session.user.companyId ?? "default"
 
-  const paymentMethods = session.user.role === "GOD"
+  const paymentMethods = session.user.role === USER_ROLE.GOD
     ? []
     : await withPrismaRetry(
         () =>
           prisma.paymentMethodConfig.findMany({
             where: { companyId },
-            orderBy: { internalCode: "asc" },
+            orderBy: { internalCode: SORT_DIRECTION.ASC },
           }),
         "configs:payment-methods"
       )
@@ -22,7 +23,7 @@ export async function GET() {
   const systemConfigs = await withPrismaRetry(
     () =>
       prisma.systemConfig.findMany({
-        orderBy: [{ category: "asc" }, { key: "asc" }],
+        orderBy: [{ category: SORT_DIRECTION.ASC }, { key: SORT_DIRECTION.ASC }],
       }),
     "configs:system"
   )
@@ -37,7 +38,7 @@ export async function PUT(req: NextRequest) {
   const companyId = session.user.companyId ?? "default"
   const body = await req.json()
 
-  if (session.user.role === "GOD" && body.type !== "systemConfig") return NextResponse.json({ error: "GOD no puede modificar configuraciones de empresa" }, { status: 403 })
+  if (session.user.role === USER_ROLE.GOD && body.type !== "systemConfig") return NextResponse.json({ error: "GOD no puede modificar configuraciones de empresa" }, { status: 403 })
 
   if (body.type === "paymentMethod") {
     const { id, internalCode, name, factusPaymentForm, factusPaymentMethodCode, isActive } = body
@@ -81,7 +82,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role === "GOD") return NextResponse.json({ error: "GOD no puede eliminar configuraciones" }, { status: 403 })
+  if (session.user.role === USER_ROLE.GOD) return NextResponse.json({ error: "GOD no puede eliminar configuraciones" }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")

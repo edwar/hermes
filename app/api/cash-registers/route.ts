@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -12,7 +13,7 @@ export async function GET() {
     () =>
       prisma.cashRegister.findMany({
         where: companyScope(session),
-        orderBy: { name: "asc" },
+        orderBy: { name: SORT_DIRECTION.ASC },
       }),
     "cash-registers:list"
   )
@@ -22,7 +23,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const session = await auth()
-  if (!session?.user || (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "GOD")) {
+  if (!session?.user || (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
   if (!session.user.companyId) {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "CASH_REGISTER_CREATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.CASH_REGISTER_CREATED,
     entity: "CashRegister", entityId: register.id, req,
   })
 

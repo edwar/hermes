@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { FACTUS_TRANSACTION_TYPE, USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD" && session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
+  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
     return NextResponse.json({ error: "No tienes permisos para comprar créditos" }, { status: 403 })
   }
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Si es ADMIN/OWNER, solo su propia empresa
-  if (session.user.role !== "GOD" && session.user.companyId !== companyId) {
+  if (session.user.role !== USER_ROLE.GOD && session.user.companyId !== companyId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   }
 
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
         const txRecord = await tx.factusCreditTransaction.create({
           data: {
             companyId,
-            type: "PURCHASE",
+            type: FACTUS_TRANSACTION_TYPE.PURCHASE,
             amount,
             balanceAfter: newBalance,
             notes: notes || null,
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
         await logAudit({
           userId: session.user.id,
           companyId,
-          action: "FACTUS_CREDITS_PURCHASED",
+          action: AUDIT_ACTION.FACTUS_CREDITS_PURCHASED,
           entity: "Company",
           entityId: companyId,
           metadata: { amount, balanceAfter: newBalance },
@@ -82,15 +83,15 @@ export async function GET(req: NextRequest) {
   const pageSize = 20
 
   // GOD ve todo; OWNER/ADMIN solo su empresa
-  if (session.user.role !== "GOD" && companyId && companyId !== session.user.companyId) {
+  if (session.user.role !== USER_ROLE.GOD && companyId && companyId !== session.user.companyId) {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   }
-  if (session.user.role !== "GOD" && !companyId) {
+  if (session.user.role !== USER_ROLE.GOD && !companyId) {
     // OWNER/ADMIN sin filter: solo ven su empresa
   }
 
   const where: Record<string, unknown> = {}
-  if (session.user.role !== "GOD") {
+  if (session.user.role !== USER_ROLE.GOD) {
     where.companyId = session.user.companyId
   } else if (companyId) {
     where.companyId = companyId
@@ -108,7 +109,7 @@ export async function GET(req: NextRequest) {
         prisma.factusCreditTransaction.findMany({
           where,
           include: { company: { select: { name: true } } },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: SORT_DIRECTION.DESC },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),

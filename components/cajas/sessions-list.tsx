@@ -9,6 +9,7 @@ import { Loader2, FileText } from "lucide-react"
 import { SessionReport } from "./session-report"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { CASH_SESSION_STATUS } from "@/lib/constants"
 
 interface SessionsListProps {
   refreshKey?: number
@@ -99,8 +100,8 @@ export function SessionsList({ refreshKey }: SessionsListProps) {
                       {s.difference !== null ? formatCOP(Number(s.difference)) : "-"}
                     </td>
                     <td className="px-4 py-2.5 text-center">
-                      <Badge variant={s.status === "OPEN" ? "default" : "secondary"}>
-                        {s.status === "OPEN" ? "Abierta" : "Cerrada"}
+                      <Badge variant={s.status === CASH_SESSION_STATUS.OPEN ? "default" : "secondary"}>
+                        {s.status === CASH_SESSION_STATUS.OPEN ? "Abierta" : "Cerrada"}
                       </Badge>
                     </td>
                     <td className="hidden sm:table-cell px-4 py-2.5 text-center font-mono tabular-nums">{s._count.sales}</td>

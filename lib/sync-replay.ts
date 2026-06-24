@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma"
+import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from "@/lib/constants"
 
 interface ReplayRequest {
-  method: "POST" | "PUT" | "PATCH" | "DELETE"
+  method: typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE
   url: string
   body: string | null
 }
@@ -40,7 +41,7 @@ export async function processReplayQueue(
   const res = await fetch(`${process.env.NEXTAUTH_URL ?? process.env.AUTH_URL ?? "http://localhost:3000"}${request.url}`, {
     method: request.method,
     headers: {
-      "Content-Type": "application/json",
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.JSON,
       "x-offline-replay": "true",
       "x-offline-client-id": clientId,
       ...replayHeaders,

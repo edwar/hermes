@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
+import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -12,7 +13,7 @@ export async function GET() {
     () =>
       prisma.cashDenomination.findMany({
         where: { companyId },
-        orderBy: { sortOrder: "asc" },
+        orderBy: { sortOrder: SORT_DIRECTION.ASC },
       }),
     "cash-denominations:list"
   )
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const role = session.user.role
-  if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  if (role !== USER_ROLE.GOD && role !== USER_ROLE.OWNER && role !== USER_ROLE.ADMIN) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   const companyId = session.user.companyId
   if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     () =>
       prisma.cashDenomination.findFirst({
         where: { companyId },
-        orderBy: { sortOrder: "desc" },
+        orderBy: { sortOrder: SORT_DIRECTION.DESC },
         select: { sortOrder: true },
       }),
     "cash-denominations:max-order"
@@ -61,7 +62,7 @@ export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const role = session.user.role
-  if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  if (role !== USER_ROLE.GOD && role !== USER_ROLE.OWNER && role !== USER_ROLE.ADMIN) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   const companyId = session.user.companyId
   if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
 
@@ -85,7 +86,7 @@ export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   const role = session.user.role
-  if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") return NextResponse.json({ error: "No autorizado" }, { status: 403 })
+  if (role !== USER_ROLE.GOD && role !== USER_ROLE.OWNER && role !== USER_ROLE.ADMIN) return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   const companyId = session.user.companyId
   if (!companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
 

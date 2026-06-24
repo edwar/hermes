@@ -1,4 +1,14 @@
+// =============================================================================
+// CLIENTE HTTP DE FACTUS — COMUNICACIÓN CON LA API DE FACTUS (DIAN)
+// Factus es un Proveedor Tecnológico (PROV) autorizado por DIAN para la
+// facturación electrónica en Colombia. Este archivo contiene:
+//   1. Autenticación OAuth2 (password grant + refresh token)
+//   2. Cliente HTTP genérico (factusRequest) para cualquier endpoint
+//   3. Funciones específicas: facturas, notas crédito, rangos, eventos RADIAN
+// =============================================================================
+
 import { prisma } from '@/lib/prisma';
+import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from '@/lib/constants';
 
 const FACTUS_API_URL = process.env.FACTUS_API_URL || 'https://api-sandbox.factus.com.co';
 const CLIENT_ID = process.env.FACTUS_CLIENT_ID || '';
@@ -23,6 +33,8 @@ interface FactusError {
   };
 }
 
+// --- Error personalizado para la API de Factus ---
+// Incluye statusCode, detalles de validación y el payload completo de error
 export class FactusApiError extends Error {
   constructor(
     message: string,
@@ -34,6 +46,13 @@ export class FactusApiError extends Error {
     this.name = 'FactusApiError';
   }
 }
+
+// =============================================================================
+// AUTENTICACIÓN OAUTH2
+// Factus usa OAuth2 con grant_type=password para obtener un access token.
+// Los tokens se almacenan en la tabla Company y se refrescan automáticamente
+// cuando están por expirar.
+// =============================================================================
 
 async function getStoredTokens(companyId: string) {
   const company = await prisma.company.findUnique({
@@ -64,6 +83,10 @@ async function saveTokens(
   });
 }
 
+// --- Autenticar (o reusar token existente) ---
+// 1. Si hay token guardado y no ha expirado (>5 min de margen), lo reusa
+// 2. Si hay refresh token, intenta refrescar
+// 3. Si todo falla, hace login completo con usuario/contraseña
 export async function authenticate(companyId: string): Promise<string> {
   const stored = await getStoredTokens(companyId);
 
@@ -93,6 +116,7 @@ export async function authenticate(companyId: string): Promise<string> {
   return token.access_token;
 }
 
+// --- Login con usuario/contraseña (password grant) ---
 async function passwordGrant(): Promise<TokenResponse> {
   const params = new URLSearchParams({
     grant_type: 'password',
@@ -103,10 +127,10 @@ async function passwordGrant(): Promise<TokenResponse> {
   });
 
   const response = await fetch(`${FACTUS_API_URL}/oauth/token`, {
-    method: 'POST',
+    method: HTTP_METHOD.POST,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json',
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.FORM_URLENCODED,
+      [HEADER_NAME.ACCEPT]: CONTENT_TYPE.JSON,
     },
     body: params.toString(),
   });
@@ -122,6 +146,7 @@ async function passwordGrant(): Promise<TokenResponse> {
   return response.json();
 }
 
+// --- Refrescar token (refresh grant) ---
 async function refreshAccessToken(refreshToken: string): Promise<string> {
   const params = new URLSearchParams({
     grant_type: 'refresh_token',
@@ -131,10 +156,10 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
   });
 
   const response = await fetch(`${FACTUS_API_URL}/oauth/token`, {
-    method: 'POST',
+    method: HTTP_METHOD.POST,
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json',
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.FORM_URLENCODED,
+      [HEADER_NAME.ACCEPT]: CONTENT_TYPE.JSON,
     },
     body: params.toString(),
   });
@@ -149,6 +174,15 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
   const data: TokenResponse = await response.json();
   return data.access_token;
 }
+
+// =============================================================================
+// CLIENTE HTTP GENÉRICO
+// factusRequest() es la función base para todas las llamadas a Factus.
+// Automáticamente:
+//   1. Autentica (obtiene token)
+//   2. Agrega headers (Authorization Bearer, Content-Type)
+//   3. Maneja errores (los parsea y lanza FactusApiError)
+// =============================================================================
 
 export async function factusRequest<T = unknown>(
   endpoint: string,
@@ -169,12 +203,12 @@ export async function factusRequest<T = unknown>(
   const bodyString = typeof bodyData === 'string' ? bodyData : (bodyData ? JSON.stringify(bodyData) : undefined);
 
   const response = await fetch(url, {
-    method: options.method || 'GET',
+    method: options.method || HTTP_METHOD.GET,
     body: bodyString,
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      [HEADER_NAME.AUTHORIZATION]: `Bearer ${accessToken}`,
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.JSON,
+      [HEADER_NAME.ACCEPT]: CONTENT_TYPE.JSON,
     },
   });
 
@@ -203,14 +237,20 @@ export async function factusRequest<T = unknown>(
   return jsonResponse;
 }
 
+// =============================================================================
+// FUNCIONES ESPECÍFICAS DE LA API DE FACTUS
+// =============================================================================
+
+// --- Obtener una factura o nota crédito desde Factus por su ID/número ---
 export async function getInvoice(invoiceId: string, companyId: string, isCreditNote?: boolean) {
   return factusRequest<Record<string, unknown>>(
     isCreditNote ? `/v2/credit-notes/${invoiceId}` : `/v2/bills/${invoiceId}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
 }
 
+// --- Descargar PDF de una factura/nota crédito (viene en base64 desde Factus) ---
 export async function getInvoicePdf(invoiceId: string, companyId: string, isCreditNote?: boolean): Promise<ArrayBuffer> {
   if (!companyId) {
     throw new Error('companyId is required');
@@ -219,10 +259,10 @@ export async function getInvoicePdf(invoiceId: string, companyId: string, isCred
   const accessToken = await authenticate(companyId);
 
   const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-pdf`, {
-    method: 'GET',
+    method: HTTP_METHOD.GET,
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Accept': 'application/json',
+      [HEADER_NAME.AUTHORIZATION]: `Bearer ${accessToken}`,
+      [HEADER_NAME.ACCEPT]: CONTENT_TYPE.JSON,
     },
   });
 
@@ -245,6 +285,7 @@ export async function getInvoicePdf(invoiceId: string, companyId: string, isCred
   return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }
 
+// --- Descargar XML de una factura/nota crédito (formato DIAN estándar) ---
 export async function getInvoiceXml(invoiceId: string, companyId: string, isCreditNote?: boolean): Promise<ArrayBuffer> {
   if (!companyId) {
     throw new Error('companyId is required');
@@ -253,9 +294,9 @@ export async function getInvoiceXml(invoiceId: string, companyId: string, isCred
   const accessToken = await authenticate(companyId);
 
   const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-xml/`, {
-    method: 'GET',
+    method: HTTP_METHOD.GET,
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
+      [HEADER_NAME.AUTHORIZATION]: `Bearer ${accessToken}`,
     },
   });
 
@@ -269,7 +310,7 @@ export async function getInvoiceXml(invoiceId: string, companyId: string, isCred
   const contentType = response.headers.get('content-type') || '';
   let xmlContent: string;
 
-  if (contentType.includes('application/json')) {
+  if (contentType.includes(CONTENT_TYPE.JSON)) {
     const data = await response.json();
     xmlContent = data.data?.xml_base_64_encoded || data.xml_base_64_encoded;
     if (xmlContent) {
@@ -286,6 +327,7 @@ export async function getInvoiceXml(invoiceId: string, companyId: string, isCred
   return new TextEncoder().encode(xmlContent).buffer;
 }
 
+// --- Listar facturas desde Factus (con filtros de paginación y fechas) ---
 export async function listInvoices(
   companyId: string,
   params: {
@@ -308,7 +350,7 @@ export async function listInvoices(
     meta: { total: number; page: number; per_page: number };
   }>(
     `/v2/bills?${query.toString()}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
 }
@@ -336,6 +378,7 @@ interface PendingBill {
   errors?: Record<string, string>;
 }
 
+// --- Helper para "aplanar" la respuesta de Factus (maneja distintos formatos de respuesta) ---
 async function unwrapList<T>(raw: FactusEnvelope<FactusListResponse<T>> | T[]): Promise<T[]> {
   if (Array.isArray(raw)) return raw
   const inner = raw?.data
@@ -346,25 +389,28 @@ async function unwrapList<T>(raw: FactusEnvelope<FactusListResponse<T>> | T[]): 
   return []
 }
 
+// --- Listar facturas pendientes (status=0) en Factus ---
+// Se usa antes de crear una nueva FE para limpiar la cola de pendientes
 export async function listPendingBills(companyId: string): Promise<PendingBill[]> {
   const query = new URLSearchParams();
   query.set('filter[status]', '0');
   query.set('per_page', '50');
   const raw = await factusRequest<FactusEnvelope<FactusListResponse<PendingBill>> | PendingBill[]>(
     `/v2/bills?${query.toString()}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
   return unwrapList<PendingBill>(raw)
 }
 
+// --- Listar notas crédito pendientes (status=0) en Factus ---
 export async function listPendingCreditNotes(companyId: string): Promise<PendingBill[]> {
   const query = new URLSearchParams();
   query.set('filter[status]', '0');
   query.set('per_page', '50');
   const raw = await factusRequest<FactusEnvelope<FactusListResponse<PendingBill>> | PendingBill[]>(
     `/v2/credit-notes?${query.toString()}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
   return unwrapList<PendingBill>(raw)
@@ -386,6 +432,9 @@ interface NumberingRange {
   is_active: number;
 }
 
+// --- Listar rangos de numeración desde Factus ---
+// Los rangos de numeración son asignados por DIAN y definen el prefijo,
+// rango numérico, resolución y vigencia para facturas/notas crédito.
 export async function listNumberingRanges(companyId: string, filters?: { document?: string; isActive?: boolean }) {
   const query = new URLSearchParams();
   if (filters?.document) query.set('filter[document]', filters.document);
@@ -394,11 +443,13 @@ export async function listNumberingRanges(companyId: string, filters?: { documen
 
   return factusRequest<FactusEnvelope<{ data: NumberingRange[]; pagination?: Record<string, unknown> }>>(
     `/v2/numbering-ranges${qs ? `?${qs}` : ''}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
 }
 
+// --- Obtener el rango de numeración activo para un tipo de documento ---
+// Document type "21" = Factura Electrónica, "22" = Nota Crédito
 export async function getActiveNumberingRangeByDocument(companyId: string, document: string) {
   const raw = await listNumberingRanges(companyId, { document, isActive: true });
   const inner = raw?.data;
@@ -407,14 +458,16 @@ export async function getActiveNumberingRangeByDocument(companyId: string, docum
   return ranges[0] as NumberingRange;
 }
 
+// --- Obtener un rango de numeración específico por ID ---
 export async function getNumberingRange(companyId: string, id: number) {
   return factusRequest<NumberingRange>(
     `/v2/numbering-ranges/${id}`,
-    { method: 'GET' },
+    { method: HTTP_METHOD.GET },
     companyId
   );
 }
 
+// --- Obtener rangos de numeración guardados localmente en nuestra DB ---
 export async function getCompanyNumberingRanges(companyId: string) {
   const { prisma } = await import('@/lib/prisma');
   return prisma.companyNumberingRange.findMany({
@@ -423,6 +476,7 @@ export async function getCompanyNumberingRanges(companyId: string) {
   });
 }
 
+// --- Obtener el rango de numeración local para un tipo de documento específico ---
 export async function getNumberingRangeByDocumentType(companyId: string, documentType: string) {
   const { prisma } = await import('@/lib/prisma');
   return prisma.companyNumberingRange.findUnique({
@@ -432,6 +486,9 @@ export async function getNumberingRangeByDocumentType(companyId: string, documen
   });
 }
 
+// --- Enviar un evento RADIAN a Factus ---
+// RADIAN es el sistema de la DIAN para registro de eventos (aceptación,
+// rechazo, etc.). El evento "033" es "Aceptación Expresa".
 export async function sendRadianEvent(
   billNumber: string,
   eventType: string,
@@ -440,18 +497,19 @@ export async function sendRadianEvent(
 ) {
   return factusRequest<Record<string, unknown>>(
     `/v2/bills/${encodeURIComponent(billNumber)}/radian/events/${eventType}`,
-    { method: 'POST', body: body ?? {} } as any,
+    { method: HTTP_METHOD.POST, body: body ?? {} } as any,
     companyId
   );
 }
 
+// --- Crear un nuevo rango de numeración en Factus ---
 export async function createNumberingRange(
   companyId: string,
   data: { document: string; prefix: string; from: string; to: string; current: string }
 ) {
   return factusRequest<NumberingRange>(
     '/v2/numbering-ranges',
-    { method: 'POST', body: JSON.stringify(data) },
+    { method: HTTP_METHOD.POST, body: JSON.stringify(data) },
     companyId
   );
 }

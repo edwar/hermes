@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 import { logAudit } from "@/lib/audit"
+import { USER_ROLE, AUDIT_ACTION, CASH_SESSION_STATUS } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -36,13 +37,13 @@ export async function POST(req: NextRequest) {
     "cash-movements:session-lookup"
   )
 
-  if (!cashSession || cashSession.status !== "OPEN") {
+  if (!cashSession || cashSession.status !== CASH_SESSION_STATUS.OPEN) {
     return NextResponse.json({ error: "La sesión de caja no está abierta" }, { status: 400 })
   }
 
-  if (session.user.role === "GOD") {
+  if (session.user.role === USER_ROLE.GOD) {
     // GOD puede hacer cualquier cosa
-  } else if (session.user.role === "OWNER" || session.user.role === "ADMIN") {
+  } else if (session.user.role === USER_ROLE.OWNER || session.user.role === USER_ROLE.ADMIN) {
     // OWNER/ADMIN solo puede hacer movimientos en su empresa
     if (cashSession.cashRegister.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     const adminUser = await withPrismaRetry(
       () =>
         prisma.user.findFirst({
-          where: { role: "ADMIN", companyId: session.user.companyId, isActive: true },
+          where: { role: USER_ROLE.ADMIN, companyId: session.user.companyId, isActive: true },
         }),
       "cash-movements:admin-lookup"
     )
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
   )
 
   await logAudit({
-    userId: session.user.id, companyId: session.user.companyId, action: "CASH_MOVEMENT_CREATED",
+    userId: session.user.id, companyId: session.user.companyId,     action: AUDIT_ACTION.CASH_MOVEMENT_CREATED,
     entity: "CashMovement", entityId: movement.id, metadata: { type, amount, reason: reason.trim() }, req,
   })
 

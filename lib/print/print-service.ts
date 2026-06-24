@@ -201,7 +201,7 @@ export async function testPrint(method: PrintMethod): Promise<void> {
     subtotal: 0,
     tax: 0,
     discount: 0,
-    paymentMethod: "CASH",
+    paymentMethod: constants.PAYMENT_METHOD.CASH,
     createdAt: new Date().toISOString(),
     items: [{ name: "PRUEBA DE IMPRESIÓN", quantity: 1, unitPrice: 0, subtotal: 0 }],
   }
@@ -211,10 +211,10 @@ export async function testPrint(method: PrintMethod): Promise<void> {
 
 function buildBrowserReceiptHtml(data: PrintData): string {
   const methodLabels: Record<string, string> = {
-    CASH: "Efectivo",
-    CARD: "Tarjeta",
-    TRANSFER: "Transferencia",
-    CREDIT: "Crédito",
+    [constants.PAYMENT_METHOD.CASH]: "Efectivo",
+    [constants.PAYMENT_METHOD.CARD]: "Tarjeta",
+    [constants.PAYMENT_METHOD.TRANSFER]: "Transferencia",
+    [constants.PAYMENT_METHOD.CREDIT]: "Crédito",
   }
 
   const itemsHtml = data.items

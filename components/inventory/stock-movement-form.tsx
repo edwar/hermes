@@ -22,6 +22,7 @@ import {
 import { useCreateStockMovement } from "@/features/inventory/hooks/use-stock-movements"
 import { useProducts } from "@/features/inventory/hooks/use-products"
 import { Loader2 } from "lucide-react"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 interface StockMovementFormProps {
   open: boolean
@@ -29,7 +30,7 @@ interface StockMovementFormProps {
 }
 
 export function StockMovementForm({ open, onOpenChange }: StockMovementFormProps) {
-  const [type, setType] = useState<"IN" | "OUT">("IN")
+  const [type, setType] = useState<"IN" | "OUT">(STOCK_MOVEMENT_TYPE.IN)
   const [productId, setProductId] = useState("")
   const [quantity, setQuantity] = useState("")
   const [reason, setReason] = useState("")
@@ -44,7 +45,7 @@ export function StockMovementForm({ open, onOpenChange }: StockMovementFormProps
       quantity: parseInt(quantity),
       reason: reason || undefined,
     })
-    setType("IN")
+    setType(STOCK_MOVEMENT_TYPE.IN)
     setProductId("")
     setQuantity("")
     setReason("")
@@ -70,8 +71,8 @@ export function StockMovementForm({ open, onOpenChange }: StockMovementFormProps
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="IN">Entrada</SelectItem>
-                <SelectItem value="OUT">Salida</SelectItem>
+                <SelectItem value={STOCK_MOVEMENT_TYPE.IN}>Entrada</SelectItem>
+                <SelectItem value={STOCK_MOVEMENT_TYPE.OUT}>Salida</SelectItem>
               </SelectContent>
             </Select>
           </div>

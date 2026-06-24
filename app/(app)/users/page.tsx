@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast"
 import { apiFetch } from "@/lib/api-client"
 import { Plus, Pencil, Users } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import { USER_ROLE } from "@/lib/constants"
 
 interface UserForm {
   id?: string
@@ -50,11 +51,11 @@ interface UserForm {
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Dueño",
-  ADMIN: "Gerente",
-  MANAGER: "Gestor",
-  CASHIER: "Cajero",
-  GOD: "Super Admin",
+  [USER_ROLE.OWNER]: "Dueño",
+  [USER_ROLE.ADMIN]: "Gerente",
+  [USER_ROLE.MANAGER]: "Gestor",
+  [USER_ROLE.CASHIER]: "Cajero",
+  [USER_ROLE.GOD]: "Super Admin",
 }
 
 function createEmptyForm(): UserForm {
@@ -186,8 +187,8 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell className="text-muted-foreground">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant={user.role === "GOD" ? "default" : user.role === "ADMIN" ? "default" : "secondary"}>
-                          {user.role === "GOD" ? "Super Admin" : user.role === "OWNER" ? "Dueño" : user.role === "ADMIN" ? "Gerente" : user.role === "MANAGER" ? "Gestor" : "Cajero"}
+                        <Badge variant={user.role === USER_ROLE.GOD ? "default" : user.role === USER_ROLE.ADMIN ? "default" : "secondary"}>
+                          {user.role === USER_ROLE.GOD ? "Super Admin" : user.role === USER_ROLE.OWNER ? "Dueño" : user.role === USER_ROLE.ADMIN ? "Gerente" : user.role === USER_ROLE.MANAGER ? "Gestor" : "Cajero"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -251,10 +252,10 @@ export default function UsersPage() {
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="OWNER">Dueño</SelectItem>
-                  <SelectItem value="ADMIN">Gerente</SelectItem>
-                  <SelectItem value="MANAGER">Gestor</SelectItem>
-                  <SelectItem value="CASHIER">Cajero</SelectItem>
+                  <SelectItem value={USER_ROLE.OWNER}>Dueño</SelectItem>
+                  <SelectItem value={USER_ROLE.ADMIN}>Gerente</SelectItem>
+                  <SelectItem value={USER_ROLE.MANAGER}>Gestor</SelectItem>
+                  <SelectItem value={USER_ROLE.CASHIER}>Cajero</SelectItem>
                 </SelectContent>
               </Select>
             </div>

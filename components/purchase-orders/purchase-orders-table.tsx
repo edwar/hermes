@@ -29,11 +29,12 @@ import { formatCOP } from "@/lib/utils"
 import { Plus, PackageSearch, Check, X, Eye, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { PO_STATUS } from "@/lib/constants"
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  PENDING: { label: "Pendiente", variant: "outline" },
-  RECEIVED: { label: "Recibido", variant: "default" },
-  CANCELLED: { label: "Cancelado", variant: "destructive" },
+  [PO_STATUS.PENDING]: { label: "Pendiente", variant: "outline" },
+  [PO_STATUS.RECEIVED]: { label: "Recibido", variant: "default" },
+  [PO_STATUS.CANCELLED]: { label: "Cancelado", variant: "destructive" },
 }
 
 export function PurchaseOrdersTable() {
@@ -90,9 +91,9 @@ export function PurchaseOrdersTable() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="PENDING">Pendientes</SelectItem>
-              <SelectItem value="RECEIVED">Recibidos</SelectItem>
-              <SelectItem value="CANCELLED">Cancelados</SelectItem>
+              <SelectItem value={PO_STATUS.PENDING}>Pendientes</SelectItem>
+              <SelectItem value={PO_STATUS.RECEIVED}>Recibidos</SelectItem>
+              <SelectItem value={PO_STATUS.CANCELLED}>Cancelados</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -150,7 +151,7 @@ export function PurchaseOrdersTable() {
                         >
                           <Eye className="size-3.5" />
                         </Button>
-                        {order.status === "PENDING" && (
+                        {order.status === PO_STATUS.PENDING && (
                           <Button
                             variant="ghost"
                             size="icon"

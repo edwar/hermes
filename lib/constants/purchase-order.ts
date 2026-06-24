@@ -1,0 +1,5 @@
+export const PO_STATUS = {
+  PENDING: "PENDING",
+  RECEIVED: "RECEIVED",
+  CANCELLED: "CANCELLED",
+} as const

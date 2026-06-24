@@ -1,6 +1,7 @@
 "use client"
 
 import { db, type OfflineMutation } from "@/lib/db"
+import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from "@/lib/constants"
 
 export type QueuedResponse<T = unknown> = {
   ok: true
@@ -21,7 +22,7 @@ export type ApiResponse<T> =
     }
 
 export interface ApiFetchOptions<TMock = unknown> {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+  method?: typeof HTTP_METHOD.GET | typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE
   body?: unknown
   headers?: Record<string, string>
   resource?: string
@@ -31,7 +32,7 @@ export interface ApiFetchOptions<TMock = unknown> {
   forceQueue?: boolean
 }
 
-const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"])
+const MUTATING_METHODS = new Set([HTTP_METHOD.POST, HTTP_METHOD.PUT, HTTP_METHOD.PATCH, HTTP_METHOD.DELETE])
 
 function isNetworkError(err: unknown): boolean {
   if (err instanceof TypeError) return true
@@ -131,7 +132,7 @@ export async function apiFetch<T = unknown>(
   options: ApiFetchOptions<T> = {}
 ): Promise<ApiResponse<T>> {
   const {
-    method = "GET",
+    method = HTTP_METHOD.GET,
     body,
     headers,
     resource,
@@ -141,7 +142,7 @@ export async function apiFetch<T = unknown>(
     forceQueue = false,
   } = options
 
-  const isMutation = MUTATING_METHODS.has(method.toUpperCase())
+  const isMutation = method ? MUTATING_METHODS.has(method.toUpperCase() as typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE) : false
 
   if (
     isMutation &&
@@ -161,7 +162,7 @@ export async function apiFetch<T = unknown>(
   const init: RequestInit = {
     method,
     headers: {
-      "Content-Type": "application/json",
+      [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.JSON,
       ...headers,
     },
     body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,

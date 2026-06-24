@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { CASH_SESSION_STATUS, SORT_DIRECTION } from "@/lib/constants"
 
 const HEARTBEAT_TIMEOUT_MS = 60 * 1000 // 60 segundos sin heartbeat = sesión muerta
 
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
             user: { select: { id: true, name: true, email: true } },
             _count: { select: { sales: true } },
           },
-          orderBy: { openedAt: "desc" },
+          orderBy: { openedAt: SORT_DIRECTION.DESC },
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
   const userActiveSession = await withPrismaRetry(
     () =>
       prisma.cashSession.findFirst({
-        where: { userId: session.user.id, status: "OPEN" },
+        where: { userId: session.user.id, status: CASH_SESSION_STATUS.OPEN },
       }),
     "cash-sessions:user-active-lookup"
   )
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
   const registerActiveSession = await withPrismaRetry(
     () =>
       prisma.cashSession.findFirst({
-        where: { cashRegisterId, status: "OPEN" },
+        where: { cashRegisterId, status: CASH_SESSION_STATUS.OPEN },
         include: { user: { select: { name: true, email: true } } }
       }),
     "cash-sessions:register-active-lookup"
@@ -131,7 +132,7 @@ export async function POST(req: NextRequest) {
         () =>
           prisma.cashSession.update({
             where: { id: registerActiveSession.id },
-            data: { status: "CLOSED", closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
+            data: { status: CASH_SESSION_STATUS.CLOSED, closedAt: new Date(), notes: "Sesión cerrada por inactividad" }
           }),
         "cash-sessions:auto-close-stale-2"
       )

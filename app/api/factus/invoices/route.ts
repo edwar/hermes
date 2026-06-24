@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { factusRequest, FactusApiError, listInvoices, getNumberingRangeByDocumentType } from '@/lib/factus/client';
 import { mapSaleToFactusInvoice, mapSaleToFactusCreditNote } from '@/lib/factus/mappers';
 import type { InvoiceStatus } from '@prisma/client';
+import { USER_ROLE, FACTUS_DOCUMENT_TYPE, FACTUS_INVOICE_TYPE, SORT_DIRECTION, HTTP_METHOD } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: SORT_DIRECTION.DESC },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    if (session.user.role === 'CASHIER') {
+    if (session.user.role === USER_ROLE.CASHIER) {
       return NextResponse.json({ error: 'No tiene permisos para esta acción' }, { status: 403 });
     }
 
@@ -100,7 +101,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Facturación electrónica bloqueada para esta empresa' }, { status: 403 });
     }
 
-    const documentType = isReturn ? '22' : '21';
+    const documentType = isReturn ? FACTUS_DOCUMENT_TYPE.CREDIT_NOTE : FACTUS_DOCUMENT_TYPE.SALES_INVOICE;
     const rangeRecord = await getNumberingRangeByDocumentType(companyId, documentType);
 
     if (!rangeRecord) {
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     let factusPayload;
     let endpoint: string;
-    let invoiceType: 'invoice' | 'credit-note' = 'invoice';
+    let invoiceType: string = FACTUS_INVOICE_TYPE.INVOICE;
 
     if (isReturn) {
       const originalInvoice = sale.parentSale?.electronicInvoice;
@@ -172,7 +173,7 @@ export async function POST(req: NextRequest) {
         billIdNum
       );
       endpoint = '/v2/credit-notes/validate';
-      invoiceType = 'credit-note';
+      invoiceType = FACTUS_INVOICE_TYPE.CREDIT_NOTE;
     } else {
       factusPayload = await mapSaleToFactusInvoice(sale, rangeRecord.factusRangeId, `sale-${sale.id.slice(0, 8)}-${Date.now()}`);
       endpoint = '/v2/bills/validate';
@@ -186,7 +187,7 @@ export async function POST(req: NextRequest) {
       status: string;
       created_at: string;
       links?: { rel: string; href: string }[];
-    }>(endpoint, { method: 'POST', body: factusPayload as any }, companyId);
+    }>(endpoint, { method: HTTP_METHOD.POST, body: factusPayload as any }, companyId);
 
     const invoiceStatus: InvoiceStatus =
       factusResponse.status === 'accepted' || factusResponse.status === 'validated'

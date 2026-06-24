@@ -14,6 +14,7 @@ import { formatCOP } from "@/lib/utils"
 import { Loader2, Printer, Plus, Minus, CheckCircle, ArrowRight } from "lucide-react"
 import { SessionReport } from "./session-report"
 import { CashMovementForm } from "./cash-movement-form"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 interface CloseSessionDialogProps {
   open: boolean
@@ -243,10 +244,10 @@ useEffect(() => {
                   {summary.movements.map((m: any) => (
                     <div key={m.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
-                        {m.type === "IN" ? "Ingreso" : "Retiro"}: {m.reason}
+                        {m.type === STOCK_MOVEMENT_TYPE.IN ? "Ingreso" : "Retiro"}: {m.reason}
                       </span>
-                      <span className={`font-mono tabular-nums ${m.type === "IN" ? "text-green-600" : "text-destructive"}`}>
-                        {m.type === "IN" ? "+" : "-"}{formatCOP(Number(m.amount))}
+                      <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-green-600" : "text-destructive"}`}>
+                        {m.type === STOCK_MOVEMENT_TYPE.IN ? "+" : "-"}{formatCOP(Number(m.amount))}
                       </span>
                     </div>
                   ))}

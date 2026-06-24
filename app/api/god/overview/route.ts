@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== "GOD") return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
+  if (session.user.role !== USER_ROLE.GOD) return NextResponse.json({ error: "Solo GOD" }, { status: 403 })
 
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -35,7 +36,7 @@ export async function GET() {
     prisma.company.findMany({
       where: { factusEnabled: true, isActive: true, factusCreditBalance: { lte: 10 } },
       select: { id: true, name: true, factusCreditBalance: true },
-      orderBy: { factusCreditBalance: "asc" },
+      orderBy: { factusCreditBalance: SORT_DIRECTION.ASC },
       take: 10,
     }),
   ])
