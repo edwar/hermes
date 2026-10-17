@@ -348,16 +348,18 @@ export function FactusSettings() {
             )}
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label className="text-xs">Client ID</Label>
+                <Label htmlFor="factus-client-id" className="text-xs">Client ID</Label>
                 <Input
+                  id="factus-client-id"
                   value={credForm.clientId}
                   onChange={(e) => setCredForm((p) => ({ ...p, clientId: e.target.value }))}
                   autoComplete="off"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Client Secret</Label>
+                <Label htmlFor="factus-client-secret" className="text-xs">Client Secret</Label>
                 <Input
+                  id="factus-client-secret"
                   type="password"
                   value={credForm.clientSecret}
                   onChange={(e) => setCredForm((p) => ({ ...p, clientSecret: e.target.value }))}
@@ -365,8 +367,9 @@ export function FactusSettings() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Correo del usuario</Label>
+                <Label htmlFor="factus-username" className="text-xs">Correo del usuario</Label>
                 <Input
+                  id="factus-username"
                   type="email"
                   value={credForm.username}
                   onChange={(e) => setCredForm((p) => ({ ...p, username: e.target.value }))}
@@ -374,8 +377,9 @@ export function FactusSettings() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Contraseña</Label>
+                <Label htmlFor="factus-password" className="text-xs">Contraseña</Label>
                 <Input
+                  id="factus-password"
                   type="password"
                   value={credForm.password}
                   onChange={(e) => setCredForm((p) => ({ ...p, password: e.target.value }))}

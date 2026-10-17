@@ -43,3 +43,8 @@ next-env.d.ts
 
 # Caché local de Impeccable (herramienta de diseño)
 .impeccable/hook.cache.json
+
+# Pruebas
+/playwright-report/
+/test-results/
+/tests/e2e/.auth/

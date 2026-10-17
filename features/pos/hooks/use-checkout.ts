@@ -78,6 +78,8 @@ export function useCheckout() {
         toast.success("Venta guardada localmente. Se sincronizará automáticamente.")
       }
       queryClient.invalidateQueries({ queryKey: ["products"] })
+      // El catálogo del POS tiene su propia clave: sin esto el stock mostrado queda viejo tras vender.
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       queryClient.invalidateQueries({ queryKey: ["sales"] })
     },
     onError: (err: Error) => {

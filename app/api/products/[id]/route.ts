@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
+import { updateProductSchema } from "@/features/inventory/schemas/product-schema"
+import { USER_ROLE } from "@/lib/constants"
 
 export async function GET(
   req: NextRequest,
@@ -22,4 +24,60 @@ export async function GET(
 
   if (!product) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
   return NextResponse.json(product)
+}
+
+// El cliente (use-products.ts) actualiza y elimina por /api/products/:id; antes solo existían
+// PUT/DELETE en la ruta de colección, así que editar y eliminar respondían 405.
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
+    return NextResponse.json({ error: "No tienes permisos para actualizar productos" }, { status: 403 })
+  }
+
+  const { id } = await params
+  const parsed = updateProductSchema.safeParse(await req.json())
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+  }
+
+  const exists = await withPrismaRetry(
+    () => prisma.product.findFirst({ where: { id, ...companyScope(session) }, select: { id: true } }),
+    "products:update-lookup"
+  )
+  if (!exists) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
+
+  const product = await withPrismaRetry(
+    () => prisma.product.update({ where: { id }, data: parsed.data }),
+    "products:update"
+  )
+  return NextResponse.json(product)
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
+    return NextResponse.json({ error: "Solo administradores pueden eliminar productos" }, { status: 403 })
+  }
+
+  const { id } = await params
+  const exists = await withPrismaRetry(
+    () => prisma.product.findFirst({ where: { id, ...companyScope(session) }, select: { id: true } }),
+    "products:deactivate-lookup"
+  )
+  if (!exists) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
+
+  // Se desactiva en vez de borrar: conserva el historial de ventas.
+  await withPrismaRetry(
+    () => prisma.product.update({ where: { id }, data: { isActive: false } }),
+    "products:deactivate"
+  )
+  return NextResponse.json({ success: true })
 }
