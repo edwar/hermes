@@ -80,7 +80,14 @@ model Company {
   factusCreditTotal       Int     @default(0)
   factusBlocked           Boolean @default(false)
 
-  numberingRanges              CompanyNumberingRange[]
+  // Credenciales de la cuenta Factus de ESTE emisor (una cuenta por NIT).
+  // Los secretos se guardan cifrados (ver lib/crypto.ts).
+  factusClientId          String?
+  factusClientSecretEnc   String?
+  factusUsername          String?
+  factusPasswordEnc       String?
+
+  numberingRanges             CompanyNumberingRange[]
   cashDenominations            CashDenomination[]
   factusCreditTransactions     FactusCreditTransaction[]
   auditLogs                    AuditLog[]
@@ -324,11 +331,20 @@ model ElectronicInvoice {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  // Clave idempotente enviada a Factus como reference_code (estable por documento).
+  referenceCode   String?
+  attempts        Int           @default(0)
+  lastAttemptAt   DateTime?
+  nextRetryAt     DateTime?
+
   companyId       String
   saleId          String?        @unique
 
   company         Company        @relation(fields: [companyId], references: [id])
   sale            Sale?          @relation(fields: [saleId], references: [id])
+
+  @@index([status, nextRetryAt])
+  @@index([companyId, status])
 }
 
 model CashRegister {

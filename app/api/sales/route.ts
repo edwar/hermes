@@ -10,25 +10,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
-import { mapSaleToFactusInvoice } from "@/lib/factus/mappers"
-import { factusRequest, getNumberingRangeByDocumentType, listPendingBills, sendRadianEvent } from "@/lib/factus/client"
-import { logAudit } from "@/lib/audit"
-import { notifyLowCredit } from "@/lib/notifications"
-import { EventCodes, DocumentTypeCodes } from "@/lib/factus/reference-tables"
-import { STOCK_MOVEMENT_TYPE, FACTUS_TRANSACTION_TYPE, FACTUS_DOCUMENT_TYPE, AUDIT_ACTION, FE_STATUS, USER_ROLE, HTTP_METHOD, SORT_DIRECTION } from "@/lib/constants"
+import { emitInvoiceForSale } from "@/lib/invoicing/emit"
+import { STOCK_MOVEMENT_TYPE, USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 import z from "zod"
-
-interface FactusResponse {
-  id?: number
-  number?: string
-  consecutive: string
-  cufe: string
-  qr_code: string
-  status: string
-  validated_at?: boolean
-  is_validated?: boolean
-  errors?: string[]
-}
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -208,201 +192,24 @@ export async function POST(req: NextRequest) {
   })
 
   // ===========================================================================
-  // PASO 3: FACTURA ELECTRÓNICA (FE) — INTEGRACIÓN CON FACTUS + DIAN
-  // Si el usuario marcó "Solicitar Factura Electrónica" en el checkout:
-  //   a) Verificamos que Factus esté habilitado y tenga créditos
-  //   b) Limpiamos facturas pendientes en Factus (para evitar duplicados)
-  //   c) Mapeamos la venta al formato que exige Factus/DIAN
-  //   d) Enviamos a POST /v2/bills/validate de Factus
-  //   e) Guardamos el resultado (CUFE, consecutivo) en ElectronicInvoice
-  //   f) Descontamos 1 crédito de facturación del saldo de la empresa
-  //   g) Auditamos todo
+  // PASO 3: FACTURA ELECTRÓNICA (FE) — INTEGRACIÓN CON EL PROVEEDOR (FACTUS + DIAN)
+  // La venta y el inventario ya están guardados. La emisión vive en
+  // lib/invoicing/emit.ts y es idempotente (reference_code estable por venta):
+  //   - VALIDATED: la DIAN aceptó el documento; se descontó 1 crédito.
+  //   - PENDING:   sin respuesta definitiva; se reintenta en segundo plano.
+  //   - REJECTED:  la DIAN rechazó; hay que corregir datos y reintentar.
+  //   - skipped:   no se intentó (FE deshabilitada, bloqueada o sin créditos).
+  // Una falla de FE nunca revierte la venta.
   // ===========================================================================
 
   let electronicInvoiceResult = null
 
   if (requestElectronicInvoice) {
     try {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId },
-        select: {
-          factusEnabled: true,
-          factusBlocked: true,
-          factusCreditBalance: true,
-        },
-      })
-
-      if (!company?.factusEnabled) {
-        console.error("Factus: La empresa no tiene habilitado Factus")
-      } else if (company.factusBlocked) {
-        console.warn("Factus: Facturación bloqueada para esta empresa. La venta se creó sin FE.")
-      } else if ((company.factusCreditBalance ?? 0) <= 0) {
-        console.warn("Factus: Saldo de créditos insuficiente. La venta se creó sin FE.")
-      } else {
-        // --- Obtener el rango de numeración para facturas ---
-        const rangeRecord = await getNumberingRangeByDocumentType(companyId, FACTUS_DOCUMENT_TYPE.SALES_INVOICE)
-        const numberingRangeId = rangeRecord?.factusRangeId
-
-        // --- Mapear la venta de nuestra DB al payload que entiende Factus/DIAN ---
-        const invoicePayload = await mapSaleToFactusInvoice(
-          sale as any,
-          numberingRangeId,
-          `sale-${sale.id.slice(0, 8)}-${Date.now()}`
-        )
-
-        // --- Limpiar pendientes de Factus antes de crear la factura ---
-        // Factus solo permite tener una factura pendiente a la vez por rango.
-        // Si hay facturas previas en estado pendiente (status=0), las destruimos.
-        let blockedByDian = false
-        try {
-          // Busca si hay facturas pendientes en Factus
-          const pending = await listPendingBills(companyId)
-          console.log(`Factus: Facturas pendientes: ${pending.length}`)
-          for (const bill of pending) {
-            console.log(`  Factura: id=${bill.id}, num=${bill.number}, ref=${bill.reference_code}, status=${bill.status}`)
-            if (bill.reference_code) {
-              try {
-                //Destruye la factura por referencia
-                await factusRequest(
-                  `/v2/bills/destroy/reference/${encodeURIComponent(bill.reference_code)}`,
-                  { method: HTTP_METHOD.DELETE },
-                  companyId
-                )
-                console.log(`  ✅ Factura destruida por referencia: ${bill.reference_code}`)
-              } catch (destroyErr: any) {
-                //Si la factura ya fue enviada a DIAN, forzamos aceptación expresa (evento "033")
-                // para liberar la cola y luego reintentamos destruir
-                const msg = destroyErr?.message?.toLowerCase() ?? ""
-                if (msg.includes("dian") || msg.includes("enviado")) {
-                  console.warn(`  ⛔ Factura ${bill.number} ya fue enviada a DIAN, no se puede destruir. Intentando aceptación expresa...`)
-                  if (bill.number) {
-                    try {
-                      // Forzamos aceptación expresa para liberar la cola
-                      await sendRadianEvent(bill.number, EventCodes.EXPRESS_ACCEPTANCE, companyId, {
-                        identification_document_code: sale.customer?.documentType ?? DocumentTypeCodes.CC,
-                        identification: sale.customer?.cedula ?? "00000000",
-                        dv: sale.customer?.dv ?? "",
-                        first_name: sale.customer?.name ?? "Cliente",
-                        last_name: "",
-                        job_title: "",
-                        organization_department: "",
-                      })
-                      console.log(`  ✅ Express acceptance sent for ${bill.number}, retrying destroy...`)
-                      try {
-                        // Reintentamos destruir la factura
-                        await factusRequest(
-                          `/v2/bills/destroy/reference/${encodeURIComponent(bill.reference_code)}`,
-                          { method: HTTP_METHOD.DELETE },
-                          companyId
-                        )
-                        console.log(`  ✅ Destruida después de aceptación: ${bill.reference_code}`)
-                      } catch {
-                        console.warn(`  ⛔ No se pudo destruir la factura ${bill.number} después de aceptación. Debería liberarse pronto.`)
-                        blockedByDian = true
-                      }
-                    } catch (acceptErr: any) {
-                      console.error(`  ❌ Aceptación expresa fallida para ${bill.number}:`, acceptErr?.message)
-                      blockedByDian = true
-                    }
-                  } else {
-                    // Si la factura no tiene referencia, no podemos destruirla
-                    console.warn(`  ⛔ Factura ${bill.number} no tiene referencia, no se puede destruir.`)
-                    blockedByDian = true
-                  }
-                } else {
-                  console.error(`  ❌ Falló la destrucción de la factura ${bill.reference_code}:`, destroyErr?.message)
-                }
-              }
-            }
-          }
-        } catch (cleanupErr) {
-          // Error al limpiar facturas pendientes
-          console.error("Error al limpiar facturas pendientes en Factus:", cleanupErr)
-        }
-
-        if (blockedByDian) {
-          console.warn("Factus: no se pudieron limpiar todas las facturas pendientes. " +
-            "La venta se creó sin FE.")
-        } else {
-          // --- Enviar la factura a Factus (POST /v2/bills/validate) ---
-          // Factus la recibe, la valida contra las reglas de DIAN y la acusa recibo
-          let factusResponse: FactusResponse
-          try {
-            factusResponse = await factusRequest<FactusResponse>(
-              "/v2/bills/validate",
-              { method: HTTP_METHOD.POST, body: invoicePayload as any },
-              companyId
-            )
-          } catch (error: any) {
-            console.error("Factus error:", error?.message || error)
-            throw error
-          }
-
-          const responseData = (factusResponse as any).data || factusResponse
-          const isValidated = responseData.is_validated === true || factusResponse.status === "Created" || factusResponse.status === "accepted"
-          const billNumber = responseData.number || factusResponse.number || 'unknown'
-
-          // --- Guardar el resultado de la FE en nuestra base de datos ---
-          // Almacenamos CUFE (código único de factura electrónica), consecutivo, estado
-          await prisma.electronicInvoice.create({
-            data: {
-              companyId,
-              saleId: sale.id,
-              cufe: responseData.cufe || factusResponse.cufe,
-              consecutive: billNumber,
-              status: isValidated ? FE_STATUS.VALIDATED : FE_STATUS.PENDING,
-              factusBillId: billNumber,
-              total: sale.total,
-              taxTotal: sale.tax,
-            },
-          })
-
-          // --- Descontar 1 crédito de facturación del saldo de la empresa ---
-          // Este es el core del modelo de negocio: cada FE consume un crédito
-          await prisma.company.update({
-            where: { id: companyId },
-            data: { factusCreditBalance: { decrement: 1 } },
-          })
-
-          // --- Registrar la transacción de consumo de crédito ---
-          await prisma.factusCreditTransaction.create({
-            data: {
-              companyId,
-              type: FACTUS_TRANSACTION_TYPE.CONSUMPTION,
-              amount: 1,
-              balanceAfter: (company.factusCreditBalance ?? 0) - 1,
-              saleId: sale.id,
-              notes: `FE ${billNumber}`,
-            },
-          })
-
-          // --- Notificar si el saldo de créditos está bajo ---
-          await notifyLowCredit(companyId, (company.factusCreditBalance ?? 0) - 1)
-
-          // --- Auditar todo: consumo de crédito + creación de FE ---
-          await logAudit({
-            userId: session.user.id,
-            companyId,
-            action: AUDIT_ACTION.FACTUS_CREDITS_CONSUMED,
-            entity: "Sale",
-            entityId: sale.id,
-            metadata: { billNumber, balanceAfter: (company.factusCreditBalance ?? 0) - 1 },
-          })
-
-          await logAudit({
-            userId: session.user.id,
-            companyId,
-            action: AUDIT_ACTION.FACTUS_INVOICE_CREATED,
-            entity: "ElectronicInvoice",
-            entityId: sale.id,
-            metadata: { billNumber, cufe: responseData.cufe || factusResponse.cufe },
-          })
-
-          electronicInvoiceResult = factusResponse
-        }
-      }
+      electronicInvoiceResult = await emitInvoiceForSale(sale.id, companyId, session.user.id)
     } catch (error) {
       console.error("Error creating electronic invoice:", error)
+      electronicInvoiceResult = { status: "error", reason: "No se pudo emitir la factura electrónica" }
     }
   }
 

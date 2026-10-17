@@ -63,9 +63,17 @@ export function useCheckout() {
 
       return result.data
     },
-    onSuccess: (sale: { isSynced?: boolean }) => {
+    onSuccess: (sale: { isSynced?: boolean; electronicInvoice?: { status?: string; reason?: string | null } | null }) => {
+      const fe = sale.electronicInvoice
       if (sale.isSynced !== false) {
         toast.success("Venta registrada exitosamente")
+        if (fe?.status === "PENDING") {
+          toast.info("Factura electrónica en proceso. Se reintentará automáticamente.")
+        } else if (fe?.status === "REJECTED") {
+          toast.error(`La DIAN rechazó la factura electrónica: ${fe.reason ?? "revisa los datos del cliente"}`)
+        } else if (fe?.status === "skipped" || fe?.status === "error") {
+          toast.error(`La venta se guardó sin factura electrónica: ${fe.reason ?? "motivo desconocido"}`)
+        }
       } else {
         toast.success("Venta guardada localmente. Se sincronizará automáticamente.")
       }

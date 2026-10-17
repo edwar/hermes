@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { authenticate, FactusApiError, getNumberingRangeByDocumentType } from '@/lib/factus/client';
+import { authenticate, FactusApiError, FactusNotConfiguredError, getNumberingRangeByDocumentType } from '@/lib/factus/client';
+import { encryptSecret } from '@/lib/crypto';
 
 export async function GET() {
   try {
@@ -25,6 +26,10 @@ export async function GET() {
         factusEnabled: true,
         factusEconomicActivity: true,
         factusTokenExpiresAt: true,
+        factusClientId: true,
+        factusClientSecretEnc: true,
+        factusUsername: true,
+        factusPasswordEnc: true,
         name: true,
         nit: true,
         address: true,
@@ -46,6 +51,13 @@ export async function GET() {
       numberingRangeId: null,
       economicActivity: company.factusEconomicActivity,
       connected: hasValidToken,
+      credentials: {
+        configured: Boolean(
+          company.factusClientId && company.factusClientSecretEnc && company.factusUsername && company.factusPasswordEnc
+        ),
+        clientId: company.factusClientId,
+        username: company.factusUsername,
+      },
       company: {
         name: company.name,
         nit: company.nit,
@@ -77,7 +89,37 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { enabled, validateAndEnable, testConnection } = body;
+    const { enabled, validateAndEnable, testConnection, credentials } = body;
+
+    if (credentials) {
+      const { clientId, clientSecret, username, password } = credentials as Record<string, unknown>;
+      const fields = [clientId, clientSecret, username, password];
+      if (!fields.every((f) => typeof f === 'string' && f.trim().length > 0)) {
+        return NextResponse.json({ success: false, error: 'Todos los campos de credenciales son requeridos' }, { status: 400 });
+      }
+
+      try {
+        await prisma.company.update({
+          where: { id: companyId },
+          data: {
+            factusClientId: (clientId as string).trim(),
+            factusClientSecretEnc: encryptSecret((clientSecret as string).trim()),
+            factusUsername: (username as string).trim(),
+            factusPasswordEnc: encryptSecret(password as string),
+            // Credenciales nuevas invalidan los tokens y obligan a reconectar.
+            factusAccessToken: null,
+            factusRefreshToken: null,
+            factusTokenExpiresAt: null,
+            factusEnabled: false,
+          },
+        });
+      } catch (error) {
+        console.error('Save Factus credentials error:', error);
+        return NextResponse.json({ success: false, error: 'No se pudieron guardar las credenciales' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
 
     if (validateAndEnable) {
       const company = await prisma.company.findUnique({
@@ -110,6 +152,9 @@ export async function PUT(req: NextRequest) {
       try {
         await authenticate(companyId);
       } catch (error) {
+        if (error instanceof FactusNotConfiguredError) {
+          return NextResponse.json({ valid: false, error: 'Configura primero las credenciales de Factus de la empresa' });
+        }
         if (error instanceof FactusApiError) {
           return NextResponse.json({ valid: false, error: `Error de Factus: ${error.message}` });
         }
@@ -143,6 +188,12 @@ export async function PUT(req: NextRequest) {
         await authenticate(companyId);
         return NextResponse.json({ success: true, message: 'Conexión exitosa con Factus' });
       } catch (error) {
+        if (error instanceof FactusNotConfiguredError) {
+          return NextResponse.json(
+            { success: false, error: 'Configura primero las credenciales de Factus de la empresa' },
+            { status: 400 }
+          );
+        }
         if (error instanceof FactusApiError) {
           return NextResponse.json(
             { success: false, error: `Error de Factus: ${error.message}` },

@@ -11,10 +11,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
-import { listNumberingRanges, getInvoice, factusRequest } from "@/lib/factus/client"
-import { mapSaleToFactusCreditNote } from "@/lib/factus/mappers"
-import { logAudit } from "@/lib/audit"
-import { STOCK_MOVEMENT_TYPE, AUDIT_ACTION, FE_STATUS, FACTUS_DOCUMENT_TYPE, HTTP_METHOD } from "@/lib/constants"
+import { emitCreditNoteForReturn } from "@/lib/invoicing/emit"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -197,93 +195,17 @@ export async function POST(req: NextRequest) {
   //   f) Auditamos
   // ===========================================================================
 
-  if (
-    createCreditNote &&
-    company?.factusEnabled &&
-    !company.factusBlocked &&
-    originalSale.electronicInvoice
-  ) {
+  let creditNoteResult = null
+
+  if (createCreditNote && originalSale.electronicInvoice) {
     try {
-      // --- Obtener rango de numeración activo para notas crédito ---
-      const rawRanges = await listNumberingRanges(companyId, { document: FACTUS_DOCUMENT_TYPE.CREDIT_NOTE });
-      const inner = (rawRanges as any)?.data;
-      const allRanges = Array.isArray(inner) ? inner : (inner as any)?.data ?? [];
-      const activeRange = allRanges.find((r: any) => r.is_active === true || r.is_active === 1);
-
-      if (!activeRange) {
-        throw new Error(
-          `No se encontró un rango de numeración activo para notas crédito (documento ${FACTUS_DOCUMENT_TYPE.CREDIT_NOTE}) en Factus.`
-        );
-      }
-
-      // --- Verificar que la factura original tenga un número válido en Factus ---
-      const originalInvoice = originalSale.electronicInvoice;
-      const billIdentifier = originalInvoice.consecutive || originalInvoice.factusBillId;
-      if (!billIdentifier || billIdentifier === 'unknown') {
-        throw new Error(
-          'La factura original no se creó correctamente en Factus (sin número de factura). ' +
-          'Regenera la factura electrónica para esta venta e intenta la devolución nuevamente.'
-        );
-      }
-
-      // --- Obtener la factura original desde Factus para referenciarla en la nota crédito ---
-      const factusInvoice = await getInvoice(billIdentifier, companyId) as any;
-      const factusId = Number(factusInvoice?.data?.id ?? factusInvoice?.id);
-      const billId = isNaN(factusId) ? undefined : factusId;
-
-      // --- Mapear la devolución al formato de nota crédito de Factus/DIAN ---
-      const creditNotePayload = await mapSaleToFactusCreditNote(
-        returnSale as any,
-        billIdentifier,
-        activeRange.id,
-        `return-${returnSale.id.slice(0, 8)}-${Date.now()}`,
-        1,
-        billId
-      );
-
-      // --- Enviar la nota crédito a Factus (POST /v2/credit-notes/validate) ---
-      const factusResponse = await factusRequest<{
-        id: number;
-        consecutive: string;
-        cufe: string;
-        status: string;
-      }>("/v2/credit-notes/validate", { method: HTTP_METHOD.POST, body: creditNotePayload as any }, companyId);
-
-      const responseData = (factusResponse as any).data || factusResponse;
-      const isValidated =
-        responseData.is_validated === true ||
-        responseData.status === "validated" ||
-        factusResponse.status === "accepted";
-
-      // --- Guardar la nota crédito en nuestra DB (misma tabla ElectronicInvoice) ---
-      const electronicInvoice = await prisma.electronicInvoice.create({
-        data: {
-          companyId,
-          saleId: returnSale.id,
-          cufe: responseData.cufe || factusResponse.cufe || "",
-          consecutive: responseData.number || factusResponse.consecutive || String(responseData.id || factusResponse.id),
-          status: isValidated ? FE_STATUS.VALIDATED : FE_STATUS.PENDING,
-          factusBillId: String(responseData.id || factusResponse.id || responseData.number || factusResponse.consecutive),
-          total: returnSale.total,
-          taxTotal: returnSale.tax,
-        },
-      });
-
-      // --- Auditar la creación de la nota crédito ---
-      await logAudit({
-        userId: session.user.id, companyId: session.user.companyId, action: AUDIT_ACTION.FACTUS_CREDIT_NOTE_CREATED,
-        entity: "ElectronicInvoice", entityId: electronicInvoice.id, req,
-      })
-    } catch (error: any) {
-      console.error("Error preparando nota crédito:", error?.message || error);
-      if (error?.factusData) {
-        console.error("Factus error completo:", JSON.stringify(error.factusData, null, 2));
-      } else if (error?.details) {
-        console.error("Detalles:", JSON.stringify(error.details, null, 2));
-      }
+      creditNoteResult = await emitCreditNoteForReturn(returnSale.id, companyId, session.user.id)
+    } catch (error) {
+      console.error("Error emitiendo nota crédito:", error)
+      creditNoteResult = { status: "error", reason: "No se pudo emitir la nota crédito" }
     }
   }
 
   // --- Respuesta final: devolvemos la venta de devolución ---
-  return NextResponse.json(returnSale, { status: 201 })
+  return NextResponse.json({ ...returnSale, creditNote: creditNoteResult }, { status: 201 })
 }

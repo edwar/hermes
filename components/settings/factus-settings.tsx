@@ -23,6 +23,11 @@ interface FactusSettings {
   numberingRangeId: number | null
   economicActivity: string | null
   connected: boolean
+  credentials: {
+    configured: boolean
+    clientId: string | null
+    username: string | null
+  }
   company: {
     name: string
     nit: string | null
@@ -75,6 +80,8 @@ export function FactusSettings() {
   const [rangeModal, setRangeModal] = useState<{ open: boolean; documentType: string; label: string } | null>(null)
   const [rangeForm, setRangeForm] = useState({ from: "", to: "" })
   const [rangesExpanded, setRangesExpanded] = useState(false)
+  const [credForm, setCredForm] = useState({ clientId: "", clientSecret: "", username: "", password: "" })
+  const [savingCreds, setSavingCreds] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -223,6 +230,30 @@ export function FactusSettings() {
     }
   }
 
+  async function handleSaveCredentials() {
+    setSavingCreds(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/factus/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credentials: credForm }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sileo.success({ title: "Credenciales guardadas. Activa la facturación para conectar." })
+        setCredForm({ clientId: "", clientSecret: "", username: "", password: "" })
+        fetchSettings()
+      } else {
+        sileo.error({ title: data.error || "Error al guardar credenciales" })
+      }
+    } catch {
+      sileo.error({ title: "Error al guardar credenciales" })
+    } finally {
+      setSavingCreds(false)
+    }
+  }
+
   async function handleTestConnection() {
     setTesting(true)
     setMessage(null)
@@ -266,6 +297,80 @@ export function FactusSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-3 rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Credenciales de Factus</Label>
+                <p className="text-xs text-muted-foreground">
+                  Cada empresa factura con su propia cuenta de Factus (una por NIT).
+                </p>
+              </div>
+              {settings?.credentials.configured ? (
+                <Badge variant="default" className="bg-green-600 text-xs">Configuradas</Badge>
+              ) : (
+                <Badge variant="destructive" className="text-xs">Pendientes</Badge>
+              )}
+            </div>
+            {settings?.credentials.configured && (
+              <p className="text-xs text-muted-foreground">
+                Client ID: <span className="font-mono">{settings.credentials.clientId}</span> · Usuario:{" "}
+                <span className="font-mono">{settings.credentials.username}</span>. Los secretos no se muestran;
+                para cambiarlos, ingresa todos los campos de nuevo.
+              </p>
+            )}
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client ID</Label>
+                <Input
+                  value={credForm.clientId}
+                  onChange={(e) => setCredForm((p) => ({ ...p, clientId: e.target.value }))}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Client Secret</Label>
+                <Input
+                  type="password"
+                  value={credForm.clientSecret}
+                  onChange={(e) => setCredForm((p) => ({ ...p, clientSecret: e.target.value }))}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Correo del usuario</Label>
+                <Input
+                  type="email"
+                  value={credForm.username}
+                  onChange={(e) => setCredForm((p) => ({ ...p, username: e.target.value }))}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Contraseña</Label>
+                <Input
+                  type="password"
+                  value={credForm.password}
+                  onChange={(e) => setCredForm((p) => ({ ...p, password: e.target.value }))}
+                  autoComplete="new-password"
+                />
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSaveCredentials}
+              disabled={
+                savingCreds ||
+                !credForm.clientId ||
+                !credForm.clientSecret ||
+                !credForm.username ||
+                !credForm.password
+              }
+            >
+              {savingCreds ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+              Guardar credenciales
+            </Button>
+          </div>
+
           <div className="rounded-lg border border-border p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
