@@ -44,6 +44,7 @@ const ACTION_LABELS: Record<string, string> = {
   FACTUS_CREDITS_CONSUMED: "Crédito consumido",
   FACTUS_INVOICE_CREATED: "Factura creada",
   FACTUS_CREDIT_NOTE_CREATED: "Nota crédito creada",
+  FACTUS_INVOICE_CLEANED: "Documento pendiente limpiado de Factus",
   CASH_SESSION_OPENED: "Sesión abierta",
   CASH_SESSION_CLOSED: "Sesión cerrada",
   CASH_MOVEMENT_CREATED: "Movimiento de caja",

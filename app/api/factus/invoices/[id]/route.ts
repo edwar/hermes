@@ -3,7 +3,10 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getInvoicePdf, getInvoiceXml, factusRequest, FactusApiError, getInvoice } from '@/lib/factus/client';
 import type { InvoiceStatus } from '@prisma/client';
-import { HTTP_METHOD, HEADER_NAME } from '@/lib/constants';
+import { HTTP_METHOD, HEADER_NAME, AUDIT_ACTION } from '@/lib/constants';
+import { logAudit } from '@/lib/audit';
+import { emitCreditNoteForReturn, emitInvoiceForSale } from '@/lib/invoicing/emit';
+import { getProvider } from '@/lib/invoicing';
 
 export async function GET(
   req: NextRequest,
@@ -116,6 +119,63 @@ export async function PATCH(
 
     if (!invoice) {
       return NextResponse.json({ error: 'Factura no encontrada' }, { status: 404 });
+    }
+
+    // Acciones sobre documentos que aún no tienen número en Factus: van antes de
+    // la validación de ID de más abajo.
+    if (action === 'resend') {
+      if (invoice.status !== 'PENDING' && invoice.status !== 'REJECTED') {
+        return NextResponse.json({ error: 'Solo se pueden reintentar documentos pendientes o rechazados' }, { status: 400 });
+      }
+      if (!invoice.saleId) {
+        return NextResponse.json({ error: 'El documento no tiene venta asociada' }, { status: 400 });
+      }
+
+      // Reintento idempotente: mismo reference_code, así Factus devuelve el documento
+      // existente en vez de crear uno nuevo. Se reinicia el contador de intentos.
+      await prisma.electronicInvoice.update({ where: { id }, data: { attempts: 0, nextRetryAt: null } });
+      const result = invoice.sale?.isReturn
+        ? await emitCreditNoteForReturn(invoice.saleId, companyId, session.user.id)
+        : await emitInvoiceForSale(invoice.saleId, companyId, session.user.id);
+
+      return NextResponse.json({
+        success: result.status === 'VALIDATED' || result.status === 'ACCEPTED',
+        ...result,
+      });
+    }
+
+    if (action === 'delete-pending') {
+      if (invoice.status !== 'PENDING') {
+        return NextResponse.json({ error: 'Solo se pueden limpiar documentos pendientes' }, { status: 400 });
+      }
+      if (!invoice.referenceCode) {
+        return NextResponse.json(
+          { error: 'El documento no tiene referenceCode; no se puede limpiar en Factus' },
+          { status: 400 }
+        );
+      }
+
+      // Si la DIAN ya lo validó, Factus rechaza el borrado y el error llega al usuario.
+      await getProvider({ id: companyId }).discardRejected(
+        companyId,
+        invoice.referenceCode,
+        invoice.sale?.isReturn ? 'credit_note' : 'invoice'
+      );
+
+      await prisma.electronicInvoice.update({
+        where: { id },
+        data: { status: 'CANCELLED', errorMessage: 'Limpiado de la cola pendiente de Factus', nextRetryAt: null },
+      });
+      await logAudit({
+        userId: session.user.id,
+        companyId,
+        action: AUDIT_ACTION.FACTUS_INVOICE_CLEANED,
+        entity: 'ElectronicInvoice',
+        entityId: id,
+        metadata: { cleanedPending: true, referenceCode: invoice.referenceCode },
+      });
+
+      return NextResponse.json({ success: true });
     }
 
     if (!invoice.consecutive && !invoice.factusBillId) {

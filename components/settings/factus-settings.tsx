@@ -82,6 +82,7 @@ export function FactusSettings() {
   const [rangesExpanded, setRangesExpanded] = useState(false)
   const [credForm, setCredForm] = useState({ clientId: "", clientSecret: "", username: "", password: "" })
   const [savingCreds, setSavingCreds] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -251,6 +252,29 @@ export function FactusSettings() {
       sileo.error({ title: "Error al guardar credenciales" })
     } finally {
       setSavingCreds(false)
+    }
+  }
+
+  async function handleReconnect() {
+    setReconnecting(true)
+    setMessage(null)
+    try {
+      const res = await fetch("/api/factus/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ validateAndEnable: true }),
+      })
+      const data = await res.json()
+      if (res.ok && data.valid) {
+        sileo.success({ title: "Conexión con Factus restablecida" })
+        fetchSettings()
+      } else {
+        sileo.error({ title: data.errors?.join(", ") || data.error || "Error al reconectar" })
+      }
+    } catch {
+      sileo.error({ title: "Error al reconectar con Factus" })
+    } finally {
+      setReconnecting(false)
     }
   }
 
@@ -428,14 +452,38 @@ export function FactusSettings() {
             </div>
           </div>
 
-          {settings?.enabled && (
+          {settings?.enabled && settings.connected && (
             <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-600">
               <CheckCircle2 className="size-4" />
-              Facturación electrónica activa
+              Facturación electrónica activa y conectada con Factus
             </div>
           )}
 
-          {!settings?.connected && (
+          {settings?.enabled && !settings.connected && (
+            <div className="flex flex-col gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                <div>
+                  <p className="font-medium">Conexión con Factus perdida</p>
+                  <p className="text-xs text-amber-600/80">
+                    La facturación está habilitada pero el token expiró. Usa &quot;Reconectar&quot; para renovar la conexión sin perder la configuración.
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleReconnect}
+                disabled={reconnecting}
+                className="shrink-0 border-amber-500/30 bg-background hover:bg-amber-500/10"
+              >
+                {reconnecting ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <RefreshCw className="mr-1.5 size-4" />}
+                Reconectar
+              </Button>
+            </div>
+          )}
+
+          {!settings?.enabled && !settings?.connected && (
             <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600">
               <AlertCircle className="size-4" />
               Activa el toggle para conectar con Factus
