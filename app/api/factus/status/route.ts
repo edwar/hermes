@@ -19,6 +19,10 @@ export async function GET() {
       select: {
         factusEnabled: true,
         factusTokenExpiresAt: true,
+        factusClientId: true,
+        factusClientSecretEnc: true,
+        factusUsername: true,
+        factusPasswordEnc: true,
       },
     });
 
@@ -33,6 +37,9 @@ export async function GET() {
     return NextResponse.json({
       enabled: company.factusEnabled,
       connected: company.factusEnabled && hasValidToken,
+      credentialsConfigured: Boolean(
+        company.factusClientId && company.factusClientSecretEnc && company.factusUsername && company.factusPasswordEnc
+      ),
     });
   } catch (error) {
     console.error('Get Factus status error:', error);

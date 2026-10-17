@@ -10,11 +10,68 @@
 import { prisma } from '@/lib/prisma';
 import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from '@/lib/constants';
 
+import { decryptSecret } from '@/lib/crypto';
+
 const FACTUS_API_URL = process.env.FACTUS_API_URL || 'https://api-sandbox.factus.com.co';
-const CLIENT_ID = process.env.FACTUS_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.FACTUS_CLIENT_SECRET || '';
-const USERNAME = process.env.FACTUS_USERNAME || '';
-const PASSWORD = process.env.FACTUS_PASSWORD || '';
+
+// Factus asigna una cuenta por NIT emisor, así que las credenciales viven en
+// cada Company. Las variables de entorno FACTUS_* solo sirven como respaldo en
+// sandbox (desarrollo); en producción nunca se usan, para no emitir facturas de
+// un comercio bajo la cuenta de otro.
+interface FactusCredentials {
+  clientId: string;
+  clientSecret: string;
+  username: string;
+  password: string;
+}
+
+export class FactusNotConfiguredError extends Error {
+  constructor(message = 'La empresa no tiene credenciales de Factus configuradas') {
+    super(message);
+    this.name = 'FactusNotConfiguredError';
+  }
+}
+
+function isSandbox() {
+  return FACTUS_API_URL.includes('sandbox');
+}
+
+async function getCredentials(companyId: string): Promise<FactusCredentials> {
+  const company = await prisma.company.findUnique({
+    where: { id: companyId },
+    select: {
+      factusClientId: true,
+      factusClientSecretEnc: true,
+      factusUsername: true,
+      factusPasswordEnc: true,
+    },
+  });
+
+  if (
+    company?.factusClientId &&
+    company.factusClientSecretEnc &&
+    company.factusUsername &&
+    company.factusPasswordEnc
+  ) {
+    return {
+      clientId: company.factusClientId,
+      clientSecret: decryptSecret(company.factusClientSecretEnc),
+      username: company.factusUsername,
+      password: decryptSecret(company.factusPasswordEnc),
+    };
+  }
+
+  if (isSandbox() && process.env.FACTUS_CLIENT_ID) {
+    return {
+      clientId: process.env.FACTUS_CLIENT_ID,
+      clientSecret: process.env.FACTUS_CLIENT_SECRET || '',
+      username: process.env.FACTUS_USERNAME || '',
+      password: process.env.FACTUS_PASSWORD || '',
+    };
+  }
+
+  throw new FactusNotConfiguredError();
+}
 
 interface TokenResponse {
   access_token: string;
@@ -98,15 +155,22 @@ export async function authenticate(companyId: string): Promise<string> {
 
     if (stored.factusRefreshToken) {
       try {
-        const refreshed = await refreshAccessToken(stored.factusRefreshToken);
-        return refreshed;
+        const credentials = await getCredentials(companyId);
+        const refreshed = await refreshAccessToken(credentials, stored.factusRefreshToken);
+        await saveTokens(
+          companyId,
+          refreshed.access_token,
+          refreshed.refresh_token ?? stored.factusRefreshToken,
+          refreshed.expires_in
+        );
+        return refreshed.access_token;
       } catch {
         // Falló la renovación del token, continuar con el grant por contraseña
       }
     }
   }
 
-  const token = await passwordGrant();
+  const token = await passwordGrant(await getCredentials(companyId));
   await saveTokens(
     companyId,
     token.access_token,
@@ -117,13 +181,13 @@ export async function authenticate(companyId: string): Promise<string> {
 }
 
 // --- Login con usuario/contraseña (password grant) ---
-async function passwordGrant(): Promise<TokenResponse> {
+async function passwordGrant(credentials: FactusCredentials): Promise<TokenResponse> {
   const params = new URLSearchParams({
     grant_type: 'password',
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
-    username: USERNAME,
-    password: PASSWORD,
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
+    username: credentials.username,
+    password: credentials.password,
   });
 
   const response = await fetch(`${FACTUS_API_URL}/oauth/token`, {
@@ -147,11 +211,11 @@ async function passwordGrant(): Promise<TokenResponse> {
 }
 
 // --- Refrescar token (refresh grant) ---
-async function refreshAccessToken(refreshToken: string): Promise<string> {
+async function refreshAccessToken(credentials: FactusCredentials, refreshToken: string): Promise<TokenResponse> {
   const params = new URLSearchParams({
     grant_type: 'refresh_token',
-    client_id: CLIENT_ID,
-    client_secret: CLIENT_SECRET,
+    client_id: credentials.clientId,
+    client_secret: credentials.clientSecret,
     refresh_token: refreshToken,
   });
 
@@ -171,8 +235,7 @@ async function refreshAccessToken(refreshToken: string): Promise<string> {
     );
   }
 
-  const data: TokenResponse = await response.json();
-  return data.access_token;
+  return response.json();
 }
 
 // =============================================================================

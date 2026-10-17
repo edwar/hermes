@@ -109,8 +109,16 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
       return result.queued ? result.mock : result.data
     },
     onSuccess: (data) => {
-      const queued = (data as { _queued?: boolean })._queued
+      const { _queued: queued, creditNote } = data as {
+        _queued?: boolean
+        creditNote?: { status?: string; reason?: string | null } | null
+      }
       sileo.success({ title: queued ? "Devolución encolada: se procesará al reconectar" : "Devolución procesada exitosamente" })
+      if (creditNote?.status === "PENDING") {
+        sileo.info({ title: "Nota crédito en proceso. Se reintentará automáticamente." })
+      } else if (creditNote && creditNote.status !== "VALIDATED") {
+        sileo.error({ title: `Nota crédito no emitida: ${creditNote.reason ?? "revisa la configuración"}` })
+      }
       handleClose()
     },
     onError: (err: Error) => {

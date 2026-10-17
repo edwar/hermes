@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Table,
   TableBody,
   TableCell,
@@ -23,7 +34,7 @@ import {
 import { Pagination } from "@/components/ui/pagination"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Zap, Download, Mail, RefreshCw, FileText, Loader2 } from "lucide-react"
+import { Zap, Download, Mail, RefreshCw, FileText, Loader2, RotateCw, Trash2 } from "lucide-react"
 import { sileo } from "sileo"
 import { ExportCSVButton } from "@/components/shared/export-csv-button"
 import { FE_STATUS, REPORT_TYPE } from "@/lib/constants"
@@ -45,6 +56,10 @@ function formatCOP(value: number | string) {
 }
 
 export function ElectronicInvoicesTable() {
+  const { data: session } = useSession()
+  const role = session?.user?.role
+  const canManage = role === "GOD" || role === "ADMIN"
+
   const [invoices, setInvoices] = useState<any[]>([])
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(1)
@@ -53,6 +68,9 @@ export function ElectronicInvoicesTable() {
   const [statusFilter, setStatusFilter] = useState("")
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [sendingId, setSendingId] = useState<string | null>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
+  const [pendingResendId, setPendingResendId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchInvoices(1)
@@ -160,6 +178,55 @@ export function ElectronicInvoicesTable() {
     }
   }
 
+  async function handleResend(id: string) {
+    setActionId(id)
+    try {
+      const res = await fetch(`/api/factus/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resend" }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sileo.success({ title: "Documento validado por la DIAN", description: data.number ? `Número: ${data.number}` : undefined })
+        fetchInvoices(page)
+      } else if (res.ok) {
+        sileo.error({ title: data.reason || `El documento sigue en estado ${data.status}` })
+        fetchInvoices(page)
+      } else {
+        sileo.error({ title: data.error || "No se pudo reintentar" })
+      }
+    } catch {
+      sileo.error({ title: "Error de conexión al reintentar" })
+    } finally {
+      setActionId(null)
+      setPendingResendId(null)
+    }
+  }
+
+  async function handleDeletePending(id: string) {
+    setActionId(id)
+    try {
+      const res = await fetch(`/api/factus/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete-pending" }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        sileo.success({ title: "Documento pendiente eliminado de Factus" })
+        fetchInvoices(page)
+      } else {
+        sileo.error({ title: data.error || "No se pudo limpiar" })
+      }
+    } catch {
+      sileo.error({ title: "Error de conexión al limpiar" })
+    } finally {
+      setActionId(null)
+      setPendingDeleteId(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -250,9 +317,16 @@ export function ElectronicInvoicesTable() {
                       {formatCOP(inv.total)}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-center">
-                      <Badge variant={status.variant} className="text-xs font-normal">
-                        {status.label}
-                      </Badge>
+                      <div className="flex flex-col items-center gap-1">
+                        <Badge variant={status.variant} className="text-xs font-normal">
+                          {status.label}
+                        </Badge>
+                        {(inv.status === FE_STATUS.PENDING || inv.status === FE_STATUS.REJECTED) && inv.errorMessage && (
+                          <span className="line-clamp-2 max-w-[220px] text-[10px] text-amber-600" title={inv.errorMessage}>
+                            {inv.errorMessage}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-1">
@@ -309,6 +383,38 @@ export function ElectronicInvoicesTable() {
                             <RefreshCw className="size-3.5" />
                           </Button>
                         )}
+                        {canManage && (inv.status === FE_STATUS.PENDING || inv.status === FE_STATUS.REJECTED) && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 md:size-8 touch-target text-primary"
+                              title="Reintentar emisión"
+                              aria-label="Reintentar emisión"
+                              disabled={actionId === inv.id}
+                              onClick={() => setPendingResendId(inv.id)}
+                            >
+                              {actionId === inv.id ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <RotateCw className="size-3.5" />
+                              )}
+                            </Button>
+                            {inv.status === FE_STATUS.PENDING && inv.referenceCode && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-9 md:size-8 touch-target text-destructive"
+                                title="Limpiar de la cola pendiente en Factus"
+                                aria-label="Limpiar de la cola pendiente en Factus"
+                                disabled={actionId === inv.id}
+                                onClick={() => setPendingDeleteId(inv.id)}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </Button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -325,6 +431,46 @@ export function ElectronicInvoicesTable() {
         total={total}
         onPageChange={fetchInvoices}
       />
+
+      <AlertDialog open={!!pendingResendId} onOpenChange={(v) => { if (!v) setPendingResendId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reintentar emisión</AlertDialogTitle>
+            <AlertDialogDescription>
+              Se reenviará el documento con el mismo código de referencia, así que no se duplica ante la DIAN.
+              Si fue rechazado, corrige antes los datos de la venta o del cliente. Un documento validado consume un crédito.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => pendingResendId && handleResend(pendingResendId)}>
+              Reintentar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(v) => { if (!v) setPendingDeleteId(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpiar documento pendiente de Factus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Elimina el documento no validado en Factus y marca el registro local como cancelado.
+              Si la DIAN ya lo validó, la operación fallará y verás el error de Factus.
+              Úsalo solo cuando el documento esté atascado y no se pueda reintentar. La venta quedará sin factura electrónica.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/80"
+              onClick={() => pendingDeleteId && handleDeletePending(pendingDeleteId)}
+            >
+              Limpiar de Factus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

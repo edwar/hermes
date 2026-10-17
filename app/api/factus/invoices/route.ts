@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { factusRequest, FactusApiError, listInvoices, getNumberingRangeByDocumentType } from '@/lib/factus/client';
-import { mapSaleToFactusInvoice, mapSaleToFactusCreditNote } from '@/lib/factus/mappers';
+import { FactusApiError, listInvoices } from '@/lib/factus/client';
+import { emitCreditNoteForReturn, emitInvoiceForSale } from '@/lib/invoicing/emit';
 import type { InvoiceStatus } from '@prisma/client';
-import { USER_ROLE, FACTUS_DOCUMENT_TYPE, FACTUS_INVOICE_TYPE, SORT_DIRECTION, HTTP_METHOD } from '@/lib/constants';
+import { USER_ROLE, FACTUS_INVOICE_TYPE, SORT_DIRECTION } from '@/lib/constants';
 
 export async function GET(req: NextRequest) {
   try {
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { saleId, isReturn, correctionConceptId } = body;
+    const { saleId, isReturn } = body;
 
     if (!saleId) {
       return NextResponse.json({ error: 'saleId es requerido' }, { status: 400 });
@@ -101,130 +101,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Facturación electrónica bloqueada para esta empresa' }, { status: 403 });
     }
 
-    const documentType = isReturn ? FACTUS_DOCUMENT_TYPE.CREDIT_NOTE : FACTUS_DOCUMENT_TYPE.SALES_INVOICE;
-    const rangeRecord = await getNumberingRangeByDocumentType(companyId, documentType);
-
-    if (!rangeRecord) {
-      return NextResponse.json({ error: `Rango de numeración para ${isReturn ? 'nota crédito' : 'factura'} no configurado` }, { status: 400 });
-    }
-
-    const sale = await prisma.sale.findUnique({
-      where: { id: saleId, companyId },
-      include: {
-        items: { include: { product: true } },
-        customer: true,
-        company: true,
-        electronicInvoice: true,
-        parentSale: {
-          include: {
-            electronicInvoice: true,
-          },
-        },
-      },
-    });
-
-    if (!sale) {
-      return NextResponse.json({ error: 'Venta no encontrada' }, { status: 404 });
-    }
-
-    if (isReturn && !sale.parentSale?.electronicInvoice) {
-      return NextResponse.json(
-        { error: 'La venta original no tiene factura electrónica' },
-        { status: 400 }
-      );
-    }
-
-    if (sale.electronicInvoice && sale.electronicInvoice.status !== 'REJECTED') {
-      return NextResponse.json(
-        { error: 'Esta venta ya tiene una factura electrónica válida' },
-        { status: 400 }
-      );
-    }
-
-    let factusPayload;
-    let endpoint: string;
-    let invoiceType: string = FACTUS_INVOICE_TYPE.INVOICE;
-
-    if (isReturn) {
-      const originalInvoice = sale.parentSale?.electronicInvoice;
-      if (!originalInvoice?.factusBillId) {
-        return NextResponse.json(
-          { error: 'La factura original no tiene un ID de Factus asociado' },
-          { status: 400 }
-        );
-      }
-      if (!originalInvoice?.cufe) {
-        return NextResponse.json(
-          { error: 'La factura original no tiene CUFE' },
-          { status: 400 }
-        );
-      }
-
-      const billNumber = originalInvoice.factusBillId ?? '';
-      let billIdNum: number | undefined = parseInt(billNumber, 10);
-      if (isNaN(billIdNum)) billIdNum = undefined;
-
-      factusPayload = await mapSaleToFactusCreditNote(
-        sale,
-        billNumber,
-        rangeRecord.factusRangeId,
-        `return-${sale.id.slice(0, 8)}-${Date.now()}`,
-        Number(correctionConceptId || '1'),
-        billIdNum
-      );
-      endpoint = '/v2/credit-notes/validate';
-      invoiceType = FACTUS_INVOICE_TYPE.CREDIT_NOTE;
-    } else {
-      factusPayload = await mapSaleToFactusInvoice(sale, rangeRecord.factusRangeId, `sale-${sale.id.slice(0, 8)}-${Date.now()}`);
-      endpoint = '/v2/bills/validate';
-    }
-
-    const factusResponse = await factusRequest<{
-      id: number;
-      consecutive: string;
-      cufe: string;
-      qr_code: string;
-      status: string;
-      created_at: string;
-      links?: { rel: string; href: string }[];
-    }>(endpoint, { method: HTTP_METHOD.POST, body: factusPayload as any }, companyId);
-
-    const invoiceStatus: InvoiceStatus =
-      factusResponse.status === 'accepted' || factusResponse.status === 'validated'
-        ? 'VALIDATED'
-        : 'PENDING';
-
-    await prisma.electronicInvoice.upsert({
-      where: { saleId: sale.id },
-      create: {
-        companyId,
-        saleId: sale.id,
-        cufe: factusResponse.cufe,
-        consecutive: factusResponse.consecutive,
-        status: invoiceStatus,
-        factusBillId: String(factusResponse.id),
-        total: sale.total,
-        taxTotal: sale.tax,
-        validatedAt: invoiceStatus === 'VALIDATED' ? new Date() : null,
-      },
-      update: {
-        cufe: factusResponse.cufe,
-        consecutive: factusResponse.consecutive,
-        status: invoiceStatus,
-        factusBillId: String(factusResponse.id),
-        validatedAt: invoiceStatus === 'VALIDATED' ? new Date() : null,
-      },
-    });
+    // Facturas y notas crédito se emiten (o se reintentan) con el servicio idempotente.
+    // Para una nota crédito, `saleId` es el de la venta de devolución.
+    const result = isReturn
+      ? await emitCreditNoteForReturn(saleId, companyId, session.user.id)
+      : await emitInvoiceForSale(saleId, companyId, session.user.id);
 
     return NextResponse.json({
-      success: true,
-      invoiceId: factusResponse.id,
-      consecutive: factusResponse.consecutive,
-      cufe: factusResponse.cufe,
-      status: invoiceStatus,
-      type: invoiceType,
-      qrCode: factusResponse.qr_code,
-      links: factusResponse.links,
+      success: result.status === 'VALIDATED' || result.status === 'ACCEPTED',
+      type: isReturn ? FACTUS_INVOICE_TYPE.CREDIT_NOTE : FACTUS_INVOICE_TYPE.INVOICE,
+      ...result,
     });
   } catch (error) {
     console.error('Create invoice error:', error);
