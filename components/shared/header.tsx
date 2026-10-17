@@ -24,6 +24,9 @@ import { APP_NAME } from "@/lib/constants"
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/pos": "Punto de Venta",
+  "/electronic-invoices": "Facturas Electrónicas",
+  "/purchase-orders": "Compras",
+  "/suppliers": "Proveedores",
   "/inventory": "Inventario",
   "/categories": "Categorías",
   "/reports": "Reportes",
@@ -67,17 +70,17 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b border-pos-border bg-background/95 backdrop-blur-sm px-3 sm:px-6 sticky top-0 z-10">
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background px-3 sm:px-5">
         <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
             onClick={onMenuClick}
-            className="flex size-9 shrink-0 items-center justify-center rounded-md text-foreground/70 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:hidden touch-target"
+            className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 md:hidden touch-target"
             aria-label="Abrir menú de navegación"
           >
             <Menu className="size-5" />
           </button>
-          <h1 className="font-sans text-lg sm:text-xl font-bold tracking-tight truncate">{title}</h1>
+          <h1 className="truncate text-[15px] font-semibold tracking-tight">{title}</h1>
         </div>
         <div className="flex items-center gap-1 sm:gap-4">
           <OnlineBadge />
@@ -86,15 +89,15 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             <ThemeToggle />
           </div>
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-2 hover:bg-muted cursor-pointer transition-colors touch-target">
-              <Avatar className="size-8">
-                <AvatarFallback className="text-xs bg-primary/10 text-primary font-sans font-bold">
+            <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-elevated cursor-pointer transition-colors touch-target">
+              <Avatar className="size-7 rounded-md after:rounded-md">
+                <AvatarFallback className="rounded-md bg-elevated font-mono text-xs font-semibold text-info">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden sm:flex flex-col items-start leading-tight max-w-36 min-w-0 w-full">
                 <span className="block w-full text-sm font-medium truncate">{session?.user?.name}</span>
-                <span className="block w-full text-left text-[11px] text-muted-foreground capitalize truncate">{session?.user?.role?.toLowerCase()}</span>
+                <span className="block w-full text-left font-mono text-[10px] tracking-[0.06em] text-muted-foreground uppercase truncate">{session?.user?.role?.toLowerCase()}</span>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -102,7 +105,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
                 <DropdownMenuLabel>
                   <div className="flex items-center gap-3">
                     <Avatar className="size-9">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary font-sans font-bold">
+                      <AvatarFallback className="rounded-md bg-elevated font-mono text-xs font-semibold text-info">
                         {initials}
                       </AvatarFallback>
                     </Avatar>

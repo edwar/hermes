@@ -198,7 +198,7 @@ export default function CompaniesPage() {
                           company.factusBlocked ? (
                             <Badge variant="destructive" className="text-[10px]">Bloqueado</Badge>
                           ) : (
-                            <Badge variant="default" className="text-[10px] bg-green-600">Activo</Badge>
+                            <Badge variant="default" className="text-[10px] bg-success text-background">Activo</Badge>
                           )
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
@@ -208,7 +208,7 @@ export default function CompaniesPage() {
                         <Badge variant="secondary">{company._count?.users || 0}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={company.isActive ? "bg-green-100 text-green-700 border-green-200" : ""}>
+                        <Badge className={company.isActive ? "bg-success/10 text-success border-success/30" : ""}>
                           {company.isActive ? "Activa" : "Inactiva"}
                         </Badge>
                       </TableCell>

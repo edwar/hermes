@@ -13,12 +13,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
-  Building2, Coins, Zap, ShieldAlert, TrendingUp, ShoppingCart, AlertTriangle, Eye,
+  Coins, ShieldAlert, TrendingUp, AlertTriangle, Eye,
 } from "lucide-react"
 import { formatCOP } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { StatCard } from "@/components/dashboard/stat-card"
+import { StatStrip } from "@/components/dashboard/stat-card"
 
 export default function GodDashboardPage() {
   const { data: session } = useSession()
@@ -64,18 +64,25 @@ export default function GodDashboardPage() {
         <p className="text-sm text-muted-foreground">Visión general de todas las empresas</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Empresas" value={overview?.totalCompanies ?? 0} subtitle={`${overview?.activeCompanies ?? 0} activas`} icon={Building2} />
-        <StatCard title="Con Factus" value={overview?.factusEnabled ?? 0} subtitle={`${overview?.factusBlocked ?? 0} bloqueadas`} icon={Zap} />
-        <StatCard title="Créditos Vendidos" value={overview?.totalCreditsSold ?? 0} subtitle={`${overview?.totalCreditsRemaining ?? 0} disponibles`} icon={Coins} />
-        <StatCard title="Ventas del Mes" value={formatCOP(overview?.monthSales?.total ?? 0)} subtitle={`${overview?.monthSales?.count ?? 0} tickets`} icon={ShoppingCart} />
-      </div>
+      <StatStrip
+        cells={[
+          { label: "Empresas", value: String(overview?.totalCompanies ?? 0), detail: `${overview?.activeCompanies ?? 0} activas` },
+          {
+            label: "Con Factus",
+            value: String(overview?.factusEnabled ?? 0),
+            detail: `${overview?.factusBlocked ?? 0} bloqueadas`,
+            tone: (overview?.factusBlocked ?? 0) > 0 ? "warning" : "default",
+          },
+          { label: "Créditos vendidos", value: String(overview?.totalCreditsSold ?? 0), detail: `${overview?.totalCreditsRemaining ?? 0} disponibles` },
+          { label: "Ventas del mes", value: formatCOP(overview?.monthSales?.total ?? 0), detail: `${overview?.monthSales?.count ?? 0} tickets` },
+        ]}
+      />
 
       {companies.filter((c: any) => (c.factusCreditPending ?? 0) > 0).length > 0 && (
-        <Card className="border-blue-200 dark:border-blue-800">
+        <Card className="border-info/30">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Coins className="size-4 text-blue-500" />
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="size-4 text-info" />
               Créditos pendientes de activación
             </CardTitle>
           </CardHeader>
@@ -99,10 +106,10 @@ export default function GodDashboardPage() {
       )}
 
       {overview?.lowCreditCompanies?.length > 0 && (
-        <Card className="border-amber-200 dark:border-amber-800">
+        <Card className="border-warning/30">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="size-4 text-amber-500" />
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-4 text-warning" />
               Empresas con saldo bajo de créditos (&le;10)
             </CardTitle>
           </CardHeader>
@@ -119,7 +126,7 @@ export default function GodDashboardPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Todas las Empresas</CardTitle>
+          <CardTitle>Todas las Empresas</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
@@ -143,7 +150,7 @@ export default function GodDashboardPage() {
                       c.factusBlocked ? (
                         <Badge variant="destructive" className="text-[10px]">Bloqueado</Badge>
                       ) : (
-                        <Badge className="text-[10px] bg-green-600">Activo</Badge>
+                        <Badge className="text-[10px] bg-success text-background">Activo</Badge>
                       )
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>

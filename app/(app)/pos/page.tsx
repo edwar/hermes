@@ -223,7 +223,7 @@ export default function POSPage() {
 
   if (sessionLoading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-4 md:-m-6">
+      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center -m-4 md:-m-6">
         <Loader2 className="size-8 animate-spin text-muted-foreground" />
       </div>
     )
@@ -231,7 +231,7 @@ export default function POSPage() {
 
   if (hasConflict) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-4 md:-m-6">
+      <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center -m-4 md:-m-6">
         <div className="mx-auto max-w-sm text-center">
           <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="size-10 text-destructive" />
@@ -267,16 +267,16 @@ export default function POSPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] -m-4 md:-m-6 overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] -m-4 md:-m-6 overflow-hidden">
       <BarcodeScanner onProductFound={handleAddProduct} />
       <div className="flex flex-1 flex-col min-w-0">
         {!isOnline && (
-          <div className="flex items-center gap-2 bg-amber-500/10 border-b border-amber-500/20 px-4 py-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 bg-warning/10 border-b border-warning/30 px-4 py-1.5 text-xs text-warning">
             <WifiOff className="size-3.5 shrink-0" />
             <span>Modo offline — las ventas se guardarán localmente y se sincronizarán al recuperar la conexión.</span>
           </div>
         )}
-        <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-6 pb-2 gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4 pb-2 md:px-6 md:pt-6">
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => setPrinterOpen(true)}>
               <Printer className="mr-2 size-4" />
@@ -318,7 +318,10 @@ export default function POSPage() {
             compact={isMobile}
           />
         </div>
-        <ProductGrid onAddProduct={handleAddProduct} />
+        <ProductGrid
+          onAddProduct={handleAddProduct}
+          cartQuantities={Object.fromEntries(cart.items.map((i) => [i.productId, i.quantity]))}
+        />
       </div>
       <Cart
         items={cart.items}

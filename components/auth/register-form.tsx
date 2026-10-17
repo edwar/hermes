@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Eye, EyeOff, AlertCircle, Loader2, Store, CheckCircle } from "lucide-react"
+import { Eye, EyeOff, AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 export function RegisterForm() {
@@ -78,12 +78,12 @@ export function RegisterForm() {
 
   if (success) {
     return (
-      <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <Card className="border-pos-border shadow-xl shadow-primary/8">
+      <div className="w-full max-w-sm ">
+        <Card className="">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4 py-8">
-              <div className="flex size-16 items-center justify-center rounded-lg bg-green-100">
-                <CheckCircle className="size-8 text-green-600" />
+              <div className="flex size-16 items-center justify-center rounded-lg bg-success/10">
+                <CheckCircle className="size-8 text-success" />
               </div>
               <div className="text-center space-y-2">
                 <h3 className="font-semibold text-lg">¡Registro exitoso!</h3>
@@ -99,16 +99,13 @@ export function RegisterForm() {
   }
 
   return (
-    <div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <Card className="border-pos-border shadow-xl shadow-primary/8">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-primary/15">
-            <Store className="size-7 text-primary" />
-          </div>
-          <CardTitle className="font-sans text-2xl font-bold tracking-tight">
+    <div className="w-full max-w-sm ">
+      <Card className="">
+        <CardHeader className="pb-2">
+                    <CardTitle className="text-foreground normal-case">
             Crear cuenta
           </CardTitle>
-          <CardDescription className="text-sm font-[family-name:var(--font-sans)]">
+          <CardDescription className="text-sm">
             Ingresa el código de invitación de tu empresa
           </CardDescription>
         </CardHeader>
@@ -125,7 +122,7 @@ export function RegisterForm() {
                 placeholder="Pega el código de invitación"
                 required
                 defaultValue={token}
-                className="h-11 border-pos-border focus-visible:ring-primary"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -140,7 +137,7 @@ export function RegisterForm() {
                 autoComplete="email"
                 required
                 defaultValue={prefilledEmail}
-                className="h-11 border-pos-border focus-visible:ring-primary"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -154,7 +151,7 @@ export function RegisterForm() {
                 placeholder="Juan Pérez"
                 autoComplete="name"
                 required
-                className="h-11 border-pos-border focus-visible:ring-primary"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -170,7 +167,7 @@ export function RegisterForm() {
                   autoComplete="new-password"
                   required
                   minLength={6}
-                  className="h-11 pr-10 border-pos-border focus-visible:ring-primary"
+                  className="h-11 pr-10"
                 />
                 <button
                   type="button"
@@ -195,7 +192,7 @@ export function RegisterForm() {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="h-11 border-pos-border focus-visible:ring-primary"
+                className="h-11"
               />
             </div>
             {error && (
@@ -206,7 +203,7 @@ export function RegisterForm() {
             )}
             <Button
               type="submit"
-              className="w-full h-11 text-base bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/25"
+              className="w-full h-11 text-base"
               disabled={loading}
             >
               {loading ? (

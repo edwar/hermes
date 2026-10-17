@@ -91,9 +91,9 @@ export function SessionsList({ refreshKey }: SessionsListProps) {
                     <td className={`hidden md:table-cell px-4 py-2.5 text-right font-mono tabular-nums ${
                       s.difference !== null
                         ? Number(s.difference) === 0
-                          ? "text-green-600"
+                          ? "text-success"
                           : Number(s.difference) > 0
-                            ? "text-amber-600"
+                            ? "text-warning"
                             : "text-destructive"
                         : ""
                     }`}>

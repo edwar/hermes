@@ -331,7 +331,7 @@ export function PaymentModal({
                       <span className="font-mono tabular-nums">{formatCOP(parseFloat(amountReceived || "0"))}</span>
                     </div>
                     {parseFloat(amountReceived || "0") >= total && (
-                      <div className="flex justify-between gap-2 font-semibold text-green-600">
+                      <div className="flex justify-between gap-2 font-semibold text-success">
                         <span>Cambio</span>
                         <span className="font-mono tabular-nums">{formatCOP(change)}</span>
                       </div>

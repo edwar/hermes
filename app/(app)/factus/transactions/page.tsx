@@ -111,7 +111,7 @@ export default function FactusTransactionsPage() {
                     <TableCell className="text-sm font-medium">{tx.company?.name ?? "—"}</TableCell>
                     <TableCell>
                       {tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? (
-                        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border-0 text-[10px]">
+                        <Badge className="bg-success/10 text-success border-0 text-[10px]">
                           Compra
                         </Badge>
                       ) : (

@@ -189,7 +189,7 @@ export function FactusPendingCard() {
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2">
             <Zap className="size-4 text-primary" />
             Problemas con Factus
             {!loading && totalPending > 0 && (
@@ -237,11 +237,11 @@ export function FactusPendingCard() {
       <CardContent className="space-y-3">
 
         {factusEnabled && !tokenValid && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600">
+          <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
             <WifiOff className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="font-medium">Token de Factus expirado</p>
-              <p className="text-xs text-amber-600/80">
+              <p className="text-xs text-warning">
                 El token se renovará automáticamente al procesar la próxima venta con FE.
               </p>
               {reconnecting ? (
@@ -261,11 +261,11 @@ export function FactusPendingCard() {
         )}
 
         {hasError && factusEnabled && tokenValid && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600">
+          <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="font-medium">No se pudo consultar Factus</p>
-              <p className="text-xs text-red-600/80">
+              <p className="text-xs text-destructive/80">
                 {billsError || creditNotesError}
               </p>
             </div>
@@ -339,7 +339,7 @@ export function FactusPendingCard() {
                                 className={
                                   "mt-1 flex flex-col gap-1 rounded-lg border p-2.5 text-xs " +
                                   (errorInfo?.isDianConflict
-                                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                    ? "border-warning/30 bg-warning/10 text-warning"
                                     : "border-destructive/30 bg-destructive/10 text-destructive")
                                 }
                                 role="alert"

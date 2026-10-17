@@ -274,7 +274,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
             </div>
 
             {selectedSale?.electronicInvoice && (
-              <div className="flex-shrink-0 flex items-center space-x-2 rounded-lg border border-amber-200 bg-amber-50 p-2 mt-3">
+              <div className="flex-shrink-0 flex items-center space-x-2 rounded-lg border border-warning/30 bg-warning/10 p-2 mt-3">
                 <Checkbox
                   id="createCreditNote"
                   checked={createCreditNote}
@@ -282,7 +282,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
                 />
                 <div className="space-y-0.5 leading-none">
                   <Label htmlFor="createCreditNote" className="text-xs font-medium cursor-pointer flex items-center gap-1">
-                    <Zap className="size-3 text-amber-600" />
+                    <Zap className="size-3 text-warning" />
                     Nota crédito DIAN
                   </Label>
                   <p className="text-[10px] text-muted-foreground">

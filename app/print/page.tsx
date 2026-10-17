@@ -99,7 +99,7 @@ export default function PrintGuidePage() {
                 </ol>
 
                 {method.note && (
-                  <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                  <div className="mt-4 rounded-lg bg-warning/10 border border-warning/30 p-3 text-sm text-warning">
                     <span className="font-medium">Nota:</span> {method.note}
                   </div>
                 )}

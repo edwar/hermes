@@ -27,7 +27,7 @@ export function ActiveSessionBadge({ onClose, compact = false }: ActiveSessionBa
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
         <Loader2 className="size-4 animate-spin text-muted-foreground" />
         <span className="text-xs text-muted-foreground">Cargando...</span>
       </div>
@@ -41,10 +41,11 @@ export function ActiveSessionBadge({ onClose, compact = false }: ActiveSessionBa
       <button
         type="button"
         onClick={onClose}
-        className="flex items-center gap-1.5 rounded-lg border bg-card px-2.5 py-1.5 shadow-sm touch-target"
+        className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 touch-target"
         aria-label="Cerrar sesión de caja"
       >
-        <Wallet className="size-3.5 text-primary" />
+        <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
+        <Wallet className="size-3.5 text-muted-foreground" />
         <span className="text-xs font-medium font-mono tabular-nums">
           {formatCOP(Number(session.openingBalance))}
         </span>
@@ -53,16 +54,22 @@ export function ActiveSessionBadge({ onClose, compact = false }: ActiveSessionBa
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-1.5 shadow-sm">
-      <Wallet className="size-4 text-primary" />
-      <div className="text-xs leading-tight">
-        <p className="font-medium">{session.cashRegister.name}</p>
-        <p className="text-muted-foreground">
-          Base: {formatCOP(Number(session.openingBalance))} · {format(new Date(session.openedAt), "HH:mm", { locale: es })}
-        </p>
+    <div
+      className="flex shrink-0 items-center gap-4 rounded-lg border border-border bg-card py-1.5 pr-1.5 pl-3"
+      title={`Abierta a las ${format(new Date(session.openedAt), "HH:mm", { locale: es })}`}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="size-2 rounded-full bg-success" aria-hidden="true" />
+        <div className="leading-tight">
+          <p className="font-mono text-[10px] font-medium tracking-[0.08em] text-success uppercase">Caja abierta</p>
+          <p className="text-xs whitespace-nowrap text-muted-foreground">
+            {session.cashRegister.name} · Base{" "}
+            <span className="font-mono">{formatCOP(Number(session.openingBalance))}</span>
+          </p>
+        </div>
       </div>
-      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={onClose}>
-        Cerrar
+      <Button variant="outline" size="sm" onClick={onClose}>
+        Cerrar caja
       </Button>
     </div>
   )

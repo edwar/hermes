@@ -204,7 +204,7 @@ export function CustomerLookup({
           ) : (
             <div className="flex-1 rounded-lg border bg-card px-3 py-2 min-h-[36px]">
               <div className="flex items-center gap-2">
-                <Check className="size-3.5 shrink-0 text-green-600" />
+                <Check className="size-3.5 shrink-0 text-success" />
                 <span className="text-xs font-medium truncate min-w-0">{foundCustomer.name}</span>
                 <Badge variant="outline" className="text-[10px] shrink-0 ml-auto">
                   {foundCustomer.cedula || cedula || "Sin cédula"}

@@ -18,7 +18,23 @@ import {
 import { formatCOP } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const COLORS = ["#16A34A", "#2563EB", "#CABA04", "#DC2626", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316", "#6366F1", "#84CC16"]
+// Paleta de datos derivada de la sintaxis de la consola. El rojo se reserva para error y rechazo.
+const COLORS = ["#79C0FF", "#56D364", "#E3B341", "#C678DD", "#FF9E64", "#2DD4BF", "#F0883E", "#A5B4FC", "#B6E36A", "#F778BA"]
+
+const AXIS_TICK = { fontSize: 11, fill: "var(--muted-foreground)", fontFamily: "var(--font-geist-mono)" }
+const AXIS_LINE = { stroke: "var(--border)" }
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background: "var(--popover)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    fontSize: 12,
+    color: "var(--foreground)",
+  },
+  labelStyle: { color: "var(--muted-foreground)", fontFamily: "var(--font-geist-mono)", fontSize: 11 },
+  itemStyle: { color: "var(--foreground)" },
+  cursor: { stroke: "var(--seam-strong)" },
+}
 
 const PAYMENT_LABELS: Record<string, string> = {
   CASH: "Efectivo",
@@ -38,21 +54,22 @@ export function DailySalesChart({ data }: { data: Array<{ date: string; total: n
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+        <CartesianGrid vertical={false} stroke="var(--border)" />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={AXIS_TICK} axisLine={AXIS_LINE} tickLine={false}
           tickFormatter={(v) => {
             const d = new Date(v + "T00:00:00")
             return d.toLocaleDateString("es", { day: "2-digit", month: "2-digit" })
           }}
         />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+        <YAxis tick={AXIS_TICK} axisLine={AXIS_LINE} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
         <Tooltip
+          {...TOOLTIP_STYLE}
           formatter={(value) => formatCOP(typeof value === "number" ? value : 0)}
           labelFormatter={(label) => new Date(label + "T00:00:00").toLocaleDateString("es")}
         />
-        <Line type="monotone" dataKey="total" stroke="#004F6E" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="total" stroke="var(--info)" strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   )
@@ -79,7 +96,10 @@ export function PaymentMethodsChart({
           nameKey="method"
           cx="50%"
           cy="50%"
-          outerRadius={80}
+          innerRadius={52}
+          outerRadius={84}
+          stroke="var(--card)"
+          strokeWidth={2}
           label={({ method, percent }: { method?: string; percent?: number }) =>
             `${PAYMENT_LABELS[method ?? ""] ?? method ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
           }
@@ -88,7 +108,7 @@ export function PaymentMethodsChart({
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => formatCOP(typeof value === "number" ? value : 0)} />
+        <Tooltip {...TOOLTIP_STYLE} formatter={(value) => formatCOP(typeof value === "number" ? value : 0)} />
       </PieChart>
     </ResponsiveContainer>
   )
@@ -123,21 +143,22 @@ export function TopProductsChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+        <CartesianGrid vertical={false} stroke="var(--border)" />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 11 }}
+          tick={AXIS_TICK} axisLine={AXIS_LINE} tickLine={false}
           tickFormatter={(v) => {
             const d = new Date(v + "T00:00:00")
             return d.toLocaleDateString("es", { day: "2-digit", month: "2-digit" })
           }}
         />
-        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+        <YAxis tick={AXIS_TICK} axisLine={AXIS_LINE} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
         <Tooltip
+          {...TOOLTIP_STYLE}
           labelFormatter={(label) => new Date(label + "T00:00:00").toLocaleDateString("es")}
           formatter={(value: any) => formatCOP(Number(value))}
         />
-        <Legend onClick={(data: any) => handleLegendClick(data)} wrapperStyle={{ fontSize: 11, cursor: "pointer" }} />
+        <Legend onClick={(data: any) => handleLegendClick(data)} wrapperStyle={{ fontSize: 11, cursor: "pointer", color: "var(--muted-foreground)" }} />
         {productNames.map((name, i) => (
           <Line
             key={name}

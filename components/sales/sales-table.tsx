@@ -162,7 +162,7 @@ export function SalesTable() {
         </Button>
         <ExportCSVButton report="sales" params={{ from, to }} />
         {isOfflineData && (
-          <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700 text-xs">
+          <Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning text-xs">
             Datos locales (sin conexión)
           </Badge>
         )}
@@ -207,12 +207,12 @@ export function SalesTable() {
                       {s.localId ?? s.id.slice(0, 8)}
                     </span>
                     {s.isSynced === false && (
-                      <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-normal">
+                      <Badge variant="outline" className="ml-2 border-warning/30 bg-warning/10 text-warning text-[10px] font-normal">
                         Pendiente
                       </Badge>
                     )}
                     {s.isReturn && (
-                      <Badge variant="outline" className="ml-2 border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-normal">
+                      <Badge variant="outline" className="ml-2 border-warning/30 bg-warning/10 text-warning text-[10px] font-normal">
                         Devolución
                       </Badge>
                     )}
@@ -234,11 +234,11 @@ export function SalesTable() {
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-center">
                     {s.isReturn ? (
-                      <Badge variant="outline" className="border-amber-200 bg-amber-50 text-amber-700 text-xs font-normal">
+                      <Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning text-xs font-normal">
                         Devolución
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-normal">
+                      <Badge variant="outline" className="border-success/30 bg-success/10 text-success text-xs font-normal">
                         Venta
                       </Badge>
                     )}

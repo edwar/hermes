@@ -108,19 +108,19 @@ export default function GodCompanyDetailPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Usuarios</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-muted-foreground">Usuarios</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{company._count?.users ?? 0}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Productos</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-muted-foreground">Productos</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{company._count?.products ?? 0}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Clientes</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-muted-foreground">Clientes</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{company._count?.customers ?? 0}</p></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Créditos Factus</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-muted-foreground">Créditos Factus</CardTitle></CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{company.factusCreditBalance ?? 0}</p>
             <p className="text-xs text-muted-foreground">{company.factusCreditTotal ?? 0} comprados históricamente</p>
@@ -138,7 +138,7 @@ export default function GodCompanyDetailPage() {
         <TabsContent value="ventas" className="space-y-4 pt-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Ventas del Mes</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle>Ventas del Mes</CardTitle></CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold">{formatCOP(monthSales?.total ?? 0)}</p>
                 <p className="text-xs text-muted-foreground">{monthSales?.count ?? 0} tickets</p>
@@ -147,7 +147,7 @@ export default function GodCompanyDetailPage() {
           </div>
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Últimas Ventas</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle>Últimas Ventas</CardTitle></CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -181,20 +181,20 @@ export default function GodCompanyDetailPage() {
         <TabsContent value="factus" className="space-y-4 pt-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Créditos Disponibles</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle>Créditos Disponibles</CardTitle></CardHeader>
               <CardContent><p className="text-2xl font-bold">{company.factusCreditBalance ?? 0}</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Créditos Comprados</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle>Créditos Comprados</CardTitle></CardHeader>
               <CardContent><p className="text-2xl font-bold">{company.factusCreditTotal ?? 0}</p></CardContent>
             </Card>
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-sm">Factus Habilitado</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle>Factus Habilitado</CardTitle></CardHeader>
               <CardContent>
                 {company.factusEnabled ? (
                   company.factusBlocked
                     ? <Badge variant="destructive">Bloqueado</Badge>
-                    : <Badge className="bg-green-600">Activo</Badge>
+                    : <Badge className="bg-success text-background">Activo</Badge>
                 ) : (
                   <Badge variant="secondary">No</Badge>
                 )}
@@ -203,10 +203,10 @@ export default function GodCompanyDetailPage() {
           </div>
 
           {company.factusCreditPending > 0 && (
-            <Card className="border-amber-200 dark:border-amber-800">
+            <Card className="border-warning/30">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <AlertTriangle className="size-3.5 text-amber-500" />
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="size-3.5 text-warning" />
                   Créditos pendientes de activación
                 </CardTitle>
               </CardHeader>
@@ -238,7 +238,7 @@ export default function GodCompanyDetailPage() {
           )}
 
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Últimos Movimientos de Créditos</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle>Últimos Movimientos de Créditos</CardTitle></CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
@@ -256,7 +256,7 @@ export default function GodCompanyDetailPage() {
                       <TableCell className="text-xs">{format(new Date(tx.createdAt), "dd/MM HH:mm", { locale: es })}</TableCell>
                       <TableCell>
                         {tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE
-                          ? <Badge className="bg-green-600 text-[10px]">Compra</Badge>
+                          ? <Badge className="bg-success text-background text-[10px]">Compra</Badge>
                           : <Badge variant="secondary" className="text-[10px]">Consumo</Badge>}
                       </TableCell>
                       <TableCell className="text-right font-mono">{tx.type === FACTUS_TRANSACTION_TYPE.PURCHASE ? "+" : "-"}{tx.amount}</TableCell>
@@ -275,7 +275,7 @@ export default function GodCompanyDetailPage() {
 
         <TabsContent value="auditoria" className="space-y-4 pt-4">
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">Actividad Reciente</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle>Actividad Reciente</CardTitle></CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>

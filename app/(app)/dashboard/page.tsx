@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { useDashboard } from "@/features/dashboard/hooks/use-dashboard"
 import { useSession } from "next-auth/react"
-import { StatCard } from "@/components/dashboard/stat-card"
+import { StatStrip } from "@/components/dashboard/stat-card"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Card,
@@ -15,12 +15,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { formatCOP } from "@/lib/utils"
-import {
-  DollarSign,
-  Package,
-  ShoppingCart,
-  TrendingUp,
-} from "lucide-react"
 import { ChartSkeleton } from "@/components/dashboard/charts"
 
 const DailySalesChart = dynamic(
@@ -60,37 +54,24 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Ventas Hoy"
-          value={formatCOP(stats?.salesToday ?? 0)}
-          subtitle={`${stats?.ticketsToday ?? 0} tickets hoy`}
-          icon={DollarSign}
-        />
-        <StatCard
-          title="Ventas del Mes"
-          value={formatCOP(stats?.salesMonth ?? 0)}
-          subtitle="Acumulado mensual"
-          icon={TrendingUp}
-        />
-        <StatCard
-          title="Productos Bajos"
-          value={String(stats?.lowStockProducts ?? 0)}
-          subtitle={`${stats?.totalProducts ?? 0} productos activos`}
-          icon={Package}
-        />
-        <StatCard
-          title="Stock Total"
-          value={String(stats?.totalProducts ?? 0)}
-          subtitle="Productos activos en inventario"
-          icon={ShoppingCart}
-        />
-      </div>
+      <StatStrip
+        cells={[
+          { label: "Ventas hoy", value: formatCOP(stats?.salesToday ?? 0), detail: `${stats?.ticketsToday ?? 0} tickets hoy` },
+          { label: "Ventas del mes", value: formatCOP(stats?.salesMonth ?? 0), detail: "Acumulado mensual" },
+          {
+            label: "Stock bajo",
+            value: String(stats?.lowStockProducts ?? 0),
+            detail: (stats?.lowStockProducts ?? 0) > 0 ? "Productos por reponer" : "Todo el stock al día",
+            tone: (stats?.lowStockProducts ?? 0) > 0 ? "warning" : "default",
+          },
+          { label: "Productos activos", value: String(stats?.totalProducts ?? 0), detail: "En inventario" },
+        ]}
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2 border-pos-border">
+        <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-sans">Ventas (30 días)</CardTitle>
+            <CardTitle>Ventas (30 días)</CardTitle>
             <CardDescription>Ingresos diarios del último mes</CardDescription>
           </CardHeader>
           <CardContent>
@@ -100,9 +81,9 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-pos-border">
+        <Card>
           <CardHeader>
-            <CardTitle className="font-sans">Método de Pago</CardTitle>
+            <CardTitle>Método de Pago</CardTitle>
             <CardDescription>Distribución del mes</CardDescription>
           </CardHeader>
           <CardContent>
@@ -113,9 +94,9 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="border-pos-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="font-sans">Productos Más Vendidos</CardTitle>
+          <CardTitle>Productos Más Vendidos</CardTitle>
           <CardDescription>Top 10 del mes</CardDescription>
         </CardHeader>
         <CardContent>
@@ -131,34 +112,31 @@ export default function DashboardPage() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-border lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-lg border p-6">
-            <div className="flex items-center justify-between pb-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="size-4" />
-            </div>
-            <Skeleton className="mt-2 h-8 w-20" />
-            <Skeleton className="mt-1 h-3 w-32" />
+          <div key={i} className="px-5 py-4">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-3 h-7 w-28" />
+            <Skeleton className="mt-3 h-3 w-32" />
           </div>
         ))}
       </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-lg border p-6">
-          <Skeleton className="h-5 w-32" />
+        <div className="rounded-lg border border-border p-4 lg:col-span-2">
+          <Skeleton className="h-3 w-32" />
           <Skeleton className="mt-1 h-4 w-48" />
-          <Skeleton className="mt-4 h-72 w-full" />
+          <Skeleton className="mt-4 h-64 w-full md:h-80" />
         </div>
-        <div className="rounded-lg border p-6">
-          <Skeleton className="h-5 w-32" />
+        <div className="rounded-lg border border-border p-4">
+          <Skeleton className="h-3 w-32" />
           <Skeleton className="mt-1 h-4 w-48" />
-          <Skeleton className="mt-4 h-72 w-full rounded-full" />
+          <Skeleton className="mt-4 h-64 w-full md:h-80" />
         </div>
       </div>
-      <div className="rounded-lg border p-6">
-        <Skeleton className="h-5 w-48" />
+      <div className="rounded-lg border border-border p-4">
+        <Skeleton className="h-3 w-48" />
         <Skeleton className="mt-1 h-4 w-52" />
-        <Skeleton className="mt-4 h-64 w-full" />
+        <Skeleton className="mt-4 h-64 w-full md:h-72" />
       </div>
     </div>
   )

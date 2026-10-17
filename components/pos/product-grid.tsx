@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useRef, useEffect } from "react"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { usePosProducts } from "@/features/pos/hooks/use-pos-products"
 import { formatCOP } from "@/lib/utils"
 import { Search, Package, Scale } from "lucide-react"
 
 interface ProductGridProps {
+  /** Cantidad de cada producto que ya está en el ticket, por id. */
+  cartQuantities?: Record<string, number>
   onAddProduct: (product: {
     id: string
     name: string
@@ -23,7 +24,7 @@ function getSalePrice(product: { purchasePrice: number; profitMargin: number }):
   return Math.round(product.purchasePrice * (1 + product.profitMargin))
 }
 
-export function ProductGrid({ onAddProduct }: ProductGridProps) {
+export function ProductGrid({ onAddProduct, cartQuantities = {} }: ProductGridProps) {
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -49,7 +50,7 @@ export function ProductGrid({ onAddProduct }: ProductGridProps) {
             placeholder="Buscar producto por nombre o código de barras..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 pl-8 text-base md:h-12 md:text-lg"
+            className="h-11 pl-9 text-base md:h-12"
           />
         </div>
       </div>
@@ -58,7 +59,7 @@ export function ProductGrid({ onAddProduct }: ProductGridProps) {
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="h-24 md:h-28 animate-pulse rounded-lg bg-muted" />
+              <div key={i} className="h-[96px] animate-pulse rounded-lg border border-border bg-card" />
             ))}
           </div>
         ) : data?.products?.length === 0 ? (
@@ -72,39 +73,46 @@ export function ProductGrid({ onAddProduct }: ProductGridProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
-            {data?.products?.map((product: any) => (
-              <button
-                key={product.id}
-                onClick={() => onAddProduct({
-                  ...product,
-                  price: getSalePrice(product),
-                })}
-                disabled={!product.sellByWeight && product.stock === 0}
-                className="flex flex-col items-start gap-1 rounded-lg border p-2.5 md:p-3 text-left transition-colors hover:border-primary hover:bg-accent/50 disabled:cursor-not-allowed disabled:opacity-40 touch-target"
-              >
-                <div className="flex items-center gap-1.5 w-full">
-                  {product.sellByWeight && <Scale className="size-3.5 text-muted-foreground shrink-0" />}
-                  <span className="line-clamp-2 text-xs md:text-sm font-medium leading-tight">
-                    {product.name}
-                  </span>
-                </div>
-                <span className="text-base md:text-lg font-bold text-primary font-mono tabular-nums">
-                  {formatCOP(getSalePrice(product))}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] md:text-xs ${!product.sellByWeight && product.stock <= product.minStock
-                    ? "border-amber-200 bg-amber-50 text-amber-700"
-                    : ""
-                    }`}
+            {data?.products?.map((product: any) => {
+              const inCart = cartQuantities[product.id] ?? 0
+              const lowStock = !product.sellByWeight && product.stock <= product.minStock
+              return (
+                <button
+                  key={product.id}
+                  onClick={() => onAddProduct({
+                    ...product,
+                    price: getSalePrice(product),
+                  })}
+                  disabled={!product.sellByWeight && product.stock === 0}
+                  className={`flex min-h-[96px] flex-col justify-between gap-2 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-elevated active:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 touch-target ${inCart > 0 ? "border-info" : "border-border hover:border-seam-strong"}`}
                 >
-                  {product.sellByWeight
-                    ? `${(product.stock / 1000).toFixed(2)} kg`
-                    : `Stock: ${product.stock}`
-                  }
-                </Badge>
-              </button>
-            ))}
+                  <div className="flex w-full items-start justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      {product.sellByWeight && <Scale className="size-3.5 shrink-0 text-muted-foreground" />}
+                      <span className="line-clamp-2 text-[13px] leading-tight font-medium md:text-sm">{product.name}</span>
+                    </span>
+                    {inCart > 0 && (
+                      <span className="shrink-0 rounded-sm bg-info/15 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-info" aria-label={`${inCart} en el ticket`}>
+                        ×{inCart}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex w-full items-end justify-between gap-2">
+                    <span className="min-w-0 truncate font-mono text-lg leading-none font-semibold tabular-nums">
+                      {formatCOP(getSalePrice(product))}
+                    </span>
+                    <span className={`flex shrink-0 items-center gap-1 font-mono text-[11px] whitespace-nowrap ${lowStock ? "text-warning" : "text-muted-foreground"}`}>
+                      {lowStock && <span className="size-1.5 rounded-full bg-warning" aria-hidden="true" />}
+                      {product.sellByWeight
+                        ? `${(product.stock / 1000).toFixed(2)} kg`
+                        : lowStock
+                          ? `${product.stock} BAJO`
+                          : `${product.stock} u`}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

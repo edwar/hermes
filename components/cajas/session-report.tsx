@@ -138,7 +138,7 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
             {session.cashMovements.map((m: { id: string; type: string; amount: number; reason: string }) => (
               <div key={m.id} className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{m.type === STOCK_MOVEMENT_TYPE.IN ? "Ingreso" : "Retiro"}: {m.reason}</span>
-                <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-green-600" : "text-destructive"}`}>
+                <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-success" : "text-destructive"}`}>
                   {m.type === STOCK_MOVEMENT_TYPE.IN ? "+" : "-"}{formatCOP(Number(m.amount))}
                 </span>
               </div>
@@ -157,7 +157,7 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
           <div className="flex justify-between"><span className="text-muted-foreground">Efectivo contado</span><span className="font-mono tabular-nums">{formatCOP(Number(session.closingBalance))}</span></div>
           <Separator />
           <div className={`flex justify-between font-semibold ${
-            Number(session.difference) === 0 ? "text-green-600" : "text-destructive"
+            Number(session.difference) === 0 ? "text-success" : "text-destructive"
           }`}>
             <span>Diferencia</span>
             <span className="font-mono tabular-nums">{formatCOP(Number(session.difference))}</span>

@@ -1,9 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* =============================================================================
+   HERMES: CONSOLA DE TURNO
+   Grafito de dos escalones, paneles separados por líneas de 1px (sin sombras) y
+   color solo para estado. Ver DESIGN.md.
+   ============================================================================= */
+
 @theme inline {
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-mono);
+  --font-sans: var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -37,102 +43,127 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* Estado: el color nunca decora, siempre significa algo. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-data: var(--data);
+  --color-elevated: var(--elevated);
+  --color-faint: var(--faint);
+  --color-seam-strong: var(--seam-strong);
+
+  /* Esquinas casi rectas: 2 / 4 / 6px. rounded-lg = panel. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
 
-  /* New cohesive brand identity colors */
-  --color-pos-brand: #004F6E;
-  --color-pos-success: #16A34A;
-  --color-pos-action: #2563EB;
-  --color-pos-blue-chart: #2563EB;
-  --color-pos-wait: #CABA04;
-  --color-pos-danger: #DC2626;
-
-  --color-pos-bg: #F9FAFB;
-  --color-pos-card: #FFFFFF;
-  --color-pos-sidebar-bg: #111827;
-  --color-pos-text: #111827;
-  --color-pos-text-muted: #6B7280;
-  --color-pos-border: #E5E7EB;
+  /* Alias heredados (se retiran cuando no quede uso). */
+  --color-pos-brand: var(--primary);
+  --color-pos-success: var(--success);
+  --color-pos-action: var(--primary);
+  --color-pos-danger: var(--destructive);
+  --color-pos-border: var(--border);
 }
 
+/* Tema claro (alterno). */
 :root {
-  --radius: 0.625rem;
+  --radius: 6px;
 
-  --background: #F9FAFB;
-  --foreground: #111827;
+  --background: #F6F8FA;
+  --foreground: #1F2328;
 
   --card: #FFFFFF;
-  --card-foreground: #111827;
+  --card-foreground: #1F2328;
 
   --popover: #FFFFFF;
-  --popover-foreground: #111827;
+  --popover-foreground: #1F2328;
 
-  --primary: #1A7A9E;
+  --elevated: #F0F3F6;
+  --faint: #848D97;
+  --seam-strong: #AFB8C1;
+
+  --primary: #0969DA;
   --primary-foreground: #FFFFFF;
 
-  --secondary: #F3F4F6;
-  --secondary-foreground: #374151;
+  --secondary: #EAEEF2;
+  --secondary-foreground: #1F2328;
 
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
+  --muted: #EAEEF2;
+  --muted-foreground: #596069;
 
-  --accent: #F3F4F6;
-  --accent-foreground: #111827;
+  --accent: #EAEEF2;
+  --accent-foreground: #1F2328;
 
-  --destructive: #DC2626;
+  --destructive: #CF222E;
   --destructive-foreground: #FFFFFF;
 
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: #1A7A9E;
+  --success: #1A7F37;
+  --warning: #9A6700;
+  --info: #0969DA;
+  --data: #8250DF;
 
-  --sidebar: #111827;
-  --sidebar-foreground: #9CA3AF;
-  --sidebar-accent: #1A7A9E;
-  --sidebar-accent-foreground: #FFFFFF;
+  --border: #D0D7DE;
+  --input: #D0D7DE;
+  --ring: #0969DA;
+
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #596069;
+  --sidebar-accent: #EAEEF2;
+  --sidebar-accent-foreground: #1F2328;
+  --sidebar-border: #D0D7DE;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Tema por defecto: grafito. */
 .dark {
-  --background: #161825;
-  --foreground: #E5E7EB;
+  --background: #0D1117;
+  --foreground: #E6EDF3;
 
-  --card: #1E2030;
-  --card-foreground: #E5E7EB;
+  --card: #151A22;
+  --card-foreground: #E6EDF3;
 
-  --popover: #1E2030;
-  --popover-foreground: #E5E7EB;
+  --popover: #1B212B;
+  --popover-foreground: #E6EDF3;
 
-  --primary: #1A7A9E;
+  --elevated: #1B212B;
+  --faint: #6E7681;
+  --seam-strong: #343B47;
+
+  --primary: #1F6FEB;
   --primary-foreground: #FFFFFF;
 
-  --secondary: #2E3040;
-  --secondary-foreground: #D1D5DB;
+  --secondary: #1B212B;
+  --secondary-foreground: #E6EDF3;
 
-  --muted: #282A3A;
-  --muted-foreground: #9CA3AF;
+  --muted: #1B212B;
+  --muted-foreground: #8B949E;
 
-  --accent: #282A3A;
-  --accent-foreground: #E5E7EB;
+  --accent: #1B212B;
+  --accent-foreground: #E6EDF3;
 
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
+  --destructive: #F85149;
+  --destructive-foreground: #0D1117;
 
-  --border: #2E3040;
-  --input: #2E3040;
-  --ring: #1A7A9E;
+  --success: #56D364;
+  --warning: #E3B341;
+  --info: #79C0FF;
+  --data: #C678DD;
 
-  --sidebar: #161825;
-  --sidebar-foreground: #E5E7EB;
-  --sidebar-accent: #1A7A9E;
-  --sidebar-accent-foreground: #FFFFFF;
+  --border: #262C36;
+  --input: #30363F;
+  --ring: #79C0FF;
+
+  --sidebar: #0D1117;
+  --sidebar-foreground: #8B949E;
+  --sidebar-accent: #1B212B;
+  --sidebar-accent-foreground: #E6EDF3;
+  --sidebar-border: #262C36;
 }
-
 
 @layer base {
   * {
@@ -145,6 +176,12 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-sans), system-ui, sans-serif;
     font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* Cifras: siempre tabulares para que los importes se alineen. */
+  body {
+    font-variant-numeric: tabular-nums;
   }
 
   /* Hide number input spinners */
@@ -189,7 +226,7 @@
   .receipt {
     width: 80mm;
     font-size: 12px;
-    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-family: var(--font-geist-mono), "Courier New", monospace;
     padding: 5mm;
     color: black;
     background: white;
@@ -290,4 +327,20 @@ a:focus-visible,
   textarea {
     font-size: 16px;
   }
+}
+
+/* Landing: el ticket de ejemplo se arma línea por línea, una sola vez. */
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-rise {
+  animation: landing-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

@@ -1,28 +1,36 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { type LucideIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-interface StatCardProps {
-  title: string
+export interface StatCell {
+  label: string
   value: string
-  subtitle: string
-  icon: LucideIcon
+  detail: string
+  /** Estado del dato: solo se colorea cuando significa algo. */
+  tone?: "default" | "warning"
 }
 
-export function StatCard({ title, value, subtitle, icon: Icon }: StatCardProps) {
+/**
+ * Franja de estado del turno: una sola superficie dividida por líneas de 1px,
+ * en vez de cuatro tarjetas iguales.
+ */
+export function StatStrip({ cells }: { cells: StatCell[] }) {
   return (
-    <Card className="transition-all duration-200 hover:shadow-lg hover:shadow-primary/5 border-pos-border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="font-sans text-sm font-bold text-muted-foreground tracking-wide uppercase">
-          {title}
-        </CardTitle>
-        <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-          <Icon className="size-4 text-primary" />
+    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-4 [&>div]:border-border [&>div:nth-child(odd)]:border-r lg:[&>div]:border-r lg:[&>div:last-child]:border-r-0 max-lg:[&>div:nth-child(-n+2)]:border-b">
+      {cells.map((cell) => (
+        <div key={cell.label} className="px-5 py-4">
+          <dt className="font-mono text-[11px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+            {cell.label}
+          </dt>
+          <dd
+            className={cn(
+              "mt-2 font-mono text-[28px] leading-none font-semibold tracking-tight tabular-nums",
+              cell.tone === "warning" && "text-warning"
+            )}
+          >
+            {cell.value}
+          </dd>
+          <p className="mt-2 text-xs text-muted-foreground">{cell.detail}</p>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="font-sans text-2xl font-bold tracking-tight">{value}</div>
-        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
-      </CardContent>
-    </Card>
+      ))}
+    </dl>
   )
 }

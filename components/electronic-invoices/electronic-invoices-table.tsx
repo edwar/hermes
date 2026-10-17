@@ -39,12 +39,12 @@ import { sileo } from "sileo"
 import { ExportCSVButton } from "@/components/shared/export-csv-button"
 import { FE_STATUS, REPORT_TYPE } from "@/lib/constants"
 
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  [FE_STATUS.PENDING]: { label: "Pendiente", variant: "secondary" },
-  [FE_STATUS.VALIDATED]: { label: "Validada", variant: "default" },
-  [FE_STATUS.ACCEPTED]: { label: "Aceptada", variant: "default" },
+const STATUS_LABELS: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "outline" }> = {
+  [FE_STATUS.PENDING]: { label: "Pendiente", variant: "warning" },
+  [FE_STATUS.VALIDATED]: { label: "Validada", variant: "success" },
+  [FE_STATUS.ACCEPTED]: { label: "Aceptada", variant: "success" },
   [FE_STATUS.REJECTED]: { label: "Rechazada", variant: "destructive" },
-  [FE_STATUS.CANCELLED]: { label: "Cancelada", variant: "destructive" },
+  [FE_STATUS.CANCELLED]: { label: "Cancelada", variant: "outline" },
 }
 
 function formatCOP(value: number | string) {
@@ -252,7 +252,7 @@ export function ElectronicInvoicesTable() {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => fetchInvoices(1)} className="h-10 w-full md:w-auto">
+        <Button variant="outline" onClick={() => fetchInvoices(1)} className="w-full md:w-auto">
           <RefreshCw className="mr-2 size-4" />
           Actualizar
         </Button>
@@ -279,7 +279,7 @@ export function ElectronicInvoicesTable() {
                 <TableHead>Consecutivo</TableHead>
                 <TableHead className="hidden md:table-cell">Fecha</TableHead>
                 <TableHead className="hidden md:table-cell">Cliente</TableHead>
-                <TableHead className="hidden lg:table-cell">CUFE</TableHead>
+                <TableHead className="hidden 2xl:table-cell">CUFE</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="hidden sm:table-cell text-center">Estado</TableHead>
                 <TableHead className="w-32 sm:w-48 text-center">Acciones</TableHead>
@@ -293,11 +293,11 @@ export function ElectronicInvoicesTable() {
                     <TableCell className="font-mono text-sm">
                       <div className="flex items-center gap-2">
                         {inv.sale?.isReturn ? (
-                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/60 dark:text-amber-300 border-0">
+                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-warning/10 text-warning hover:bg-warning/10 border-0">
                             Nota Crédito
                           </Badge>
                         ) : (
-                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-emerald-100 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-900/60 dark:text-emerald-300 border-0">
+                          <Badge className="text-[11px] px-2 py-0.5 font-semibold bg-success/10 text-success hover:bg-success/10 border-0">
                             Factura
                           </Badge>
                         )}
@@ -310,7 +310,7 @@ export function ElectronicInvoicesTable() {
                     <TableCell className="hidden md:table-cell text-sm">
                       {inv.sale?.customer?.name ?? <span className="text-muted-foreground/50">—</span>}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell font-mono text-xs text-muted-foreground max-w-[180px] truncate">
+                    <TableCell className="hidden 2xl:table-cell font-mono text-xs text-muted-foreground max-w-[180px] truncate">
                       {inv.cufe ?? <span className="text-muted-foreground/30">Sin CUFE</span>}
                     </TableCell>
                     <TableCell className="text-right font-mono tabular-nums font-medium">
@@ -322,7 +322,7 @@ export function ElectronicInvoicesTable() {
                           {status.label}
                         </Badge>
                         {(inv.status === FE_STATUS.PENDING || inv.status === FE_STATUS.REJECTED) && inv.errorMessage && (
-                          <span className="line-clamp-2 max-w-[220px] text-[10px] text-amber-600" title={inv.errorMessage}>
+                          <span className="line-clamp-2 max-w-[220px] text-[10px] text-warning" title={inv.errorMessage}>
                             {inv.errorMessage}
                           </span>
                         )}

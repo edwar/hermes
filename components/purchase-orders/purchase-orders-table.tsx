@@ -31,9 +31,9 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PO_STATUS } from "@/lib/constants"
 
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  [PO_STATUS.PENDING]: { label: "Pendiente", variant: "outline" },
-  [PO_STATUS.RECEIVED]: { label: "Recibido", variant: "default" },
+const STATUS_LABELS: Record<string, { label: string; variant: "success" | "warning" | "outline" | "destructive" }> = {
+  [PO_STATUS.PENDING]: { label: "Pendiente", variant: "warning" },
+  [PO_STATUS.RECEIVED]: { label: "Recibido", variant: "success" },
   [PO_STATUS.CANCELLED]: { label: "Cancelado", variant: "destructive" },
 }
 
@@ -155,7 +155,7 @@ export function PurchaseOrdersTable() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="size-9 md:size-8 text-green-600 touch-target"
+                            className="size-9 md:size-8 text-success touch-target"
                             onClick={() => handleReceive(order)}
                             aria-label="Recibir pedido"
                           >

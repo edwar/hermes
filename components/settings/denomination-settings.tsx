@@ -148,7 +148,7 @@ export function DenominationSettings() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2">
             <Banknote className="size-4 text-primary" />
             Denominaciones de efectivo
           </CardTitle>
@@ -187,7 +187,7 @@ export function DenominationSettings() {
                       onClick={() => handleToggle(denom)}
                       className={`rounded px-1.5 py-0.5 text-xs font-medium transition-colors ${
                         denom.isActive
-                          ? "text-green-600 hover:bg-green-50 dark:hover:bg-green-950"
+                          ? "text-success hover:bg-success/10"
                           : "text-muted-foreground hover:bg-muted"
                       }`}
                     >
