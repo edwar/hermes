@@ -13,6 +13,7 @@ import Link from "next/link"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { buttonVariants } from "@/components/ui/button"
 import { StatStrip } from "@/components/dashboard/stat-card"
+import { Wordmark } from "@/components/shared/wordmark"
 import {
   ShoppingCart,
   Package,
@@ -21,7 +22,6 @@ import {
   Users,
   Wallet,
   ArrowRight,
-  Store,
 } from "lucide-react"
 
 const WHATSAPP_URL = "https://wa.me/573175227672?text=Hola,%20quisiera%20m%C3%A1s%20informaci%C3%B3n%20sobre%20Hermes"
@@ -101,17 +101,6 @@ const sampleTicket = [
   { name: "Pan Tajado Grande", qty: 1, total: "$ 6.200" },
   { name: "Jugo Hit Tropical 400ml", qty: 3, total: "$ 8.976" },
 ]
-
-function Wordmark() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <span className="flex size-8 items-center justify-center rounded-md border border-seam-strong bg-elevated">
-        <Store className="size-4 text-info" />
-      </span>
-      <span className="font-mono text-sm font-semibold tracking-[0.14em]">HERMES</span>
-    </span>
-  )
-}
 
 function PanelLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -217,6 +206,9 @@ export default function LandingPage() {
             </Link>
             <Link href="#pricing" className="hidden px-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block">
               Precios
+            </Link>
+            <Link href="/guia" className="hidden px-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:block">
+              Guía
             </Link>
             <ThemeToggle />
             <Link href="/login" className={buttonVariants({ variant: "outline", size: "sm" })}>
@@ -417,6 +409,7 @@ export default function LandingPage() {
           <nav aria-label="Pie" className="flex items-center gap-6">
             <Link href="#features" className="transition-colors hover:text-foreground">Funcionalidades</Link>
             <Link href="#pricing" className="transition-colors hover:text-foreground">Precios</Link>
+            <Link href="/guia" className="transition-colors hover:text-foreground">Guía de uso</Link>
             <Link href="/login" className="transition-colors hover:text-foreground">Iniciar sesión</Link>
           </nav>
           <p className="font-mono tracking-[0.06em]">HECHO EN COLOMBIA &middot; 2026</p>

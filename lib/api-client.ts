@@ -30,7 +30,17 @@ export interface ApiFetchOptions<TMock = unknown> {
   mockResponse?: (body: unknown, clientId: string) => TMock
   queueable?: boolean
   forceQueue?: boolean
+  /**
+   * Tiempo máximo de espera antes de tratar la petición como caída de red y encolarla.
+   * Las operaciones que llaman a un servicio externo (factura electrónica, nota crédito) tardan más
+   * que el valor por defecto: con él, el servidor completa la operación pero el POS la da por perdida.
+   */
+  timeoutMs?: number
 }
+
+export const DEFAULT_TIMEOUT_MS = 5_000
+/** Venta o devolución que emite un documento ante la DIAN: el proveedor puede tardar varios segundos. */
+export const ELECTRONIC_INVOICE_TIMEOUT_MS = 45_000
 
 const MUTATING_METHODS = new Set([HTTP_METHOD.POST, HTTP_METHOD.PUT, HTTP_METHOD.PATCH, HTTP_METHOD.DELETE])
 
@@ -140,6 +150,7 @@ export async function apiFetch<T = unknown>(
     mockResponse,
     queueable = true,
     forceQueue = false,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
   } = options
 
   const isMutation = method ? MUTATING_METHODS.has(method.toUpperCase() as typeof HTTP_METHOD.POST | typeof HTTP_METHOD.PUT | typeof HTTP_METHOD.PATCH | typeof HTTP_METHOD.DELETE) : false
@@ -168,9 +179,8 @@ export async function apiFetch<T = unknown>(
     body: body !== undefined && body !== null ? JSON.stringify(body) : undefined,
   }
 
-  const NETWORK_TIMEOUT_MS = 5_000
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   init.signal = controller.signal
 
   try {
