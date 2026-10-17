@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatCOP } from "@/lib/utils"
-import { apiFetch } from "@/lib/api-client"
+import { apiFetch, ELECTRONIC_INVOICE_TIMEOUT_MS } from "@/lib/api-client"
 import { Search, RotateCcw, Minus, Plus, Loader2, Zap, AlertTriangle } from "lucide-react"
 import { sileo } from "sileo"
 
@@ -105,6 +105,8 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
         },
         resource: "sale-return",
         entityId: selectedSale.id,
+        // La nota crédito se emite ante la DIAN dentro de la misma petición.
+        timeoutMs: selectedSale?.electronicInvoice && createCreditNote ? ELECTRONIC_INVOICE_TIMEOUT_MS : undefined,
       })
       if (!result.ok) throw new Error(result.error || "Error al procesar devolución")
       return result.queued ? result.mock : result.data

@@ -16,7 +16,7 @@ export default function POSLoading() {
           <Skeleton className="mb-3 h-11 w-full md:mb-4 md:h-12" />
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:gap-3 lg:grid-cols-4">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-[96px]" />
+              <Skeleton key={i} className="h-[108px]" />
             ))}
           </div>
         </div>

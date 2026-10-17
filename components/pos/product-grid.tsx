@@ -59,7 +59,7 @@ export function ProductGrid({ onAddProduct, cartQuantities = {} }: ProductGridPr
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="h-[96px] animate-pulse rounded-lg border border-border bg-card" />
+              <div key={i} className="h-[108px] animate-pulse rounded-lg border border-border bg-card" />
             ))}
           </div>
         ) : data?.products?.length === 0 ? (
@@ -84,7 +84,7 @@ export function ProductGrid({ onAddProduct, cartQuantities = {} }: ProductGridPr
                     price: getSalePrice(product),
                   })}
                   disabled={!product.sellByWeight && product.stock === 0}
-                  className={`flex min-h-[96px] flex-col justify-between gap-2 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-elevated active:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 touch-target ${inCart > 0 ? "border-info" : "border-border hover:border-seam-strong"}`}
+                  className={`flex min-h-[108px] flex-col justify-between gap-2 rounded-lg border bg-card p-3 text-left transition-colors hover:bg-elevated active:bg-elevated disabled:cursor-not-allowed disabled:opacity-40 touch-target ${inCart > 0 ? "border-info" : "border-border hover:border-seam-strong"}`}
                 >
                   <div className="flex w-full items-start justify-between gap-2">
                     <span className="flex items-center gap-1.5">
@@ -97,11 +97,11 @@ export function ProductGrid({ onAddProduct, cartQuantities = {} }: ProductGridPr
                       </span>
                     )}
                   </div>
-                  <div className="flex w-full items-end justify-between gap-2">
-                    <span className="min-w-0 truncate font-mono text-lg leading-none font-semibold tabular-nums">
+                  <div className="flex w-full flex-col gap-1">
+                    <span className="font-mono text-lg leading-none font-semibold tabular-nums whitespace-nowrap md:text-xl">
                       {formatCOP(getSalePrice(product))}
                     </span>
-                    <span className={`flex shrink-0 items-center gap-1 font-mono text-[11px] whitespace-nowrap ${lowStock ? "text-warning" : "text-muted-foreground"}`}>
+                    <span className={`flex items-center gap-1 font-mono text-[11px] whitespace-nowrap ${lowStock ? "text-warning" : "text-muted-foreground"}`}>
                       {lowStock && <span className="size-1.5 rounded-full bg-warning" aria-hidden="true" />}
                       {product.sellByWeight
                         ? `${(product.stock / 1000).toFixed(2)} kg`

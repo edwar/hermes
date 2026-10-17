@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 import { db } from "@/lib/db"
-import { apiFetch } from "@/lib/api-client"
+import { apiFetch, ELECTRONIC_INVOICE_TIMEOUT_MS } from "@/lib/api-client"
 import type { CreateSaleInput } from "../schemas/sale-schema"
 
 export function useCheckout() {
@@ -21,6 +21,8 @@ export function useCheckout() {
         body: { ...data, localId },
         resource: "sale",
         entityId: null,
+        // Con factura electrónica el servidor espera a la DIAN: no se debe dar por caída a los 5 s.
+        timeoutMs: data.requestElectronicInvoice ? ELECTRONIC_INVOICE_TIMEOUT_MS : undefined,
         mockResponse: (body, cid) => {
           const payload = body as CreateSaleInput
           return {
