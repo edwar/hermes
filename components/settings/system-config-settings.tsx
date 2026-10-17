@@ -121,7 +121,7 @@ export function SystemConfigSettings() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Configuración General</CardTitle>
+          <CardTitle>Configuración General</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -147,8 +147,8 @@ export function SystemConfigSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="size-4 text-amber-500" />
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="size-4 text-warning" />
             Alertas de Créditos Factus
           </CardTitle>
         </CardHeader>
@@ -193,7 +193,7 @@ export function SystemConfigSettings() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2">
             <Mail className="size-4 text-primary" />
             Notificaciones por Correo
           </CardTitle>

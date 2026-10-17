@@ -63,7 +63,7 @@ export default function SettingsPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2">
                   <Building2 className="size-4 text-primary" /> Datos de la empresa
                 </CardTitle>
               </CardHeader>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2">
                     <FileText className="size-4 text-primary" /> Configuración del punto de venta
                   </CardTitle>
                 </CardHeader>
@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
+                  <CardTitle className="flex items-center gap-2">
                     <DollarSign className="size-4 text-primary" /> Personalización del ticket
                   </CardTitle>
                 </CardHeader>

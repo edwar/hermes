@@ -10,7 +10,7 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: "light",
+  theme: "dark",
   setTheme: () => {},
 })
 
@@ -19,13 +19,13 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light")
+  const [theme, setThemeState] = useState<Theme>("dark")
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem("theme") as Theme | null
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    const initial = stored ?? (prefersDark ? "dark" : "light")
+    // Dark-first: la consola de turno nace oscura; solo es clara si el usuario la eligió.
+    const initial: Theme = stored === "light" ? "light" : "dark"
     setThemeState(initial)
     document.documentElement.classList.toggle("dark", initial === "dark")
     setMounted(true)

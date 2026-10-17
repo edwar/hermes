@@ -42,7 +42,7 @@ export function SessionBlockerOverlay({ onSessionOpened, onConflict }: SessionBl
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] items-center justify-center -m-6">
+    <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center -m-6">
       <div className="mx-auto max-w-sm text-center">
         <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-primary/10">
           <Wallet className="size-10 text-primary" />

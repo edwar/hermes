@@ -111,12 +111,12 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
 
         <div className="space-y-4 py-2">
           {showAdminAuth ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-3">
-              <div className="flex items-center gap-2 text-amber-700">
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-3">
+              <div className="flex items-center gap-2 text-warning">
                 <ShieldCheck className="size-5" />
                 <span className="text-sm font-medium">Autorización requerida</span>
               </div>
-              <p className="text-xs text-amber-600">
+              <p className="text-xs text-warning">
                 Un cajero necesita autorización de administrador para realizar movimientos de caja.
               </p>
               <div className="space-y-2">

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { SessionProvider } from "@/providers/session-provider";
@@ -12,21 +12,19 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hermes-pos.app"
 const SITE_DESCRIPTION =
   "Sistema POS y gestión de inventarios para tu negocio. Controla ventas, inventario, cajas y facturación electrónica en un solo lugar."
 
-const inter = Inter({
-  variable: "--font-inter",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
   preload: true,
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
-  preload: false,
+  preload: true,
   fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
 })
 
@@ -137,7 +135,7 @@ const themeScript = `
   (function() {
     try {
       var theme = localStorage.getItem('theme');
-      if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      if (theme !== 'light') {
         document.documentElement.classList.add('dark');
       }
     } catch(e) {}
@@ -152,7 +150,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geist.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

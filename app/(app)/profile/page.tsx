@@ -90,7 +90,7 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2">
                   <User className="size-4 text-primary" /> Información personal
                 </CardTitle>
               </CardHeader>
@@ -122,7 +122,7 @@ export default function ProfilePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2">
                   <Lock className="size-4 text-primary" /> Cambiar contraseña
                 </CardTitle>
               </CardHeader>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2">
                   <Shield className="size-4 text-primary" /> Detalles de la cuenta
                 </CardTitle>
               </CardHeader>
@@ -204,7 +204,7 @@ export default function ProfilePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2">
                   <ShoppingCart className="size-4 text-primary" /> Actividad
                 </CardTitle>
               </CardHeader>

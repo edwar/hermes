@@ -68,7 +68,7 @@ export function CreditBalanceCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-2">
           <BadgeCheck className="size-4 text-primary" />
           Créditos de facturación
         </CardTitle>
@@ -77,7 +77,7 @@ export function CreditBalanceCard() {
         <div className="flex items-center justify-between rounded-lg border p-3">
           <div>
             <p className="text-xs text-muted-foreground">Saldo disponible</p>
-            <p className={`text-2xl font-bold font-mono tabular-nums ${(balance ?? 0) <= 0 ? "text-destructive" : "text-green-600"}`}>
+            <p className={`text-2xl font-bold font-mono tabular-nums ${(balance ?? 0) <= 0 ? "text-destructive" : "text-success"}`}>
               {balance ?? 0}
             </p>
           </div>
@@ -88,11 +88,11 @@ export function CreditBalanceCard() {
         </div>
 
         {(balance ?? 0) <= 0 && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600">
+          <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="font-medium">Sin créditos disponibles</p>
-              <p className="text-xs text-amber-600/80">
+              <p className="text-xs text-warning">
                 No hay créditos de facturación electrónica. Las facturas no se emitirán hasta que agregues más.
               </p>
             </div>

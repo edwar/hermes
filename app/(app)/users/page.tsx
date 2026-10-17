@@ -193,7 +193,7 @@ export default function UsersPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.isActive ? "outline" : "secondary"} className={
-                          user.isActive ? "bg-green-100 text-green-700 border-green-200" : ""
+                          user.isActive ? "bg-success/10 text-success border-success/30" : ""
                         }>
                           {user.isActive ? "Activo" : "Inactivo"}
                         </Badge>

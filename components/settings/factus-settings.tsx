@@ -319,7 +319,7 @@ export function FactusSettings() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2">
             <Zap className="size-4 text-primary" />
             Facturación Electrónica (Factus)
           </CardTitle>
@@ -334,7 +334,7 @@ export function FactusSettings() {
                 </p>
               </div>
               {settings?.credentials.configured ? (
-                <Badge variant="default" className="bg-green-600 text-xs">Configuradas</Badge>
+                <Badge variant="default" className="bg-success text-background text-xs">Configuradas</Badge>
               ) : (
                 <Badge variant="destructive" className="text-xs">Pendientes</Badge>
               )}
@@ -458,19 +458,19 @@ export function FactusSettings() {
           </div>
 
           {isEnabled && isConnected && (
-            <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-600">
+            <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success">
               <CheckCircle2 className="size-4" />
               Facturación electrónica activa y conectada con Factus
             </div>
           )}
 
           {hasMismatch && (
-            <div className="flex flex-col gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-2">
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <div>
                   <p className="font-medium">Conexión con Factus perdida</p>
-                  <p className="text-xs text-amber-600/80">
+                  <p className="text-xs text-warning">
                     La facturación está habilitada pero el token expiró. Usa &quot;Reconectar&quot; para renovar la conexión sin perder la configuración.
                   </p>
                 </div>
@@ -480,7 +480,7 @@ export function FactusSettings() {
                 variant="outline"
                 onClick={handleReconnect}
                 disabled={reconnecting}
-                className="shrink-0 border-amber-500/30 bg-background hover:bg-amber-500/10"
+                className="shrink-0 border-warning/30 bg-background hover:bg-warning/10"
               >
                 {reconnecting ? (
                   <Loader2 className="mr-1.5 size-4 animate-spin" />
@@ -493,7 +493,7 @@ export function FactusSettings() {
           )}
 
           {!isEnabled && !isConnected && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-600">
+            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
               <AlertCircle className="size-4" />
               Activa el toggle para conectar con Factus
             </div>
@@ -554,7 +554,7 @@ export function FactusSettings() {
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm">{range.prefix}</span>
                                 <Badge variant="outline" className="text-xs">{range.documentType}</Badge>
-                                {range.isActive && <Badge variant="default" className="text-xs bg-green-600">Activo</Badge>}
+                                {range.isActive && <Badge variant="default" className="text-xs bg-success text-background">Activo</Badge>}
                                 {range.isExpired && <Badge variant="destructive" className="text-xs">Vencido</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground">
@@ -579,19 +579,19 @@ export function FactusSettings() {
               )}
             </div>
             <div className="mt-2 grid gap-2 text-xs">
-              <p className={settings?.company.name ? "text-muted-foreground" : "text-red-500"}>
+              <p className={settings?.company.name ? "text-muted-foreground" : "text-destructive"}>
                 <strong>Nombre:</strong> {settings?.company.name || "No configurado"}
               </p>
-              <p className={settings?.company.nit ? "text-muted-foreground" : "text-red-500"}>
+              <p className={settings?.company.nit ? "text-muted-foreground" : "text-destructive"}>
                 <strong>NIT:</strong> {settings?.company.nit || "No configurado"}
               </p>
-              <p className={settings?.company.address ? "text-muted-foreground" : "text-red-500"}>
+              <p className={settings?.company.address ? "text-muted-foreground" : "text-destructive"}>
                 <strong>Dirección:</strong> {settings?.company.address || "No configurada"}
               </p>
-              <p className={settings?.company.email ? "text-muted-foreground" : "text-red-500"}>
+              <p className={settings?.company.email ? "text-muted-foreground" : "text-destructive"}>
                 <strong>Email:</strong> {settings?.company.email || "No configurado"}
               </p>
-              <p className={settings?.company.phone ? "text-muted-foreground" : "text-red-500"}>
+              <p className={settings?.company.phone ? "text-muted-foreground" : "text-destructive"}>
                 <strong>Teléfono:</strong> {settings?.company.phone || "No configurado"}
               </p>
             </div>
@@ -601,8 +601,8 @@ export function FactusSettings() {
 
           {message && (
             <div className={`flex items-center gap-2 rounded-lg p-3 text-sm ${message.type === "success"
-              ? "border border-green-500/20 bg-green-500/10 text-green-600"
-              : "border border-red-500/20 bg-red-500/10 text-red-600"
+              ? "border border-success/30 bg-success/10 text-success"
+              : "border border-destructive/30 bg-destructive/10 text-destructive"
               }`}>
               {message.type === "success" ? <CheckCircle2 className="size-4" /> : <XCircle className="size-4" />}
               {message.text}

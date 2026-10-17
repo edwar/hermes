@@ -15,7 +15,7 @@ export function OnlineBadge() {
     return (
       <Badge
         variant="outline"
-        className="gap-1.5 px-2.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900 cursor-pointer select-none"
+        className="gap-1.5 px-2.5 py-0.5 text-[11px] font-medium bg-warning/10 text-warning border-warning/30 cursor-pointer select-none"
         onClick={pendingCount > 0 ? handleSync : undefined}
       >
         <WifiOff className="size-3" />
@@ -37,8 +37,8 @@ export function OnlineBadge() {
       variant="outline"
       className={`gap-1.5 px-2.5 py-0.5 text-[11px] font-medium cursor-pointer select-none ${
         pendingCount > 0
-          ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900"
-          : "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
+          ? "bg-warning/10 text-warning border-warning/30"
+          : "bg-success/10 text-success border-success/30"
       }`}
       onClick={pendingCount > 0 ? handleSync : undefined}
     >

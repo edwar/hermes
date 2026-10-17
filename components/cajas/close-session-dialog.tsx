@@ -246,7 +246,7 @@ useEffect(() => {
                       <span className="text-muted-foreground">
                         {m.type === STOCK_MOVEMENT_TYPE.IN ? "Ingreso" : "Retiro"}: {m.reason}
                       </span>
-                      <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-green-600" : "text-destructive"}`}>
+                      <span className={`font-mono tabular-nums ${m.type === STOCK_MOVEMENT_TYPE.IN ? "text-success" : "text-destructive"}`}>
                         {m.type === STOCK_MOVEMENT_TYPE.IN ? "+" : "-"}{formatCOP(Number(m.amount))}
                       </span>
                     </div>
@@ -318,7 +318,7 @@ useEffect(() => {
                       <div className="flex justify-between text-sm pt-2">
                         <span className="text-muted-foreground">Diferencia</span>
                         <span className={`font-mono tabular-nums font-semibold ${
-                          diff === 0 ? "text-green-600" : diff > 0 ? "text-orange-500" : "text-destructive"
+                          diff === 0 ? "text-success" : diff > 0 ? "text-warning" : "text-destructive"
                         }`}>
                           {formatCOP(diff)}
                         </span>

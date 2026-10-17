@@ -35,8 +35,8 @@ export function ScaleInput({ weightUnit, weightInGrams, onWeightChange }: ScaleI
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           {connected ? (
             <>
-              <Wifi className="size-3 text-green-600" />
-              <span className="text-green-600 font-medium">Báscula conectada</span>
+              <Wifi className="size-3 text-success" />
+              <span className="text-success font-medium">Báscula conectada</span>
             </>
           ) : (
             <>

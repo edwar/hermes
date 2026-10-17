@@ -170,7 +170,7 @@ export function InvitesClient() {
                       </TableCell>
                       <TableCell>
                         {invite.used ? (
-                          <Badge className="bg-green-100 text-green-700 border-green-200">
+                          <Badge className="bg-success/10 text-success border-success/30">
                             <CheckCircle className="mr-1 size-3" />
                             Usada
                           </Badge>
@@ -180,7 +180,7 @@ export function InvitesClient() {
                             Expirada
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          <Badge variant="outline" className="bg-info/10 text-info border-info/30">
                             Activa
                           </Badge>
                         )}
@@ -200,7 +200,7 @@ export function InvitesClient() {
                             title="Copiar enlace"
                           >
                             {copied === invite.token ? (
-                              <CheckCircle className="size-4 text-green-500" />
+                              <CheckCircle className="size-4 text-success" />
                             ) : (
                               <Copy className="size-4" />
                             )}
