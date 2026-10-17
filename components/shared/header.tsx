@@ -18,7 +18,7 @@ import { OnlineBadge } from "@/components/shared/online-badge"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { CloseSessionDialog } from "@/components/cajas/close-session-dialog"
-import { LogOut, User, Menu } from "lucide-react"
+import { LogOut, User, Menu, CircleHelp } from "lucide-react"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
@@ -120,6 +120,10 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/profile")}>
                 <User className="mr-2 size-4" />
                 Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/guia")}>
+                <CircleHelp className="mr-2 size-4" />
+                Guía de uso
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

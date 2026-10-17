@@ -48,3 +48,7 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 /tests/e2e/.auth/
+
+# Guía de uso: material de trabajo de la grabación (los videos finales viven en public/guia)
+/guide-videos/
+/tests/guide/.auth/

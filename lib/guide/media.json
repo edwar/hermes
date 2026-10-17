@@ -1,0 +1,30 @@
+{
+  "abrir-caja": {
+    "duration": 46,
+    "bytes": 453365
+  },
+  "cerrar-caja": {
+    "duration": 51,
+    "bytes": 486680
+  },
+  "devolucion": {
+    "duration": 77,
+    "bytes": 919507
+  },
+  "factura-electronica": {
+    "duration": 60,
+    "bytes": 800268
+  },
+  "pantalla-de-venta": {
+    "duration": 41,
+    "bytes": 568635
+  },
+  "productos-por-peso": {
+    "duration": 39,
+    "bytes": 588594
+  },
+  "vender-y-cobrar": {
+    "duration": 57,
+    "bytes": 790193
+  }
+}
