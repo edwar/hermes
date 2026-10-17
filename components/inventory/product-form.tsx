@@ -237,8 +237,13 @@ export function ProductForm({
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Categoría *</Label>
-              <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")} required>
-                <SelectTrigger>
+              <Select
+                value={categoryId}
+                onValueChange={(v) => setCategoryId(v ?? "")}
+                items={categories?.map((cat: { id: string; name: string }) => ({ value: cat.id, label: cat.name }))}
+                required
+              >
+                <SelectTrigger id="category">
                   <SelectValue placeholder="Seleccionar categoría" />
                 </SelectTrigger>
                 <SelectContent>

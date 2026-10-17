@@ -30,7 +30,7 @@ export function returnReferenceCode(returnSaleId: string) {
   return `return-${returnSaleId}`
 }
 
-function backoffMs(attempts: number) {
+export function backoffMs(attempts: number) {
   return Math.min(BACKOFF_BASE_MS * 2 ** Math.max(attempts - 1, 0), BACKOFF_MAX_MS)
 }
 
@@ -105,16 +105,24 @@ async function emitDocument(
     if (!isCreditNote && (company.factusCreditBalance ?? 0) <= 0) {
       return { status: "skipped", reason: "Saldo de créditos de facturación insuficiente" }
     }
-    invoice = await prisma.electronicInvoice.create({
-      data: {
-        companyId,
-        saleId: sale.id,
-        referenceCode,
-        status: FE_STATUS.PENDING,
-        total: sale.total,
-        taxTotal: sale.tax,
-      },
-    })
+    try {
+      invoice = await prisma.electronicInvoice.create({
+        data: {
+          companyId,
+          saleId: sale.id,
+          referenceCode,
+          status: FE_STATUS.PENDING,
+          total: sale.total,
+          taxTotal: sale.tax,
+        },
+      })
+    } catch (error) {
+      // Otra emisión de la misma venta creó el registro entre la lectura y la escritura
+      // (saleId es único): se continúa con ese registro y el claim decide quién emite.
+      if ((error as { code?: string })?.code !== "P2002") throw error
+      invoice = await prisma.electronicInvoice.findUnique({ where: { saleId: sale.id } })
+      if (!invoice) throw error
+    }
   }
 
   // --- Reclamar el intento: solo un proceso a la vez por documento ---

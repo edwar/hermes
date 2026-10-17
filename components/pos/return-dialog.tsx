@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -83,6 +83,7 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
     },
   })
 
+  const queryClient = useQueryClient()
   const returnMutation = useMutation({
     mutationFn: async () => {
       const items = returnItems
@@ -109,6 +110,8 @@ export function ReturnDialog({ open, onOpenChange, initialSaleId }: { open: bool
       return result.queued ? result.mock : result.data
     },
     onSuccess: (data) => {
+      // La devolución repone stock: se refresca el catálogo del POS.
+      queryClient.invalidateQueries({ queryKey: ["pos-products"] })
       const { _queued: queued, creditNote } = data as {
         _queued?: boolean
         creditNote?: { status?: string; reason?: string | null } | null
