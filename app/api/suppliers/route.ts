@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSupplierSchema, updateSupplierSchema } from "@/features/suppliers/schemas/supplier-schema"
 import { companyScope } from "@/lib/company-scope"
-import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
+import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
-    return NextResponse.json({ error: "No autorizado para ver proveedores" }, { status: 403 })
-  }
+  const guard = await guardModule(["/suppliers", "/purchase-orders"])
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get("search") ?? ""
@@ -51,11 +49,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
-    return NextResponse.json({ error: "Solo administradores pueden crear proveedores" }, { status: 403 })
-  }
+  const guard = await guardModule("/suppliers")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const companyId = session.user.companyId
   if (!companyId) {
@@ -85,11 +81,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
-    return NextResponse.json({ error: "Solo administradores pueden actualizar proveedores" }, { status: 403 })
-  }
+  const guard = await guardModule("/suppliers")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const parsed = updateSupplierSchema.safeParse(body)
@@ -115,11 +109,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
-    return NextResponse.json({ error: "Solo administradores pueden eliminar proveedores" }, { status: 403 })
-  }
+  const guard = await guardModule("/suppliers")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")

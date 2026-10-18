@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { receivePurchaseOrderSchema } from "@/features/purchase-orders/schemas/purchase-order-schema"
 import { companyScope } from "@/lib/company-scope"
-import { USER_ROLE, PO_STATUS } from "@/lib/constants"
+import { PO_STATUS } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
-    return NextResponse.json({ error: "No autorizado para recibir pedidos" }, { status: 403 })
-  }
+  const guard = await guardModule("/purchase-orders")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   if (!session.user.companyId) {
     return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
   }
