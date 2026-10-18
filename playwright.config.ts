@@ -60,7 +60,6 @@ export default defineConfig({
           // Llave y secreto solo para pruebas; nunca las de producción.
           ENCRYPTION_KEY: process.env.E2E_ENCRYPTION_KEY ?? "dGVzdC1rZXktdGVzdC1rZXktdGVzdC1rZXktMTIzNDU=",
           CRON_SECRET: process.env.E2E_CRON_SECRET ?? "e2e-cron-secret",
-          FACTUS_API_URL: "https://api-sandbox.factus.com.co",
         },
       },
 })

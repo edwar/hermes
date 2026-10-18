@@ -15,17 +15,16 @@ const PRODUCTION_URL = "https://api.factus.com.co"
 
 interface PlatformConfig {
   apiUrl: string
-  urlSource: "database" | "environment" | "default"
+  urlSource: "database" | "default"
   sandbox: boolean
   credentials: {
     configured: boolean
-    source: "database" | "environment" | null
     clientId: string | null
     username: string | null
   }
 }
 
-const SOURCE_LABEL = { database: "guardada aquí", environment: "de las variables de entorno", default: "por defecto" } as const
+const SOURCE_LABEL = { database: "guardada aquí", default: "por defecto (sandbox)" } as const
 
 /** Pantalla del GOD: a qué API de Factus apunta toda la plataforma y con qué cuenta de pruebas. */
 export function FactusPlatformSettings() {
@@ -180,7 +179,7 @@ export function FactusPlatformSettings() {
             <p className="text-xs text-muted-foreground">
               Client ID: <span className="font-mono">{config.credentials.clientId}</span> · Usuario:{" "}
               <span className="font-mono">{config.credentials.username}</span>
-              {config.credentials.source === "environment" ? " (de las variables de entorno)" : ""}. Los secretos
+. Los secretos
               no se muestran; para cambiarlos, ingresa los cuatro campos de nuevo.
             </p>
           )}

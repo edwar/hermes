@@ -14,8 +14,8 @@ import { decryptSecret } from '@/lib/crypto';
 import { getFactusApiUrl, getPlatformCredentials, isSandboxApi } from '@/lib/factus/platform-config';
 
 // Factus asigna una cuenta por NIT emisor, así que las credenciales viven en
-// cada Company. La cuenta de pruebas de la plataforma (la configura el GOD, o las
-// variables de entorno FACTUS_*) solo sirve como respaldo en sandbox; en producción
+// cada Company. La cuenta de pruebas de la plataforma (la configura el GOD)
+// solo sirve como respaldo en sandbox; en producción
 // nunca se usa, para no emitir facturas de un comercio bajo la cuenta de otro.
 interface FactusCredentials {
   clientId: string;
@@ -58,7 +58,7 @@ async function getCredentials(companyId: string): Promise<FactusCredentials> {
 
   if (await isSandboxApi()) {
     const platform = await getPlatformCredentials();
-    if (platform) return platform.credentials;
+    if (platform) return platform;
   }
 
   throw new FactusNotConfiguredError();

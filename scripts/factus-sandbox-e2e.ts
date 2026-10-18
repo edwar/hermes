@@ -1,8 +1,10 @@
 // Prueba de extremo a extremo de la emisión de documentos contra el SANDBOX de Factus.
 // Escribe en la base apuntada por DATABASE_URL: úsala solo con una rama de pruebas.
+// La cuenta de pruebas sale de Configuración del Sistema → Factus de la plataforma (la rama debe tenerla cargada).
 //   DATABASE_URL=<rama> ENCRYPTION_KEY=<clave> npx tsx --env-file=.env scripts/factus-sandbox-e2e.ts
 import { prisma } from "../lib/prisma"
 import { encryptSecret } from "../lib/crypto"
+import { getPlatformCredentials, isSandboxApi } from "../lib/factus/platform-config"
 import { emitInvoiceForSale, emitCreditNoteForReturn, saleReferenceCode } from "../lib/invoicing/emit"
 import { retryPendingInvoices } from "../lib/invoicing/retry"
 import { factusProvider } from "../lib/invoicing/factus-provider"
@@ -33,7 +35,9 @@ async function newSale(opts: { customerId: string | null; parentSaleId?: string;
 }
 
 async function main() {
-  if (!process.env.FACTUS_API_URL?.includes("sandbox")) throw new Error("Solo contra sandbox")
+  if (!(await isSandboxApi())) throw new Error("Solo contra sandbox")
+  const sandbox = await getPlatformCredentials()
+  if (!sandbox) throw new Error("Carga la cuenta de pruebas en Configuración del Sistema antes de correr este script")
 
   // --- Preparación: empresa con credenciales PROPIAS cifradas (no las globales) ---
   await prisma.company.update({
@@ -42,8 +46,8 @@ async function main() {
       name: "Comercio de Prueba SAS", nit: "900123456", factusDv: "8", address: "Calle 1 # 2-3",
       email: "prueba@hermes.test", phone: "3001234567", factusEnabled: true, factusBlocked: false,
       factusCreditBalance: 10,
-      factusClientId: process.env.FACTUS_CLIENT_ID, factusClientSecretEnc: encryptSecret(process.env.FACTUS_CLIENT_SECRET!),
-      factusUsername: process.env.FACTUS_USERNAME, factusPasswordEnc: encryptSecret(process.env.FACTUS_PASSWORD!),
+      factusClientId: sandbox.clientId, factusClientSecretEnc: encryptSecret(sandbox.clientSecret),
+      factusUsername: sandbox.username, factusPasswordEnc: encryptSecret(sandbox.password),
       factusAccessToken: null, factusRefreshToken: null, factusTokenExpiresAt: null,
     },
   })

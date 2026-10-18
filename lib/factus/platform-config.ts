@@ -3,7 +3,8 @@
 //   - URL de la API: sandbox o producción. Aplica a todas las empresas.
 //   - Credenciales de la cuenta de pruebas: respaldo para empresas sin credenciales
 //     propias, y solo mientras la URL sea sandbox (ver getCredentials en client.ts).
-// Todo vive en SystemConfig; los secretos se guardan cifrados (lib/crypto.ts).
+// Todo vive en SystemConfig; los secretos se guardan cifrados (lib/crypto.ts). Ya no se
+// leen variables de entorno FACTUS_*: la única fuente es esta configuración.
 // =============================================================================
 
 import { prisma } from '@/lib/prisma';
@@ -55,43 +56,29 @@ async function readAll(): Promise<Map<string, string>> {
   return values;
 }
 
-/** URL guardada por el GOD; si no hay, la variable FACTUS_API_URL; si tampoco, el sandbox. */
+/** URL guardada por el GOD; si no hay ninguna, el sandbox. */
 export async function getFactusApiUrl(): Promise<string> {
   try {
     const stored = (await readAll()).get(KEY.apiUrl);
     if (stored) return normalizeFactusUrl(stored);
   } catch (err) {
-    console.error('[factus] No se pudo leer la URL guardada, se usa la del entorno:', err);
+    console.error('[factus] No se pudo leer la URL guardada, se usa el sandbox:', err);
   }
-  return process.env.FACTUS_API_URL || DEFAULT_FACTUS_API_URL;
+  return DEFAULT_FACTUS_API_URL;
 }
 
 export async function isSandboxApi(): Promise<boolean> {
   return isSandboxUrl(await getFactusApiUrl());
 }
 
-export async function getPlatformCredentials(): Promise<{ credentials: PlatformCredentials; source: 'database' | 'environment' } | null> {
+export async function getPlatformCredentials(): Promise<PlatformCredentials | null> {
   const values = await readAll();
   const clientId = values.get(KEY.clientId);
   const secretEnc = values.get(KEY.clientSecret);
   const username = values.get(KEY.username);
   const passwordEnc = values.get(KEY.password);
   if (clientId && secretEnc && username && passwordEnc) {
-    return {
-      source: 'database',
-      credentials: { clientId, clientSecret: decryptSecret(secretEnc), username, password: decryptSecret(passwordEnc) },
-    };
-  }
-  if (process.env.FACTUS_CLIENT_ID) {
-    return {
-      source: 'environment',
-      credentials: {
-        clientId: process.env.FACTUS_CLIENT_ID,
-        clientSecret: process.env.FACTUS_CLIENT_SECRET || '',
-        username: process.env.FACTUS_USERNAME || '',
-        password: process.env.FACTUS_PASSWORD || '',
-      },
-    };
+    return { clientId, clientSecret: decryptSecret(secretEnc), username, password: decryptSecret(passwordEnc) };
   }
   return null;
 }
@@ -103,13 +90,12 @@ export async function getPlatformConfigSummary() {
   const platform = await getPlatformCredentials().catch(() => null);
   return {
     apiUrl,
-    urlSource: values.get(KEY.apiUrl) ? ('database' as const) : process.env.FACTUS_API_URL ? ('environment' as const) : ('default' as const),
+    urlSource: values.get(KEY.apiUrl) ? ('database' as const) : ('default' as const),
     sandbox: isSandboxUrl(apiUrl),
     credentials: {
       configured: !!platform,
-      source: platform?.source ?? null,
-      clientId: platform?.credentials.clientId ?? null,
-      username: platform?.credentials.username ?? null,
+      clientId: platform?.clientId ?? null,
+      username: platform?.username ?? null,
     },
   };
 }
