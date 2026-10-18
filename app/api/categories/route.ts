@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { denyUnlessModule } from "@/lib/api-access"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createCategorySchema } from "@/features/inventory/schemas/category-schema"
 import { companyScope } from "@/lib/company-scope"
 import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/categories")
-  if (denied) return denied
+  const guard = await guardModule("/categories")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const where = { isActive: true, ...companyScope(session) }
 
@@ -26,10 +24,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/categories")
-  if (denied) return denied
+  const guard = await guardModule("/categories")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }

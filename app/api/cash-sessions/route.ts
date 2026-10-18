@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { denyUnlessModule } from "@/lib/api-access"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { CASH_SESSION_STATUS, SORT_DIRECTION } from "@/lib/constants"
@@ -8,10 +7,9 @@ import { CASH_SESSION_STATUS, SORT_DIRECTION } from "@/lib/constants"
 const HEARTBEAT_TIMEOUT_MS = 60 * 1000 // 60 segundos sin heartbeat = sesión muerta
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/cajas")
-  if (denied) return denied
+  const guard = await guardModule("/cajas")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get("page") ?? "1")
@@ -54,10 +52,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/pos")
-  if (denied) return denied
+  const guard = await guardModule("/pos")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const { cashRegisterId, openingBalance, deviceId, deviceName } = body

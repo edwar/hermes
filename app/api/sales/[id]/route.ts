@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { denyUnlessModule } from "@/lib/api-access"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
@@ -8,10 +7,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/pos")
-  if (denied) return denied
+  const guard = await guardModule("/pos")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { id } = await params
   const { searchParams } = new URL(req.url)
