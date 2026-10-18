@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isSandboxUrl, normalizeFactusUrl } from "@/lib/factus/platform-config"
+import { isSandboxUrl, normalizeFactusUrl } from "@/lib/factus/url"
 
 describe("normalizeFactusUrl", () => {
   it("acepta el sandbox y producción, sin barra final", () => {
