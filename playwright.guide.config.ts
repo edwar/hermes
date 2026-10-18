@@ -29,7 +29,6 @@ export default defineConfig({
           NEXT_PUBLIC_SITE_URL: BASE_URL,
           ENCRYPTION_KEY: process.env.E2E_ENCRYPTION_KEY ?? "dGVzdC1rZXktdGVzdC1rZXktdGVzdC1rZXktMTIzNDU=",
           CRON_SECRET: process.env.E2E_CRON_SECRET ?? "e2e-cron-secret",
-          FACTUS_API_URL: "https://api-sandbox.factus.com.co",
         },
       },
 })

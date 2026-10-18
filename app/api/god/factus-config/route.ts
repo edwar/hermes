@@ -93,7 +93,7 @@ export async function POST() {
   }
 
   const url = await getFactusApiUrl()
-  const c = platform.credentials
+  const c = platform
   try {
     const res = await fetch(`${url}/oauth/token`, {
       method: "POST",
