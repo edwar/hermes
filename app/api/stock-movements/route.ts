@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { denyUnlessModule } from "@/lib/api-access"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createStockMovementSchema } from "@/features/inventory/schemas/stock-movement-schema"
 import { companyScope } from "@/lib/company-scope"
@@ -8,6 +9,8 @@ import { SORT_DIRECTION } from "@/lib/constants"
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/stock-movements")
+  if (denied) return denied
 
   const { searchParams } = new URL(req.url)
   const productId = searchParams.get("productId") ?? ""
@@ -38,6 +41,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/stock-movements")
+  if (denied) return denied
 
   const body = await req.json()
   const parsed = createStockMovementSchema.safeParse(body)

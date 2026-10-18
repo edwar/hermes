@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { denyUnlessModule } from "@/lib/api-access"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createCustomerSchema, updateCustomerSchema } from "@/features/inventory/schemas/customer-schema"
 import { companyScope } from "@/lib/company-scope"
@@ -8,6 +9,8 @@ import { SORT_DIRECTION } from "@/lib/constants"
 export async function GET(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/customers")
+  if (denied) return denied
 
   const { searchParams } = new URL(req.url)
   const search = searchParams.get("search") ?? ""
@@ -49,6 +52,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/customers")
+  if (denied) return denied
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }
@@ -80,6 +85,8 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/customers")
+  if (denied) return denied
 
   const body = await req.json()
   const parsed = updateCustomerSchema.safeParse(body)
@@ -108,6 +115,8 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const denied = denyUnlessModule(session, "/customers")
+  if (denied) return denied
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")
