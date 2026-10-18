@@ -160,4 +160,50 @@ test.describe("Permisos por rol", () => {
     expect((await manager.request.delete("/api/products/x")).status()).toBe(403)
     await manager.close()
   })
+
+  test("nadie puede darse el rol GOD ni tocar a quien no debe", async ({ request, browser }) => {
+    const users = (await (await request.get("/api/users")).json()) as { id: string; email: string; role: string }[]
+    const cashier = users.find((u) => u.email === "cajero@hermes.com")!
+    const admin = users.find((u) => u.email === "admin@hermes.com")!
+    const put = (data: Record<string, unknown>) => request.put("/api/users", { data })
+
+    // Escalación de privilegios: un administrador de empresa no puede crear ni volverse GOD
+    expect((await put({ id: cashier.id, role: "GOD" })).status()).toBe(400)
+    expect((await put({ id: admin.id, role: "GOD" })).status()).toBe(400)
+    expect((await request.post("/api/users", { data: { name: "X", email: "x@x.co", password: "123456", role: "GOD" } })).status()).toBe(400)
+    // ...ni asignar los roles que no le corresponden, ni cambiarse el suyo, ni desactivarse
+    expect((await put({ id: cashier.id, role: "OWNER" })).status()).toBe(403)
+    expect((await put({ id: cashier.id, role: "ADMIN" })).status()).toBe(403)
+    expect((await request.post("/api/users", { data: { name: "X", email: "x@x.co", password: "123456", role: "OWNER" } })).status()).toBe(403)
+    expect((await put({ id: admin.id, role: "OWNER" })).status()).toBe(403)
+    expect((await put({ id: admin.id, isActive: false })).status()).toBe(403)
+    expect((await put({ id: cashier.id, password: "corta" })).status()).toBe(400)
+    expect((await put({ id: "no-existe", name: "X" })).status()).toBe(404)
+
+    // Usuarios de otra empresa y el GOD no existen para este administrador
+    const god = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+    const page = await god.newPage()
+    await login(page, "god@hermes.com", "god123")
+    await expect(page).not.toHaveURL(/\/login/)
+    const godId = (await (await god.request.get("/api/profile")).json()).user?.id ?? (await (await god.request.get("/api/profile")).json()).id
+    const others = (await (await god.request.get("/api/users")).json()) as { id: string; company?: { id: string } }[]
+    const foreign = others.find((u) => u.company && u.company.id !== "default-company")
+    if (godId) expect((await put({ id: godId, password: "nueva123" })).status()).toBe(404)
+    if (foreign) expect((await put({ id: foreign.id, password: "nueva123" })).status()).toBe(404)
+    await god.close()
+
+    // Lo normal sigue funcionando: editar el nombre de alguien de su equipo
+    expect((await put({ id: cashier.id, name: "Cajero Principal" })).status()).toBe(200)
+
+    // Gestor y cajero no administran usuarios
+    for (const [email, password] of [["gerente@hermes.com", "gerente123"], ["cajero@hermes.com", "cajero123"]]) {
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+      const p = await ctx.newPage()
+      await login(p, email, password)
+      await expect(p).not.toHaveURL(/\/login/)
+      expect((await ctx.request.get("/api/users")).status(), email).toBe(403)
+      expect((await ctx.request.put("/api/users", { data: { id: cashier.id, role: "GOD" } })).status(), email).toBe(403)
+      await ctx.close()
+    }
+  })
 })
