@@ -1,30 +1,128 @@
 {
   "abrir-caja": {
-    "duration": 46,
-    "bytes": 453365
+    "duration": 39,
+    "bytes": 394731
+  },
+  "auditoria": {
+    "duration": 31,
+    "bytes": 345408,
+    "file": "auditoria-924728d843"
+  },
+  "cajas": {
+    "duration": 54,
+    "bytes": 741736
+  },
+  "categorias": {
+    "duration": 38,
+    "bytes": 382923
   },
   "cerrar-caja": {
-    "duration": 51,
-    "bytes": 486680
+    "duration": 44,
+    "bytes": 543680
+  },
+  "clientes": {
+    "duration": 61,
+    "bytes": 546977
+  },
+  "compras": {
+    "duration": 57,
+    "bytes": 572401
+  },
+  "configuracion-del-sistema": {
+    "duration": 42,
+    "bytes": 479610,
+    "file": "configuracion-del-sistema-7efcf8c6d5"
+  },
+  "configuracion-facturacion": {
+    "duration": 52,
+    "bytes": 601729
+  },
+  "configuracion": {
+    "duration": 49,
+    "bytes": 552642
+  },
+  "creditos-factus": {
+    "duration": 39,
+    "bytes": 419041,
+    "file": "creditos-factus-c13069cfc1"
+  },
+  "dashboard": {
+    "duration": 41,
+    "bytes": 431598
   },
   "devolucion": {
-    "duration": 77,
-    "bytes": 919507
+    "duration": 75,
+    "bytes": 1142603
+  },
+  "empresas": {
+    "duration": 51,
+    "bytes": 482559,
+    "file": "empresas-ae40af4c5f"
   },
   "factura-electronica": {
     "duration": 60,
-    "bytes": 800268
+    "bytes": 882455
+  },
+  "historial-de-ventas": {
+    "duration": 42,
+    "bytes": 758186
+  },
+  "inventario": {
+    "duration": 62,
+    "bytes": 972025
+  },
+  "invitaciones": {
+    "duration": 46,
+    "bytes": 466357,
+    "file": "invitaciones-6af3b7e2d0"
+  },
+  "movimientos-de-stock": {
+    "duration": 42,
+    "bytes": 765755
+  },
+  "notificaciones": {
+    "duration": 31,
+    "bytes": 424550
+  },
+  "panel-de-plataforma": {
+    "duration": 32,
+    "bytes": 325803,
+    "file": "panel-de-plataforma-6084c94042"
   },
   "pantalla-de-venta": {
-    "duration": 41,
-    "bytes": 568635
+    "duration": 40,
+    "bytes": 478397
+  },
+  "perfil-y-contrasena": {
+    "duration": 51,
+    "bytes": 475887
   },
   "productos-por-peso": {
-    "duration": 39,
-    "bytes": 588594
+    "duration": 44,
+    "bytes": 707592
+  },
+  "proveedores": {
+    "duration": 47,
+    "bytes": 462745
+  },
+  "registro-con-invitacion": {
+    "duration": 44,
+    "bytes": 440693
+  },
+  "reportes": {
+    "duration": 32,
+    "bytes": 473008
+  },
+  "revisar-facturas-electronicas": {
+    "duration": 42,
+    "bytes": 593206
+  },
+  "usuarios": {
+    "duration": 51,
+    "bytes": 561887
   },
   "vender-y-cobrar": {
-    "duration": 57,
-    "bytes": 790193
+    "duration": 62,
+    "bytes": 956892
   }
 }

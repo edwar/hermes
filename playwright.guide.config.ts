@@ -12,7 +12,7 @@ export default defineConfig({
   testMatch: /.*\.guide\.ts/,
   fullyParallel: false,
   workers: 1,
-  timeout: 240_000,
+  timeout: 300_000,
   expect: { timeout: 15_000 },
   reporter: [["list"]],
   use: { baseURL: BASE_URL, locale: "es-CO", actionTimeout: 15_000 },

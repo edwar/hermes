@@ -95,20 +95,25 @@ export function PaymentMethodsChart({
           dataKey="total"
           nameKey="method"
           cx="50%"
-          cy="50%"
+          cy="42%"
           innerRadius={52}
           outerRadius={84}
           stroke="var(--card)"
           strokeWidth={2}
-          label={({ method, percent }: { method?: string; percent?: number }) =>
-            `${PAYMENT_LABELS[method ?? ""] ?? method ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
-          }
         >
           {data.map((_, i: number) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip {...TOOLTIP_STYLE} formatter={(value) => formatCOP(typeof value === "number" ? value : 0)} />
+        <Legend
+          verticalAlign="bottom"
+          formatter={(value: string) => PAYMENT_LABELS[value] ?? value}
+          wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
+        />
+        <Tooltip
+          {...TOOLTIP_STYLE}
+          formatter={(value, name) => [formatCOP(typeof value === "number" ? value : 0), PAYMENT_LABELS[String(name)] ?? String(name)]}
+        />
       </PieChart>
     </ResponsiveContainer>
   )
