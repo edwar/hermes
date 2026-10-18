@@ -8,6 +8,8 @@ export const ADMIN = {
 /** Inicia sesión por la interfaz. */
 export async function login(page: Page, email = ADMIN.email, password = ADMIN.password) {
   await page.goto("/login")
+  // Con el servidor de producción el clic puede llegar antes de que el formulario se hidrate.
+  await page.waitForLoadState("networkidle")
   await page.locator("#email").fill(email)
   await page.locator("#password").fill(password)
   await page.getByRole("button", { name: "Iniciar sesión" }).click()

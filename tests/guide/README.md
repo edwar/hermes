@@ -19,9 +19,19 @@ pnpm guide:build                                                       # webm ->
 `guide:build` necesita `ffmpeg`. Escribe en `public/guia/` y `lib/guide/media.json`; esos son los
 únicos archivos que se versionan (`guide-videos/` es material de trabajo y está en `.gitignore`).
 
-Los videos comparten estado y por eso van en serie, en orden: `00` prepara la base (cierra la caja,
-crea el producto por peso y el cliente), `01` abre la caja, `07` la cierra. Si regrabas solo uno,
-incluye antes los que lo preparan (por ejemplo `--grep "01|05"`).
+Los videos comparten estado y por eso van en serie, en orden: `00` prepara la base (borra los datos de
+ejemplo de grabaciones anteriores, cierra la caja, crea el producto por peso y el cliente), `01` abre la
+caja, `07` la cierra. Si regrabas solo uno, incluye antes los que lo preparan (por ejemplo
+`--grep "00|01|05"`). Los de plataforma (`50`–`55`) se graban con la sesión GOD y restauran los créditos
+pendientes de la empresa de pruebas. Graba contra un servidor de producción (`next build` + `next start`):
+con `next dev` los diálogos se renderizan demasiado lento.
+
+## Guía por rol
+
+`/guia` filtra los videos según el rol de quien la abre: cada video apunta a un módulo (`href`) y los
+roles que lo usan salen de `NAV_ACCESS` en `lib/navigation.ts`, la misma fuente del menú lateral. Sin
+sesión se ve todo menos Plataforma; el GOD ve todo. Los videos de Plataforma se publican con un nombre de
+archivo con sufijo aleatorio (no es control de acceso, solo evita que se adivine la URL).
 
 ## Cómo está armado
 
@@ -31,6 +41,6 @@ incluye antes los que lo preparan (por ejemplo `--grep "01|05"`).
 - `tests/guide/lib/overlay.ts`: subtítulos «PASO n DE N», cursor visible, anillo en cada clic y chip
   de teclas. Se inyecta solo en la grabación; la app no lo incluye.
 - `tests/guide/lib/recorder.ts`: ritmo de lectura (el tiempo de cada paso crece con el largo del texto).
-- `tests/guide/guia.guide.ts`: un test por video.
+- `tests/guide/NN-*.guide.ts`: un test por video, agrupados por sección (venta, operación, catálogo, control, plataforma).
 
 Los videos no llevan audio: se entienden sin sonido, que es lo que funciona en una tienda con ruido.

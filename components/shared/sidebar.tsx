@@ -28,39 +28,38 @@ import {
   Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { USER_ROLE } from "@/lib/constants"
+import { canAccess } from "@/lib/navigation"
 
 interface NavItem {
   href: string
   section: "OPERACIÓN" | "CATÁLOGO" | "CONTROL" | "PLATAFORMA"
   label: string
   icon: React.ComponentType<{ className?: string }>
-  roles?: string[]
 }
 
 const SECTION_ORDER = ["OPERACIÓN", "CATÁLOGO", "CONTROL", "PLATAFORMA"] as const
 
 const navItems: NavItem[] = [
-  { href: "/dashboard", section: "OPERACIÓN", label: "Dashboard", icon: LayoutDashboard, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
-  { href: "/pos", section: "OPERACIÓN", label: "POS", icon: ShoppingCart, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/sales", section: "OPERACIÓN", label: "Ventas", icon: Receipt, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/electronic-invoices", section: "OPERACIÓN", label: "Fact. Electrónicas", icon: Zap, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
-  { href: "/inventory", section: "CATÁLOGO", label: "Inventario", icon: Package, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/categories", section: "CATÁLOGO", label: "Categorías", icon: Tags, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/reports", section: "CONTROL", label: "Reportes", icon: BarChart3, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/customers", section: "CATÁLOGO", label: "Clientes", icon: CircleUser, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/suppliers", section: "CATÁLOGO", label: "Proveedores", icon: Truck, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/purchase-orders", section: "CATÁLOGO", label: "Compras", icon: PackageSearch, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/cajas", section: "CONTROL", label: "Cajas", icon: Wallet, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/settings", section: "CONTROL", label: "Configuración", icon: Settings, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/god-dashboard", section: "PLATAFORMA", label: "Panel GOD", icon: Eye, roles: [USER_ROLE.GOD] },
-  { href: "/system-settings", section: "PLATAFORMA", label: "Config. Sistema", icon: Settings2, roles: [USER_ROLE.GOD] },
-  { href: "/factus/transactions", section: "PLATAFORMA", label: "Transacciones Factus", icon: Coins, roles: [USER_ROLE.GOD] },
-  { href: "/audit-log", section: "PLATAFORMA", label: "Auditoría", icon: History, roles: [USER_ROLE.GOD] },
-  { href: "/notifications", section: "CONTROL", label: "Notificaciones", icon: Bell, roles: [USER_ROLE.GOD, USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/users", section: "CONTROL", label: "Usuarios", icon: Users, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/invites", section: "PLATAFORMA", label: "Invitaciones", icon: Mail, roles: [USER_ROLE.GOD] },
-  { href: "/companies", section: "PLATAFORMA", label: "Empresas", icon: Building2, roles: [USER_ROLE.GOD] },
+  { href: "/dashboard", section: "OPERACIÓN", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pos", section: "OPERACIÓN", label: "POS", icon: ShoppingCart },
+  { href: "/sales", section: "OPERACIÓN", label: "Ventas", icon: Receipt },
+  { href: "/electronic-invoices", section: "OPERACIÓN", label: "Fact. Electrónicas", icon: Zap },
+  { href: "/inventory", section: "CATÁLOGO", label: "Inventario", icon: Package },
+  { href: "/categories", section: "CATÁLOGO", label: "Categorías", icon: Tags },
+  { href: "/reports", section: "CONTROL", label: "Reportes", icon: BarChart3 },
+  { href: "/customers", section: "CATÁLOGO", label: "Clientes", icon: CircleUser },
+  { href: "/suppliers", section: "CATÁLOGO", label: "Proveedores", icon: Truck },
+  { href: "/purchase-orders", section: "CATÁLOGO", label: "Compras", icon: PackageSearch },
+  { href: "/cajas", section: "CONTROL", label: "Cajas", icon: Wallet },
+  { href: "/settings", section: "CONTROL", label: "Configuración", icon: Settings },
+  { href: "/god-dashboard", section: "PLATAFORMA", label: "Panel GOD", icon: Eye },
+  { href: "/system-settings", section: "PLATAFORMA", label: "Config. Sistema", icon: Settings2 },
+  { href: "/factus/transactions", section: "PLATAFORMA", label: "Transacciones Factus", icon: Coins },
+  { href: "/audit-log", section: "PLATAFORMA", label: "Auditoría", icon: History },
+  { href: "/notifications", section: "CONTROL", label: "Notificaciones", icon: Bell },
+  { href: "/users", section: "CONTROL", label: "Usuarios", icon: Users },
+  { href: "/invites", section: "PLATAFORMA", label: "Invitaciones", icon: Mail },
+  { href: "/companies", section: "PLATAFORMA", label: "Empresas", icon: Building2 },
 ]
 
 interface SidebarProps {
@@ -73,10 +72,8 @@ export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const { data: session } = useSession()
   const role = session?.user?.role
 
-  const visibleItems = navItems.filter((item) => {
-    if (!item.roles) return true
-    return role && item.roles.includes(role)
-  })
+  // Los roles de cada módulo viven en lib/navigation.ts (los comparte la guía de uso).
+  const visibleItems = navItems.filter((item) => canAccess(item.href, role))
 
   return (
     <>

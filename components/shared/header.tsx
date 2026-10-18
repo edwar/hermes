@@ -19,6 +19,8 @@ import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { NotificationBell } from "@/components/shared/notification-bell"
 import { CloseSessionDialog } from "@/components/cajas/close-session-dialog"
 import { LogOut, User, Menu, CircleHelp } from "lucide-react"
+import Link from "next/link"
+import { guideSlugForPath } from "@/lib/guide/content"
 import { APP_NAME } from "@/lib/constants"
 
 const pageTitles: Record<string, string> = {
@@ -52,6 +54,8 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [showCloseDialog, setShowCloseDialog] = useState(false)
   const initials = session?.user?.name?.charAt(0).toUpperCase() ?? "?"
   const title = pageTitles[pathname] ?? APP_NAME
+  // Si hay un video para esta pantalla, se ofrece un acceso directo a su guía.
+  const guideSlug = guideSlugForPath(pathname)
 
   const { data: activeSession } = useQuery({
     queryKey: ["active-session-header"],
@@ -83,6 +87,17 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           <h1 className="truncate text-[15px] font-semibold tracking-tight">{title}</h1>
         </div>
         <div className="flex items-center gap-1 sm:gap-4">
+          {guideSlug && (
+            <Link
+              href={`/guia#${guideSlug}`}
+              className="flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:bg-elevated hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              aria-label="Ver la guía de esta pantalla"
+              title="Ver la guía de esta pantalla"
+            >
+              <CircleHelp className="size-4" />
+              <span className="hidden md:inline">Guía</span>
+            </Link>
+          )}
           <OnlineBadge />
           <NotificationBell />
           <div className="hidden sm:block">

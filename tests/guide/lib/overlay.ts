@@ -14,8 +14,11 @@ export async function installOverlay(context: BrowserContext) {
 
     const css = `
       nextjs-portal, [data-nextjs-dev-tools-button], [data-next-badge-root] { display: none !important; }
+      /* El desenfoque del fondo de los diálogos hace que cada cuadro tarde cientos de ms en pintarse sin GPU. */
+      *, *::before, *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
       #__g-cursor { position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%;
-        border: 2px solid #79C0FF; background: rgba(121,192,255,.2); z-index: 2147483646; pointer-events: none; }
+        border: 2px solid #79C0FF; background: rgba(121,192,255,.2); z-index: 2147483646; pointer-events: none;
+        transition: transform .16s linear; }
       .__g-ripple { position: fixed; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 3px solid #79C0FF;
         z-index: 2147483646; pointer-events: none; animation: __g-ripple .7s ease-out forwards; }
       @keyframes __g-ripple { from { transform: scale(.6); opacity: .95; } to { transform: scale(2.6); opacity: 0; } }

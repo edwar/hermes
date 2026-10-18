@@ -1,73 +1,18 @@
-import { mkdirSync } from "node:fs"
-import { dirname } from "node:path"
 import { test, expect, type Page } from "@playwright/test"
-import { getGuideVideo } from "../../lib/guide/content"
-import { AUTH_FILE, recordGuide } from "./lib/recorder"
+import { recordGuide } from "./lib/recorder"
+import { CUSTOMER, video, WEIGHT_PRODUCT } from "./lib/fixtures"
 
 /**
  * Graba la guía de uso, un video por flujo. Los videos comparten estado (la caja que abre el primero
  * la usan los siguientes), por eso van en serie y en este orden.
  *
  *   E2E_DATABASE_URL=<base de pruebas> pnpm guide:record
- *   pnpm guide:record --grep "vender-y-cobrar"      # un solo video
+ *   pnpm guide:record --grep "00|vender-y-cobrar"      # un solo video (con su preparación)
  */
 test.describe.configure({ mode: "serial" })
 
-const WEIGHT_PRODUCT = "Queso Campesino por peso"
-const CUSTOMER = { name: "Cliente Prueba", cedula: "1234567890" }
-
-const video = (slug: string) => {
-  const v = getGuideVideo(slug)
-  if (!v) throw new Error(`Falta el contenido de ${slug}`)
-  return v
-}
 const tile = (page: Page, name: string | RegExp) => page.getByRole("button", { name }).first()
 const ticketTotal = (page: Page) => page.locator("[aria-live=polite]").first()
-
-test("00 preparación (sin grabar)", async ({ page }) => {
-  mkdirSync(dirname(AUTH_FILE), { recursive: true })
-  await page.goto("/login")
-  await page.locator("#email").fill(process.env.E2E_ADMIN_EMAIL ?? "admin@hermes.com")
-  await page.locator("#password").fill(process.env.E2E_ADMIN_PASSWORD ?? "admin123")
-  await page.getByRole("button", { name: "Iniciar sesión" }).click()
-  await expect(page).toHaveURL(/\/dashboard/)
-  await page.context().storageState({ path: AUTH_FILE })
-
-  const api = page.request
-  // Partir sin caja abierta
-  const active = await api.get("/api/cash-sessions/active")
-  const session = active.ok() ? await active.json().catch(() => null) : null
-  if (session?.id) {
-    const closed = await api.put(`/api/cash-sessions/${session.id}/close`, {
-      data: { closingBalance: Number(session.openingBalance ?? 0) },
-    })
-    expect(closed.ok()).toBeTruthy()
-  }
-
-  // Un producto que se vende por peso
-  const found = await (await api.get(`/api/products?search=${encodeURIComponent("Queso Campesino por peso")}`)).json()
-  if (!found.products?.some((p: { name: string }) => p.name === WEIGHT_PRODUCT)) {
-    const cats = await (await api.get("/api/categories")).json()
-    const categoryId = (Array.isArray(cats) ? cats : cats.categories)[0].id
-    const created = await api.post("/api/products", {
-      data: {
-        name: WEIGHT_PRODUCT, purchasePrice: 18000, profitMargin: 0.3, stock: 20000, minStock: 2000,
-        categoryId, sellByWeight: true, weightUnit: "kg",
-      },
-    })
-    expect(created.ok(), await created.text()).toBeTruthy()
-  }
-
-  // Un cliente para la factura
-  const customers = await (await api.get(`/api/customers?search=${CUSTOMER.cedula}`)).json()
-  const list = Array.isArray(customers) ? customers : customers.customers ?? []
-  if (!list.some((c: { cedula?: string }) => c.cedula === CUSTOMER.cedula)) {
-    const created = await api.post("/api/customers", {
-      data: { name: CUSTOMER.name, cedula: CUSTOMER.cedula, email: "cliente@ejemplo.co", address: "Calle 5 # 6-7", phone: "3000000000" },
-    })
-    expect(created.ok(), await created.text()).toBeTruthy()
-  }
-})
 
 test("01 abrir-caja", async ({ browser }) => {
   await recordGuide(browser, video("abrir-caja"), async (g) => {
@@ -143,12 +88,12 @@ test("04 productos-por-peso", async ({ browser }) => {
     const weight = page.locator("input[type=number]").first()
     await expect(tile(page, new RegExp(WEIGHT_PRODUCT))).toBeVisible()
     await g.step(async () => g.click(tile(page, new RegExp(WEIGHT_PRODUCT))))
-    await g.step(async () => g.type(weight, "0.75"))
+    await g.step(async () => g.type(weight, "1"))
     await g.step(async () => g.point(ticketTotal(page)))
     await g.step(async () => {
       await g.click(weight)
       await weight.press("ControlOrMeta+A")
-      await weight.pressSequentially("1.2", { delay: 120 })
+      await weight.pressSequentially("1.5", { delay: 120 })
       await page.waitForTimeout(500)
     })
     await g.step(async () => {
