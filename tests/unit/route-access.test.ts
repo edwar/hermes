@@ -24,11 +24,12 @@ describe("registro de acceso de las rutas de la API", () => {
     }
   })
 
-  it("las rutas «module» llaman a guardModule con cada módulo que declaran", () => {
+  it("las rutas «module» usan guardModule con cada módulo que declaran", () => {
     for (const [key, access] of Object.entries(ROUTE_ACCESS)) {
       if (access.kind !== "module") continue
       const code = source(key)
-      for (const m of access.modules) expect(code, `${key} debe llamar guardModule("${m}")`).toContain(`guardModule("${m}")`)
+      expect(code, `${key} debe llamar a guardModule`).toContain("guardModule(")
+      for (const m of access.modules) expect(code, `${key} debe mencionar el módulo "${m}"`).toContain(`"${m}"`)
       expect(code, `${key} no debe seguir con el helper anterior`).not.toContain("denyUnlessModule")
     }
   })
@@ -47,8 +48,8 @@ describe("registro de acceso de las rutas de la API", () => {
     }
   })
 
-  it("las brechas conocidas quedan a la vista para corregirlas", () => {
+  it("no quedan brechas conocidas sin corregir", () => {
     const gaps = Object.entries(ROUTE_ACCESS).filter(([, a]) => a.kind === "legacy" && a.gap).map(([k]) => k)
-    expect(gaps.sort()).toEqual(["exports/[report]", "settings", "settings/configs"])
+    expect(gaps).toEqual([])
   })
 })

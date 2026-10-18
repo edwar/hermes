@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 
-function isAdminOrGod(role: string) {
-  return role === "OWNER" || role === "ADMIN" || role === "GOD"
-}
-
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user || !isAdminOrGod(session.user.role)) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  const guard = await guardModule("/cajas")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { id } = await params
   const body = await req.json()
@@ -55,10 +50,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await auth()
-  if (!session?.user || !isAdminOrGod(session.user.role)) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  const guard = await guardModule("/cajas")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { id } = await params
 

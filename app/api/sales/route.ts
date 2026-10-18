@@ -7,7 +7,7 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { createSaleSchema } from "@/features/pos/schemas/sale-schema"
 import { emitInvoiceForSale } from "@/lib/invoicing/emit"
@@ -15,8 +15,9 @@ import { STOCK_MOVEMENT_TYPE, USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
 import z from "zod"
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule(["/sales", "/reports"])
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get("page") ?? "1")
@@ -63,8 +64,9 @@ export async function GET(req: NextRequest) {
 // PASO 1: CREAR LA VENTA EN NUESTRA BASE DE DATOS (Prisma / Neon)
 // =============================================================================
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/pos")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   if (!session.user.companyId) {
     return NextResponse.json({ error: "Usuario sin empresa asignada" }, { status: 400 })
