@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
+import { canAssignRole, canManageUser, selfChangeError } from "@/lib/permissions/user-management"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { logAudit } from "@/lib/audit"
@@ -14,8 +15,9 @@ const createUserSchema = z.object({
 })
 
 export async function GET() {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/users")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   if (session.user.role === USER_ROLE.GOD) {
     const users = await withPrismaRetry(
@@ -33,7 +35,7 @@ export async function GET() {
     return NextResponse.json(users)
   }
 
-  if (session.user.role === USER_ROLE.OWNER || session.user.role === USER_ROLE.ADMIN) {
+  {
     const users = await withPrismaRetry(
       () =>
         prisma.user.findMany({
@@ -47,17 +49,12 @@ export async function GET() {
     )
     return NextResponse.json(users)
   }
-
-  return NextResponse.json({ error: "No autorizado" }, { status: 401 })
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
-  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  const guard = await guardModule("/users")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const parsed = createUserSchema.safeParse(body)
@@ -65,8 +62,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  if (session.user.role === USER_ROLE.ADMIN && (parsed.data.role === USER_ROLE.OWNER || parsed.data.role === USER_ROLE.ADMIN)) {
-    return NextResponse.json({ error: "No tienes permiso para crear usuarios OWNER o ADMIN" }, { status: 403 })
+  if (!canAssignRole(session.user.role, parsed.data.role)) {
+    return NextResponse.json({ error: "No tienes permiso para crear usuarios con ese rol" }, { status: 403 })
   }
 
   const existing = await withPrismaRetry(
@@ -108,31 +105,47 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(user, { status: 201 })
 }
 
+const updateUserSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).optional(),
+  role: z.enum([USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER]).optional(),
+  isActive: z.boolean().optional(),
+  password: z.string().min(6).optional(),
+})
+
 export async function PUT(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/users")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
-  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const parsed = updateUserSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
+  const { id, ...data } = parsed.data
 
-  const body = await req.json()
-  const { id, ...data } = body
-
-  if (session.user.role === USER_ROLE.ADMIN) {
-    if (data.role === USER_ROLE.OWNER || data.role === USER_ROLE.ADMIN) {
-      return NextResponse.json({ error: "No tienes permiso para asignar rol OWNER o ADMIN" }, { status: 403 })
-    }
-  }
-
+  // Fuera de la plataforma solo se editan usuarios de la propia empresa; si no, es como si no existieran.
   const existingUser = await withPrismaRetry(
-    () => prisma.user.findUnique({ where: { id }, select: { role: true, isActive: true } }),
+    () =>
+      prisma.user.findFirst({
+        where: { id, ...(session.user.role === USER_ROLE.GOD ? {} : { companyId: session.user.companyId ?? "" }) },
+        select: { id: true, role: true, isActive: true },
+      }),
     "users:fetch-existing"
   )
 
   if (!existingUser) {
     return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 })
   }
+
+  if (!canManageUser({ id: session.user.id, role: session.user.role }, existingUser)) {
+    return NextResponse.json({ error: "No tienes permiso para modificar a este usuario" }, { status: 403 })
+  }
+  if (data.role !== undefined && data.role !== existingUser.role && !canAssignRole(session.user.role, data.role)) {
+    return NextResponse.json({ error: "No tienes permiso para asignar ese rol" }, { status: 403 })
+  }
+  const selfError = selfChangeError(session.user.id, id, data, existingUser.role)
+  if (selfError) return NextResponse.json({ error: selfError }, { status: 403 })
 
   const updateData: Record<string, unknown> = {}
   if (data.name) updateData.name = data.name
@@ -143,7 +156,7 @@ export async function PUT(req: NextRequest) {
   const user = await withPrismaRetry(
     () =>
       prisma.user.update({
-        where: { id },
+        where: { id: existingUser.id },
         data: updateData,
         select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
       }),

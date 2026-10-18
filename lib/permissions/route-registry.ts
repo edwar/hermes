@@ -77,5 +77,5 @@ export const ROUTE_ACCESS: Record<string, RouteAccess> = {
   "stock-movements": { kind: "module", modules: ["/stock-movements"] },
   suppliers: { kind: "module", modules: ["/suppliers", "/purchase-orders"], note: "GET: también Compras (el pedido elige proveedor); crear, editar y borrar: Proveedores" },
   "sync/batch": { kind: "session", note: "Repite cada operación con la sesión de quien la envía; cada ruta aplica su permiso" },
-  users: { kind: "legacy", module: "/users" },
+  users: { kind: "module", modules: ["/users"], note: "Qué roles puede asignar y a quién puede editar: lib/permissions/user-management.ts" },
 }
