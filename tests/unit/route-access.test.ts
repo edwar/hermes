@@ -1,11 +1,13 @@
-import { globSync, readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { describe, expect, it } from "vitest"
 import { KNOWN_MODULES } from "@/lib/permissions/resolve"
 import { ROUTE_ACCESS } from "@/lib/permissions/route-registry"
 
 // Lee el código de cada ruta de la API y comprueba que su acceso esté registrado y sea el que dice el registro.
-const routeFiles = globSync("app/api/**/route.ts").map((f) => f.replace(/\\/g, "/"))
-const keyOf = (file: string) => file.replace(/^app\/api\//, "").replace(/\/route\.ts$/, "")
+const routeFiles = (readdirSync("app/api", { recursive: true }) as string[])
+  .map((f) => f.replace(/\\/g, "/"))
+  .filter((f) => f === "route.ts" || f.endsWith("/route.ts"))
+const keyOf = (file: string) => file.replace(/\/?route\.ts$/, "")
 const source = (key: string) => readFileSync(`app/api/${key}/route.ts`, "utf8")
 
 describe("registro de acceso de las rutas de la API", () => {
