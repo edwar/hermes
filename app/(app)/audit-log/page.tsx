@@ -40,6 +40,7 @@ const ACTION_LABELS: Record<string, string> = {
   INVITE_CREATED: "Invitación creada",
   INVITE_USED: "Invitación usada",
   INVITE_DELETED: "Invitación eliminada",
+  FACTUS_CONFIG_UPDATED: "Configuración de Factus",
   FACTUS_CREDITS_PURCHASED: "Créditos comprados",
   FACTUS_CREDITS_CONSUMED: "Crédito consumido",
   FACTUS_INVOICE_CREATED: "Factura creada",
