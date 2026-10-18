@@ -42,6 +42,8 @@ export function PurchaseOrdersTable() {
   const [statusFilter, setStatusFilter] = useState<string>("")
   const [detailOrder, setDetailOrder] = useState<any>(null)
   const [receiveOpen, setReceiveOpen] = useState(false)
+  // Pedido que se está recibiendo: antes se guardaba en detailOrder y abría el detalle a la vez.
+  const [receivingOrder, setReceivingOrder] = useState<any>(null)
   const [receiveItems, setReceiveItems] = useState<any[]>([])
   const [page, setPage] = useState(1)
 
@@ -51,7 +53,7 @@ export function PurchaseOrdersTable() {
   const orders = data?.orders ?? []
 
   function handleReceive(order: any) {
-    setDetailOrder(order)
+    setReceivingOrder(order)
     setReceiveItems(
       order.items.map((item: any) => ({
         productId: item.productId,
@@ -75,9 +77,9 @@ export function PurchaseOrdersTable() {
 
     if (itemsToReceive.length === 0) return
 
-    await receiveOrder.mutateAsync({ id: detailOrder.id, items: itemsToReceive })
+    await receiveOrder.mutateAsync({ id: receivingOrder.id, items: itemsToReceive })
     setReceiveOpen(false)
-    setDetailOrder(null)
+    setReceivingOrder(null)
     setReceiveItems([])
   }
 
@@ -236,7 +238,7 @@ export function PurchaseOrdersTable() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={receiveOpen} onOpenChange={(v) => { if (!v) setReceiveOpen(false) }}>
+      <Dialog open={receiveOpen} onOpenChange={(v) => { if (!v) { setReceiveOpen(false); setReceivingOrder(null) } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Recibir Pedido</DialogTitle>
@@ -273,7 +275,7 @@ export function PurchaseOrdersTable() {
             ))}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setReceiveOpen(false)}>
+            <Button variant="ghost" onClick={() => { setReceiveOpen(false); setReceivingOrder(null) }}>
               Cancelar
             </Button>
             <Button onClick={confirmReceive} disabled={receiveOrder.isPending}>
