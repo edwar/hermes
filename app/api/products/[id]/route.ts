@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { updateProductSchema } from "@/features/inventory/schemas/product-schema"
-import { USER_ROLE } from "@/lib/constants"
 
 export async function GET(
   req: NextRequest,
@@ -32,11 +32,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
-    return NextResponse.json({ error: "No tienes permisos para actualizar productos" }, { status: 403 })
-  }
+  const guard = await guardModule("/inventory")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { id } = await params
   const parsed = updateProductSchema.safeParse(await req.json())
@@ -61,11 +59,11 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
-    return NextResponse.json({ error: "Solo administradores pueden eliminar productos" }, { status: 403 })
-  }
+  const guard = await guardModule("/inventory")
+  if ("error" in guard) return guard.error
+  const { session } = guard
+  // Eliminar productos no está permitido al Gestor (regla fija, aunque pueda editarlos).
+  if (session.user.role === "MANAGER") return NextResponse.json({ error: "No tienes permiso" }, { status: 403 })
 
   const { id } = await params
   const exists = await withPrismaRetry(

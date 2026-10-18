@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { createProductSchema, updateProductSchema } from "@/features/inventory/schemas/product-schema"
-import { USER_ROLE, SORT_DIRECTION } from "@/lib/constants"
+import { SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -56,11 +57,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  const guard = await guardModule("/inventory")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }
@@ -86,11 +85,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.MANAGER) {
-    return NextResponse.json({ error: "No tienes permisos para actualizar productos" }, { status: 403 })
-  }
+  const guard = await guardModule("/inventory")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const { id, ...rest } = body
@@ -113,11 +110,11 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD) {
-    return NextResponse.json({ error: "Solo administradores pueden eliminar productos" }, { status: 403 })
-  }
+  const guard = await guardModule("/inventory")
+  if ("error" in guard) return guard.error
+  const { session } = guard
+  // Eliminar productos no está permitido al Gestor (regla fija, aunque pueda editarlos).
+  if (session.user.role === "MANAGER") return NextResponse.json({ error: "No tienes permiso" }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")

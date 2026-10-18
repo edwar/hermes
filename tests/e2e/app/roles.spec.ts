@@ -129,4 +129,35 @@ test.describe("Permisos por rol", () => {
     expect((await api.get("/api/exports/cash-movements")).status()).toBe(403)
     await context.close()
   })
+
+  test("inventario, compras y proveedores respetan el módulo de cada rol", async ({ browser }) => {
+    const as = async (email: string, password: string) => {
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+      const page = await context.newPage()
+      await login(page, email, password)
+      await expect(page).not.toHaveURL(/\/login/)
+      return context
+    }
+
+    // Cajero: lee el catálogo para vender, pero no lo administra ni ve compras ni proveedores
+    const cashier = await as("cajero@hermes.com", "cajero123")
+    expect((await cashier.request.get("/api/products")).status()).toBe(200)
+    expect((await cashier.request.post("/api/products", { data: { name: "Hackeado" } })).status()).toBe(403)
+    expect((await cashier.request.put("/api/products", { data: { id: "x" } })).status()).toBe(403)
+    expect((await cashier.request.delete("/api/products?id=x")).status()).toBe(403)
+    expect((await cashier.request.get("/api/purchase-orders")).status()).toBe(403)
+    expect((await cashier.request.post("/api/purchase-orders/receive", { data: {} })).status()).toBe(403)
+    expect((await cashier.request.get("/api/suppliers")).status()).toBe(403)
+    expect((await cashier.request.post("/api/suppliers", { data: { name: "X" } })).status()).toBe(403)
+    await cashier.close()
+
+    // Gestor: administra inventario y compras; ve proveedores para armar pedidos, pero no los edita ni borra productos
+    const manager = await as("gerente@hermes.com", "gerente123")
+    expect((await manager.request.get("/api/purchase-orders")).status()).toBe(200)
+    expect((await manager.request.get("/api/suppliers")).status()).toBe(200)
+    expect((await manager.request.post("/api/suppliers", { data: { name: "X" } })).status()).toBe(403)
+    expect((await manager.request.delete("/api/products?id=x")).status()).toBe(403)
+    expect((await manager.request.delete("/api/products/x")).status()).toBe(403)
+    await manager.close()
+  })
 })
