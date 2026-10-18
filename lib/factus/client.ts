@@ -11,13 +11,12 @@ import { prisma } from '@/lib/prisma';
 import { HTTP_METHOD, CONTENT_TYPE, HEADER_NAME } from '@/lib/constants';
 
 import { decryptSecret } from '@/lib/crypto';
-
-const FACTUS_API_URL = process.env.FACTUS_API_URL || 'https://api-sandbox.factus.com.co';
+import { getFactusApiUrl, getPlatformCredentials, isSandboxApi } from '@/lib/factus/platform-config';
 
 // Factus asigna una cuenta por NIT emisor, así que las credenciales viven en
-// cada Company. Las variables de entorno FACTUS_* solo sirven como respaldo en
-// sandbox (desarrollo); en producción nunca se usan, para no emitir facturas de
-// un comercio bajo la cuenta de otro.
+// cada Company. La cuenta de pruebas de la plataforma (la configura el GOD, o las
+// variables de entorno FACTUS_*) solo sirve como respaldo en sandbox; en producción
+// nunca se usa, para no emitir facturas de un comercio bajo la cuenta de otro.
 interface FactusCredentials {
   clientId: string;
   clientSecret: string;
@@ -30,10 +29,6 @@ export class FactusNotConfiguredError extends Error {
     super(message);
     this.name = 'FactusNotConfiguredError';
   }
-}
-
-function isSandbox() {
-  return FACTUS_API_URL.includes('sandbox');
 }
 
 async function getCredentials(companyId: string): Promise<FactusCredentials> {
@@ -61,13 +56,9 @@ async function getCredentials(companyId: string): Promise<FactusCredentials> {
     };
   }
 
-  if (isSandbox() && process.env.FACTUS_CLIENT_ID) {
-    return {
-      clientId: process.env.FACTUS_CLIENT_ID,
-      clientSecret: process.env.FACTUS_CLIENT_SECRET || '',
-      username: process.env.FACTUS_USERNAME || '',
-      password: process.env.FACTUS_PASSWORD || '',
-    };
+  if (await isSandboxApi()) {
+    const platform = await getPlatformCredentials();
+    if (platform) return platform.credentials;
   }
 
   throw new FactusNotConfiguredError();
@@ -190,7 +181,7 @@ async function passwordGrant(credentials: FactusCredentials): Promise<TokenRespo
     password: credentials.password,
   });
 
-  const response = await fetch(`${FACTUS_API_URL}/oauth/token`, {
+  const response = await fetch(`${await getFactusApiUrl()}/oauth/token`, {
     method: HTTP_METHOD.POST,
     headers: {
       [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.FORM_URLENCODED,
@@ -219,7 +210,7 @@ async function refreshAccessToken(credentials: FactusCredentials, refreshToken: 
     refresh_token: refreshToken,
   });
 
-  const response = await fetch(`${FACTUS_API_URL}/oauth/token`, {
+  const response = await fetch(`${await getFactusApiUrl()}/oauth/token`, {
     method: HTTP_METHOD.POST,
     headers: {
       [HEADER_NAME.CONTENT_TYPE]: CONTENT_TYPE.FORM_URLENCODED,
@@ -260,7 +251,7 @@ export async function factusRequest<T = unknown>(
 
   const url = endpoint.startsWith('http')
     ? endpoint
-    : `${FACTUS_API_URL}${endpoint}`;
+    : `${await getFactusApiUrl()}${endpoint}`;
 
   const bodyData = options.body;
   const bodyString = typeof bodyData === 'string' ? bodyData : (bodyData ? JSON.stringify(bodyData) : undefined);
@@ -321,7 +312,7 @@ export async function getInvoicePdf(invoiceId: string, companyId: string, isCred
 
   const accessToken = await authenticate(companyId);
 
-  const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-pdf`, {
+  const response = await fetch(`${await getFactusApiUrl()}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-pdf`, {
     method: HTTP_METHOD.GET,
     headers: {
       [HEADER_NAME.AUTHORIZATION]: `Bearer ${accessToken}`,
@@ -356,7 +347,7 @@ export async function getInvoiceXml(invoiceId: string, companyId: string, isCred
 
   const accessToken = await authenticate(companyId);
 
-  const response = await fetch(`${FACTUS_API_URL}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-xml/`, {
+  const response = await fetch(`${await getFactusApiUrl()}/${isCreditNote ? 'v2/credit-notes' : 'v2/bills'}/${invoiceId}/download-xml/`, {
     method: HTTP_METHOD.GET,
     headers: {
       [HEADER_NAME.AUTHORIZATION]: `Bearer ${accessToken}`,
