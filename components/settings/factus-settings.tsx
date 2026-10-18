@@ -261,7 +261,6 @@ export function FactusSettings() {
 
   async function handleTestConnection() {
     setTesting(true)
-    setMessage(null)
     try {
       const res = await fetch("/api/factus/settings", {
         method: "PUT",
@@ -270,13 +269,13 @@ export function FactusSettings() {
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        setMessage({ type: "success", text: "Conexión exitosa con Factus" })
+        sileo.success({ title: "Conexión exitosa con Factus" })
         fetchSettings()
       } else {
-        setMessage({ type: "error", text: data.error || "Error de conexión" })
+        sileo.error({ title: data.error || "No se pudo conectar con Factus" })
       }
     } catch {
-      setMessage({ type: "error", text: "Error al probar conexión" })
+      sileo.error({ title: "Error al probar la conexión" })
     } finally {
       setTesting(false)
     }
@@ -387,20 +386,31 @@ export function FactusSettings() {
                 />
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={handleSaveCredentials}
-              disabled={
-                savingCreds ||
-                !credForm.clientId ||
-                !credForm.clientSecret ||
-                !credForm.username ||
-                !credForm.password
-              }
-            >
-              {savingCreds ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
-              Guardar credenciales
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleSaveCredentials}
+                disabled={
+                  savingCreds ||
+                  !credForm.clientId ||
+                  !credForm.clientSecret ||
+                  !credForm.username ||
+                  !credForm.password
+                }
+              >
+                {savingCreds ? <Loader2 className="mr-1 size-4 animate-spin" /> : null}
+                Guardar credenciales
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleTestConnection}
+                disabled={testing || !settings?.credentials.configured}
+              >
+                {testing ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Zap className="mr-1 size-4" />}
+                Probar conexión
+              </Button>
+            </div>
           </div>
 
           <div className="rounded-lg border border-border p-4">

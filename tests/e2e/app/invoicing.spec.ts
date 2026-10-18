@@ -59,6 +59,16 @@ test.describe("Factus: credenciales por empresa", () => {
     expect(json.enabled).toBe(false) // credenciales nuevas obligan a reconectar
   })
 
+  test("Probar conexión avisa si Factus rechaza las credenciales", async ({ page }) => {
+    await page.goto("/settings")
+    await expect(page.getByText("Configuradas", { exact: true })).toBeVisible()
+    const test = page.getByRole("button", { name: "Probar conexión" })
+    await expect(test).toBeEnabled()
+    await test.click()
+    // Las credenciales de la prueba anterior son falsas: el sandbox las rechaza y se muestra el error.
+    await expect(page.getByText(/Error de Factus|No se pudo conectar/)).toBeVisible({ timeout: 20_000 })
+  })
+
   test("el botón de guardar exige los cuatro campos", async ({ page }) => {
     await page.goto("/settings")
     const save = page.getByRole("button", { name: "Guardar credenciales" })
