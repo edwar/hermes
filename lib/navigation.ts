@@ -40,6 +40,8 @@ export const NAV_ACCESS: Readonly<Record<string, readonly Role[]>> = {
   "/companies": [GOD],
   // Rutas que no están en el menú pero pertenecen a un módulo
   "/stock-movements": [OWNER, ADMIN, MANAGER],
+  // Emitir, reenviar y limpiar facturas electrónicas (el cajero solo las consulta)
+  "/electronic-invoices/manage": [OWNER, ADMIN, MANAGER],
   "/profile": [GOD, OWNER, ADMIN, MANAGER, CASHIER],
 }
 

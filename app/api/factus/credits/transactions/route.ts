@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
 import { FACTUS_TRANSACTION_TYPE, USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  if (session.user.role !== USER_ROLE.GOD && session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN) {
-    return NextResponse.json({ error: "No tienes permisos para comprar créditos" }, { status: 403 })
-  }
+  const guard = await guardModule("/settings")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const { companyId, amount, notes } = body as { companyId?: string; amount?: number; notes?: string }
@@ -71,8 +69,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/settings")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const { searchParams } = new URL(req.url)
   const companyId = searchParams.get("companyId")

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { guardModule } from '@/lib/permissions/guard';
 import { prisma } from '@/lib/prisma';
 import { getInvoicePdf, getInvoiceXml, factusRequest, FactusApiError, getInvoice } from '@/lib/factus/client';
 import type { InvoiceStatus } from '@prisma/client';
@@ -13,10 +13,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
+    const guard = await guardModule('/electronic-invoices');
+    if ('error' in guard) return guard.error;
+    const { session } = guard;
 
     const companyId = session.user.companyId;
     if (!companyId) {
@@ -94,14 +93,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    if (session.user.role === 'CASHIER') {
-      return NextResponse.json({ error: 'No tiene permisos' }, { status: 403 });
-    }
+    const guard = await guardModule('/electronic-invoices/manage');
+    if ('error' in guard) return guard.error;
+    const { session } = guard;
 
     const companyId = session.user.companyId;
     if (!companyId) {

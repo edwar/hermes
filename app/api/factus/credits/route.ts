@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { notifyLowCredit } from "@/lib/notifications"
 import { logAudit } from "@/lib/audit"
@@ -24,13 +25,10 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
+  const guard = await guardModule("/settings")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   const role = session.user.role
-  if (role !== USER_ROLE.GOD && role !== USER_ROLE.OWNER && role !== USER_ROLE.ADMIN) {
-    return NextResponse.json({ error: "Solo ADMIN/OWNER/GOD pueden comprar créditos" }, { status: 403 })
-  }
 
   const body = await req.json()
   const quantity = parseInt(body.quantity)

@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { factusRequest, FactusApiError } from "@/lib/factus/client"
 import { HTTP_METHOD } from "@/lib/constants"
 
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session?.user) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-    }
-
-    const role = session.user.role
-    if (role !== "GOD" && role !== "OWNER" && role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Solo ADMIN/OWNER/GOD pueden limpiar pendientes de Factus" },
-        { status: 403 }
-      )
-    }
+    const guard = await guardModule("/settings")
+    if ("error" in guard) return guard.error
+    const { session } = guard
 
     const companyId = session.user.companyId
     if (!companyId) {
