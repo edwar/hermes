@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { canAccessModule } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 import { listPendingBills, listPendingCreditNotes, FactusApiError } from "@/lib/factus/client"
 
@@ -25,8 +26,11 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const role = session.user.role
-    const canManage = role === "GOD" || role === "OWNER" || role === "ADMIN"
+    // Quien administra la configuración ve el diagnóstico completo; el resto, solo los datos básicos.
+    const canManage = await canAccessModule(
+      { userId: session.user.id, role: session.user.role, companyId: session.user.companyId },
+      "/settings"
+    )
 
     if (!canManage) {
       return NextResponse.json({

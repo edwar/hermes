@@ -29,7 +29,7 @@ describe("registro de acceso de las rutas de la API", () => {
       if (access.kind !== "module") continue
       const code = source(key)
       expect(code, `${key} debe llamar a guardModule`).toContain("guardModule(")
-      for (const m of access.modules) expect(code, `${key} debe mencionar el módulo "${m}"`).toContain(`"${m}"`)
+      for (const m of access.modules) expect(code, `${key} debe mencionar el módulo "${m}"`).toMatch(new RegExp(`["']${m}["']`))
       expect(code, `${key} no debe seguir con el helper anterior`).not.toContain("denyUnlessModule")
     }
   })

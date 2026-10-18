@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { guardModule } from '@/lib/permissions/guard';
 import { prisma } from '@/lib/prisma';
 import { listNumberingRanges, getNumberingRange, createNumberingRange, FactusApiError } from '@/lib/factus/client';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    if (session.user.role === 'CASHIER') {
-      return NextResponse.json({ error: 'No tiene permisos' }, { status: 403 });
-    }
+    const guard = await guardModule('/settings');
+    if ('error' in guard) return guard.error;
+    const { session } = guard;
 
     const companyId = session.user.companyId;
     if (!companyId) {
@@ -41,14 +36,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    if (session.user.role === 'CASHIER') {
-      return NextResponse.json({ error: 'No tiene permisos' }, { status: 403 });
-    }
+    const guard = await guardModule('/settings');
+    if ('error' in guard) return guard.error;
+    const { session } = guard;
 
     const companyId = session.user.companyId;
     if (!companyId) {

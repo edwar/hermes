@@ -206,4 +206,39 @@ test.describe("Permisos por rol", () => {
       await ctx.close()
     }
   })
+
+  test("las rutas de Factus respetan quién configura, quién gestiona facturas y quién solo consulta", async ({ browser }) => {
+    const as = async (email: string, password: string) => {
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+      const page = await context.newPage()
+      await login(page, email, password)
+      await expect(page).not.toHaveURL(/\/login/)
+      return context
+    }
+    const settings = [
+      ["GET", "/api/factus/settings"], ["GET", "/api/factus/company-ranges"], ["GET", "/api/factus/numbering-ranges"],
+      ["GET", "/api/factus/credits/transactions"], ["DELETE", "/api/factus/pending-bills"],
+    ] as const
+
+    // Cajero: consulta facturas, pero no configura, no compra créditos ni gestiona
+    const cashier = await as("cajero@hermes.com", "cajero123")
+    expect((await cashier.request.get("/api/factus/invoices")).status()).toBe(200)
+    expect((await cashier.request.get("/api/factus/credits")).status()).toBe(200)
+    expect((await cashier.request.get("/api/factus/diagnose-pending")).status()).toBe(200)
+    for (const [method, url] of settings) expect((await cashier.request.fetch(url, { method })).status(), `cajero ${method} ${url}`).toBe(403)
+    expect((await cashier.request.post("/api/factus/invoices", { data: {} })).status()).toBe(403)
+    expect((await cashier.request.patch("/api/factus/invoices/x", { data: { action: "resend" } })).status()).toBe(403)
+    expect((await cashier.request.post("/api/factus/credits", { data: { quantity: 5 } })).status()).toBe(403)
+    expect((await cashier.request.post("/api/factus/credits/transactions", { data: { companyId: "default-company", amount: 5 } })).status()).toBe(403)
+    expect((await cashier.request.post("/api/invoicing/retry")).status()).toBe(403)
+    await cashier.close()
+
+    // Gestor: gestiona facturas, pero ya no cambia la configuración ni las credenciales de Factus
+    const manager = await as("gerente@hermes.com", "gerente123")
+    expect((await manager.request.get("/api/factus/invoices")).status()).toBe(200)
+    expect((await manager.request.patch("/api/factus/invoices/no-existe", { data: { action: "resend" } })).status()).toBe(404)
+    for (const [method, url] of settings) expect((await manager.request.fetch(url, { method })).status(), `gestor ${method} ${url}`).toBe(403)
+    expect((await manager.request.put("/api/factus/settings", { data: { credentials: { clientId: "a", clientSecret: "b", username: "c", password: "d" } } })).status()).toBe(403)
+    await manager.close()
+  })
 })

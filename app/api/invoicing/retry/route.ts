@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { forceRetryCompany, retryPendingInvoices } from "@/lib/invoicing/retry"
-import { USER_ROLE } from "@/lib/constants"
 
 // Reintenta las facturas electrónicas pendientes.
 //   - Cron (todas las empresas): GET/POST con `Authorization: Bearer <CRON_SECRET>`.
@@ -18,12 +17,10 @@ async function handle(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 })
   }
 
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/electronic-invoices/manage")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   if (!session.user.companyId) return NextResponse.json({ error: "Usuario sin empresa" }, { status: 400 })
-  if (session.user.role === USER_ROLE.CASHIER) {
-    return NextResponse.json({ error: "No tiene permisos" }, { status: 403 })
-  }
 
   return NextResponse.json(await forceRetryCompany(session.user.companyId))
 }
