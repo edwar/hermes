@@ -15,6 +15,12 @@ enum UserRole {
   CASHIER
 }
 
+enum PermissionScope {
+  GLOBAL
+  COMPANY
+  USER
+}
+
 enum PaymentMethod {
   CASH
   CARD
@@ -91,6 +97,7 @@ model Company {
   cashDenominations            CashDenomination[]
   factusCreditTransactions     FactusCreditTransaction[]
   auditLogs                    AuditLog[]
+  permissionRules              PermissionRule[]
 }
 
 model CompanyNumberingRange {
@@ -138,6 +145,7 @@ model User {
   purchaseOrders  PurchaseOrder[]
   auditLogs       AuditLog[]
   notifications   Notification[]
+  permissionRules PermissionRule[]
 
   @@unique([email, companyId])
 }
@@ -523,4 +531,28 @@ model Notification {
 
   @@index([userId, readAt, createdAt])
   @@index([createdAt])
+}
+
+// Reglas de acceso por módulo. Se resuelven en capas: usuario → empresa → global → valores por
+// defecto del código (NAV_ACCESS). `subject` identifica a quién aplica la regla y evita una
+// clave única con columnas nulas: "GLOBAL:CASHIER", "COMPANY:<companyId>:CASHIER", "USER:<userId>".
+model PermissionRule {
+  id        String          @id @default(cuid())
+  scope     PermissionScope
+  subject   String
+  role      UserRole?
+  companyId String?
+  userId    String?
+  module    String
+  allowed   Boolean
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  company Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([subject, module])
+  @@index([scope, role])
+  @@index([companyId])
+  @@index([userId])
 }
