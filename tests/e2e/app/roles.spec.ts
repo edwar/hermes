@@ -32,4 +32,31 @@ test.describe("Permisos por rol", () => {
     expect(retry.status()).toBe(403)
     await context.close()
   })
+
+  test("el cajero no puede llamar a rutas de módulos que el menú le oculta", async ({ browser }) => {
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+    const page = await context.newPage()
+    await login(page, "cajero@hermes.com", "cajero123")
+    await expect(page).toHaveURL(/\/dashboard/)
+
+    const api = context.request
+    expect((await api.get("/api/stock-movements")).status()).toBe(403)
+    expect((await api.post("/api/stock-movements", { data: { type: "IN", quantity: 1, reason: "x", productId: "x" } })).status()).toBe(403)
+    expect((await api.get("/api/categories")).status()).toBe(403)
+    expect((await api.post("/api/categories", { data: { name: "Hackeada" } })).status()).toBe(403)
+    expect((await api.get("/api/cash-sessions")).status()).toBe(403)
+    expect((await api.get("/api/cash-sessions/no-existe/report")).status()).toBe(403)
+
+    // Lo que sí necesita para vender sigue funcionando.
+    expect((await api.get("/api/customers")).status()).toBe(200)
+    expect((await api.get("/api/cash-sessions/active")).status()).toBe(200)
+    expect((await api.get("/api/dashboard")).status()).toBe(200)
+    await context.close()
+  })
+
+  test("el administrador sigue usando esas mismas rutas", async ({ request }) => {
+    for (const url of ["/api/stock-movements", "/api/categories", "/api/cash-sessions", "/api/customers"]) {
+      expect((await request.get(url)).status(), url).toBe(200)
+    }
+  })
 })
