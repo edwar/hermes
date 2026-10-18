@@ -8,18 +8,16 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { denyUnlessModule } from "@/lib/api-access"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { emitCreditNoteForReturn } from "@/lib/invoicing/emit"
 import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  const denied = denyUnlessModule(session, "/pos")
-  if (denied) return denied
+  const guard = await guardModule("/pos")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const body = await req.json()
   const { saleId, items, reason, sessionId, createCreditNote } = body as {
