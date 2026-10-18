@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { companyScope } from "@/lib/company-scope"
 import { logAudit } from "@/lib/audit"
-import { USER_ROLE, AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
+import { AUDIT_ACTION, SORT_DIRECTION } from "@/lib/constants"
 
 export async function GET() {
   const session = await auth()
@@ -22,10 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user || (session.user.role !== USER_ROLE.OWNER && session.user.role !== USER_ROLE.ADMIN && session.user.role !== USER_ROLE.GOD)) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-  }
+  const guard = await guardModule("/cajas")
+  if ("error" in guard) return guard.error
+  const { session } = guard
   if (!session.user.companyId) {
     return NextResponse.json({ error: "No tienes una empresa asignada" }, { status: 400 })
   }

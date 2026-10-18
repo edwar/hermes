@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 
 export async function GET() {
@@ -32,8 +33,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+  const guard = await guardModule("/settings")
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const companyId = session.user.companyId ?? "default"
 

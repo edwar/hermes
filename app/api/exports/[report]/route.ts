@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { guardModule } from "@/lib/permissions/guard"
 import { prisma } from "@/lib/prisma"
 import { toCSV } from "@/lib/exporters/csv"
 import { companyScope } from "@/lib/company-scope"
@@ -7,6 +7,16 @@ import { FACTUS_TRANSACTION_TYPE, USER_ROLE, SORT_DIRECTION, CONTENT_TYPE, HEADE
 
 const REPORTS = ["sales", "inventory", "electronic-invoices", "cash-movements", "credit-transactions", "stock-movements"] as const
 type Report = typeof REPORTS[number]
+
+// Quién puede exportar cada reporte: el mismo acceso que tiene al módulo donde se ve ese dato.
+const REPORT_MODULE: Record<Report, string | string[]> = {
+  "sales": ["/sales", "/reports"],
+  "inventory": "/inventory",
+  "electronic-invoices": "/electronic-invoices",
+  "cash-movements": "/cajas",
+  "credit-transactions": "/factus/transactions",
+  "stock-movements": "/stock-movements",
+}
 
 const COLUMNS: Record<Report, { key: string; label: string }[]> = {
   "sales": [
@@ -69,13 +79,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ report: string }> }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: "No autorizado" }, { status: 401 })
-
   const { report } = await params
   if (!REPORTS.includes(report as Report)) {
     return NextResponse.json({ error: `Reporte no válido. Usar: ${REPORTS.join(", ")}` }, { status: 400 })
   }
+
+  const guard = await guardModule(REPORT_MODULE[report as Report])
+  if ("error" in guard) return guard.error
+  const { session } = guard
 
   const scope = companyScope(session)
   const companyId = session.user.companyId

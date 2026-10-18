@@ -14,7 +14,7 @@
 // =============================================================================
 
 export type RouteAccess =
-  | { kind: "module"; modules: string[] }
+  | { kind: "module"; modules: string[]; note?: string }  // varios módulos: basta con uno (o cada método tiene el suyo)
   | { kind: "god" }
   | { kind: "session"; note: string }
   | { kind: "public"; note: string }
@@ -24,12 +24,12 @@ export const ROUTE_ACCESS: Record<string, RouteAccess> = {
   "audit-log": { kind: "god" },
   "auth/[...nextauth]": { kind: "public", note: "Inicio de sesión de next-auth" },
   "auth/register": { kind: "public", note: "Registro con código de invitación" },
-  "cash-denominations": { kind: "legacy", module: "/cajas" },
-  "cash-movements": { kind: "legacy", module: "/cajas" },
-  "cash-registers": { kind: "legacy", module: "/cajas" },
-  "cash-registers/[id]": { kind: "legacy", module: "/cajas" },
+  "cash-denominations": { kind: "module", modules: ["/cajas"], note: "GET abierto: el POS lee las denominaciones" },
+  "cash-movements": { kind: "module", modules: ["/pos"], note: "El cajero necesita la contraseña de un administrador" },
+  "cash-registers": { kind: "module", modules: ["/cajas"], note: "GET abierto: el POS elige la caja al abrir sesión" },
+  "cash-registers/[id]": { kind: "module", modules: ["/cajas"] },
   "cash-sessions": { kind: "module", modules: ["/cajas", "/pos"] },
-  "cash-sessions/[id]/close": { kind: "legacy", module: "/cajas" },
+  "cash-sessions/[id]/close": { kind: "session", note: "La persona dueña de la sesión de caja, o OWNER/ADMIN/GOD" },
   "cash-sessions/[id]/report": { kind: "module", modules: ["/cajas"] },
   "cash-sessions/active": { kind: "session", note: "La caja abierta de la propia persona" },
   "cash-sessions/active/summary": { kind: "session", note: "Resumen de la propia caja abierta" },
@@ -39,9 +39,9 @@ export const ROUTE_ACCESS: Record<string, RouteAccess> = {
   customers: { kind: "module", modules: ["/customers"] },
   dashboard: { kind: "session", note: "Todos los roles de empresa ven el dashboard" },
   "exports/[report]": {
-    kind: "legacy",
-    module: "/reports",
-    gap: "Solo exige sesión: cualquier rol puede exportar ventas, inventario, facturas y movimientos",
+    kind: "module",
+    modules: ["/sales", "/reports", "/inventory", "/electronic-invoices", "/cajas", "/factus/transactions", "/stock-movements"],
+    note: "Cada reporte exige el módulo donde se ve ese dato",
   },
   "factus/auth": { kind: "session", note: "El cajero puede reconectar; el token se refresca al facturar" },
   "factus/company-ranges": { kind: "legacy", module: "/settings" },
@@ -68,20 +68,12 @@ export const ROUTE_ACCESS: Record<string, RouteAccess> = {
   profile: { kind: "session", note: "El perfil de la propia persona" },
   "purchase-orders": { kind: "legacy", module: "/purchase-orders" },
   "purchase-orders/receive": { kind: "legacy", module: "/purchase-orders" },
-  sales: { kind: "legacy", module: "/pos" },
+  sales: { kind: "module", modules: ["/sales", "/reports", "/pos"], note: "GET: Ventas o Reportes; POST: POS" },
   "sales/[id]": { kind: "module", modules: ["/pos"] },
   "sales/return": { kind: "module", modules: ["/pos"] },
   "sales/sync": { kind: "module", modules: ["/pos"] },
-  settings: {
-    kind: "legacy",
-    module: "/settings",
-    gap: "PUT solo exige sesión: cualquier rol puede cambiar el nombre, el IVA y el pie del ticket",
-  },
-  "settings/configs": {
-    kind: "legacy",
-    module: "/settings",
-    gap: "PUT de medios de pago solo exige sesión; revisar qué roles deben poder cambiarlos",
-  },
+  settings: { kind: "module", modules: ["/settings"], note: "GET abierto: todos los roles leen los datos de la tienda (tickets)" },
+  "settings/configs": { kind: "module", modules: ["/settings"], note: "Medios de pago de la empresa; los ajustes del sistema son solo del GOD" },
   "stock-movements": { kind: "module", modules: ["/stock-movements"] },
   suppliers: { kind: "legacy", module: "/suppliers" },
   "sync/batch": { kind: "session", note: "Repite cada operación con la sesión de quien la envía; cada ruta aplica su permiso" },
