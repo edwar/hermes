@@ -82,10 +82,15 @@ export async function resetRole(input: { companyId: string | null; role: string 
 
 // --- Reglas por persona ---
 
-async function findTarget(userId: string) {
+/**
+ * `onlyCompanyId`: cuando quien configura es el dueño de una empresa, solo puede tocar a personas de esa
+ * empresa y nunca a un dueño (ni a sí mismo).
+ */
+async function findTarget(userId: string, onlyCompanyId?: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, companyId: true } })
-  if (!user) return { ok: false, error: "La persona no existe" } as const
+  if (!user || (onlyCompanyId && user.companyId !== onlyCompanyId)) return { ok: false, error: "La persona no existe" } as const
   if (user.role === "GOD") return { ok: false, error: "Los permisos del administrador de plataforma no se configuran" } as const
+  if (onlyCompanyId && user.role === "OWNER") return { ok: false, error: "Los permisos del dueño no se configuran" } as const
   return { ok: true, user } as const
 }
 
@@ -103,22 +108,22 @@ async function rulesForUser(user: { id: string; role: string; companyId: string 
   return rows.map(toData)
 }
 
-export async function getUserMatrix(userId: string) {
-  const found = await findTarget(userId)
+export async function getUserMatrix(userId: string, onlyCompanyId?: string) {
+  const found = await findTarget(userId, onlyCompanyId)
   if (!found.ok) return { ok: false as const, error: found.error }
   const { user } = found
   return { ok: true as const, matrix: buildUserMatrix(await rulesForUser(user), { userId: user.id, role: user.role, companyId: user.companyId }) }
 }
 
 /** Fija si una persona puede usar un módulo, por encima de las reglas de su rol. Si coincide con lo heredado, quita la regla. */
-export async function setUserRule(input: { userId: string; module: string; allowed: boolean }): Promise<SetRuleResult> {
+export async function setUserRule(input: { userId: string; module: string; allowed: boolean; onlyCompanyId?: string }): Promise<SetRuleResult> {
   const candidate: PermissionRuleData = {
     scope: "USER", role: null, companyId: null, userId: input.userId, module: input.module, allowed: input.allowed,
   }
   const invalid = validateRule(candidate)
   if (invalid) return { ok: false, error: invalid }
 
-  const found = await findTarget(input.userId)
+  const found = await findTarget(input.userId, input.onlyCompanyId)
   if (!found.ok) return { ok: false, error: found.error }
   const { user } = found
 
@@ -141,7 +146,8 @@ export async function setUserRule(input: { userId: string; module: string; allow
   return { ok: true, action }
 }
 
-export async function resetUser(userId: string): Promise<number> {
+export async function resetUser(userId: string, onlyCompanyId?: string): Promise<number> {
+  if (onlyCompanyId && !(await findTarget(userId, onlyCompanyId)).ok) return 0
   const { count } = await prisma.permissionRule.deleteMany({ where: { scope: "USER", userId } })
   clearPermissionCache()
   return count

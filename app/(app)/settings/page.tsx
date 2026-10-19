@@ -11,11 +11,15 @@ import { Loader2, Save, Building2, MapPin, Phone, Hash, Mail, DollarSign, FileTe
 import type { StoreSettings } from "@/hooks/use-settings"
 import { FactusSettings } from "@/components/settings/factus-settings"
 import { DenominationSettings } from "@/components/settings/denomination-settings"
+import { PermissionsMatrix } from "@/components/settings/permissions-matrix"
+import { useCanSee } from "@/components/shared/allowed-modules"
 import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const { settings, isLoading, updateSettings, isSaving } = useSettings()
   const { success, error } = useToast()
+  // Solo el dueño administra los permisos de su equipo.
+  const canManagePermissions = useCanSee()("/permissions")
   const [form, setForm] = useState<Partial<StoreSettings & { companyName: string; nit: string; address: string; phone: string; email: string }>>({})
 
   useEffect(() => {
@@ -226,6 +230,8 @@ export default function SettingsPage() {
           <FactusSettings />
 
           <DenominationSettings />
+
+          {canManagePermissions && <PermissionsMatrix mode="owner" />}
         </>
       )}
 

@@ -34,7 +34,7 @@ describe("contenido de la guía", () => {
 describe("guía por rol", () => {
   it("cada módulo del menú tiene al menos una guía", () => {
     // Módulos sin enlace propio en el menú: los cubre el video de su pantalla (Movimientos de Inventario, Facturas electrónicas).
-    const noMenuLink = ["/stock-movements", "/electronic-invoices/manage"]
+    const noMenuLink = ["/stock-movements", "/electronic-invoices/manage", "/permissions"]
     for (const href of Object.keys(NAV_ACCESS).filter((h) => !noMenuLink.includes(h))) {
       expect(GUIDE_VIDEOS.some((v) => v.href === href), `${href} no tiene guía`).toBe(true)
     }

@@ -27,6 +27,7 @@ describe("matriz de permisos", () => {
       expect(MODULE_LABELS[mod], mod).toBeTruthy()
     }
     expect(CONFIGURABLE_MODULES).not.toContain("/profile")
+    expect(CONFIGURABLE_MODULES).not.toContain("/permissions")
     expect(CONFIGURABLE_MODULES).toContain("/electronic-invoices/manage")
     for (const key of Object.keys(NAV_ACCESS)) expect(MODULE_LABELS[key], `${key} sin nombre`).toBeTruthy()
   })

@@ -32,16 +32,20 @@ type CompanyOption = { id: string; name: string }
 const SOURCE_TEXT = { default: "Por defecto", global: "Global", company: "Empresa", user: "Personal", owner: "Fijo" } as const
 
 /** Pantalla del GOD: qué módulos puede usar cada rol, para toda la plataforma o para una empresa. */
-export function PermissionsMatrix() {
+export function PermissionsMatrix({ mode = "god" }: { mode?: "god" | "owner" }) {
+  const isOwner = mode === "owner"
+  // El dueño usa su propia API, limitada a su empresa; el GOD elige empresa y usa la de plataforma.
+  const apiBase = isOwner ? "/api/permissions" : "/api/god/permissions"
   const queryClient = useQueryClient()
   const [scope, setScope] = useState<string>(GLOBAL)
   const [pending, setPending] = useState<string | null>(null)
   const [resetRole, setResetRole] = useState<string | null>(null)
   const companyId = scope === GLOBAL ? null : scope
-  const queryKey = ["permissions-matrix", companyId]
+  const queryKey = ["permissions-matrix", mode, companyId]
 
   const { data: companies = [] } = useQuery<CompanyOption[]>({
     queryKey: ["permissions-companies"],
+    enabled: !isOwner,
     queryFn: async () => {
       const res = await fetch("/api/companies")
       if (!res.ok) throw new Error()
@@ -52,7 +56,7 @@ export function PermissionsMatrix() {
   const { data: matrix, isLoading } = useQuery<PermissionMatrix>({
     queryKey,
     queryFn: async () => {
-      const res = await fetch(`/api/god/permissions${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`)
+      const res = await fetch(`${apiBase}${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`)
       if (!res.ok) throw new Error("No se pudieron cargar los permisos")
       return res.json()
     },
@@ -62,7 +66,7 @@ export function PermissionsMatrix() {
     const key = `${role}:${module}`
     setPending(key)
     try {
-      const res = await fetch("/api/god/permissions", {
+      const res = await fetch(apiBase, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyId, role, module, allowed }),
@@ -85,7 +89,7 @@ export function PermissionsMatrix() {
     const role = resetRole
     setResetRole(null)
     try {
-      const res = await fetch(`/api/god/permissions?role=${role}${companyId ? `&companyId=${encodeURIComponent(companyId)}` : ""}`, {
+      const res = await fetch(`${apiBase}?role=${role}${companyId ? `&companyId=${encodeURIComponent(companyId)}` : ""}`, {
         method: "DELETE",
       })
       const data = await res.json().catch(() => ({}))
@@ -108,7 +112,7 @@ export function PermissionsMatrix() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShieldCheck className="size-4 text-primary" />
-          Permisos por rol
+          {isOwner ? "Permisos del equipo" : "Permisos por rol"}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -118,6 +122,12 @@ export function PermissionsMatrix() {
             <TabsTrigger value="persona">Por persona</TabsTrigger>
           </TabsList>
           <TabsContent value="rol" className="space-y-4 pt-4">
+        {isOwner ? (
+          <p className="text-xs text-muted-foreground">
+            Decide qué puede usar cada rol de tu equipo. Los cambios aplican solo a tu empresa, se registran en
+            Auditoría y cada persona los nota al recargar su pantalla, en unos segundos.
+          </p>
+        ) : (
         <div className="space-y-1.5">
           <Label htmlFor="permissions-scope" className="text-xs">Aplicar a</Label>
           <Select value={scope} onValueChange={(v) => setScope(v ?? GLOBAL)}>
@@ -138,6 +148,7 @@ export function PermissionsMatrix() {
             Cada cambio se registra en Auditoría. La persona lo nota al recargar su pantalla, en unos segundos.
           </p>
         </div>
+        )}
 
         {isLoading || !matrix ? (
           <div className="flex justify-center py-8">
@@ -197,7 +208,7 @@ export function PermissionsMatrix() {
         )}
           </TabsContent>
           <TabsContent value="persona" className="pt-4">
-            <PermissionsByPerson />
+            <PermissionsByPerson mode={mode} />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -207,7 +218,9 @@ export function PermissionsMatrix() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Restablecer los permisos?</AlertDialogTitle>
             <AlertDialogDescription>
-              {resetRole && `El rol ${ROLE_LABELS[resetRole as keyof typeof ROLE_LABELS]} vuelve a los permisos ${companyId ? "globales" : "por defecto"}. Se quitan sus ${customized(resetRole)} cambios ${companyId ? "de esta empresa" : "globales"}.`}
+              {resetRole && (isOwner
+                ? `El rol ${ROLE_LABELS[resetRole as keyof typeof ROLE_LABELS]} vuelve a los permisos que le da la plataforma. Se quitan sus ${customized(resetRole)} cambios en tu empresa.`
+                : `El rol ${ROLE_LABELS[resetRole as keyof typeof ROLE_LABELS]} vuelve a los permisos ${companyId ? "globales" : "por defecto"}. Se quitan sus ${customized(resetRole)} cambios ${companyId ? "de esta empresa" : "globales"}.`)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

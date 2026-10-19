@@ -6,6 +6,7 @@ import {
   ALWAYS_ALLOWED_MODULES,
   KNOWN_MODULES,
   OWNER_LOCKED_MODULES,
+  OWNER_ONLY_MODULES,
   PLATFORM_MODULES,
   resolveAccess,
   type PermissionRuleData,
@@ -38,7 +39,7 @@ export interface PermissionMatrix {
 
 /** Los módulos que el GOD puede configurar: sin los de plataforma ni el perfil, que no se conceden ni se quitan. */
 export const CONFIGURABLE_MODULES: readonly string[] = KNOWN_MODULES.filter(
-  (m) => !PLATFORM_MODULES.includes(m) && !ALWAYS_ALLOWED_MODULES.includes(m)
+  (m) => !PLATFORM_MODULES.includes(m) && !ALWAYS_ALLOWED_MODULES.includes(m) && !OWNER_ONLY_MODULES.includes(m)
 )
 
 const SCOPE_OF = (companyId: string | null) => (companyId ? "COMPANY" : "GLOBAL")
