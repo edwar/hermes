@@ -20,6 +20,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PermissionsByPerson } from "@/components/settings/permissions-by-person"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ROLE_LABELS } from "@/lib/guide/content"
 import type { PermissionMatrix } from "@/lib/permissions/matrix"
@@ -27,7 +29,7 @@ import type { PermissionMatrix } from "@/lib/permissions/matrix"
 const GLOBAL = "global"
 type CompanyOption = { id: string; name: string }
 
-const SOURCE_TEXT = { default: "Por defecto", global: "Global", company: "Empresa", owner: "Fijo" } as const
+const SOURCE_TEXT = { default: "Por defecto", global: "Global", company: "Empresa", user: "Personal", owner: "Fijo" } as const
 
 /** Pantalla del GOD: qué módulos puede usar cada rol, para toda la plataforma o para una empresa. */
 export function PermissionsMatrix() {
@@ -109,7 +111,13 @@ export function PermissionsMatrix() {
           Permisos por rol
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
+        <Tabs defaultValue="rol">
+          <TabsList>
+            <TabsTrigger value="rol">Por rol</TabsTrigger>
+            <TabsTrigger value="persona">Por persona</TabsTrigger>
+          </TabsList>
+          <TabsContent value="rol" className="space-y-4 pt-4">
         <div className="space-y-1.5">
           <Label htmlFor="permissions-scope" className="text-xs">Aplicar a</Label>
           <Select value={scope} onValueChange={(v) => setScope(v ?? GLOBAL)}>
@@ -187,6 +195,11 @@ export function PermissionsMatrix() {
             </Table>
           </div>
         )}
+          </TabsContent>
+          <TabsContent value="persona" className="pt-4">
+            <PermissionsByPerson />
+          </TabsContent>
+        </Tabs>
       </CardContent>
 
       <AlertDialog open={!!resetRole} onOpenChange={(open) => !open && setResetRole(null)}>

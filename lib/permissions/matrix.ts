@@ -19,7 +19,7 @@ export interface MatrixCell {
   /** Lo que puede hacer hoy este rol en este módulo (con las reglas aplicadas). */
   allowed: boolean
   /** De dónde sale: el valor por defecto del código, una regla global o una regla de la empresa. */
-  source: "default" | "global" | "company" | "owner"
+  source: "default" | "global" | "company" | "user" | "owner"
   /** Lo que sería sin la regla de este nivel (a lo que vuelve si se quita). */
   inherited: boolean
   /** Hay una regla guardada en este nivel. */
@@ -64,7 +64,7 @@ export function buildMatrix(rules: readonly PermissionRuleData[], companyId: str
       const inherited = resolveAccess(subject, mod, withoutThisLevel).allowed
       cells[role][mod] = {
         allowed: effective.allowed,
-        source: effective.source === "user" || effective.source === "none" || effective.source === "god" || effective.source === "platform" ? "default" : effective.source,
+        source: effective.source === "none" || effective.source === "god" || effective.source === "platform" ? "default" : effective.source,
         inherited,
         overridden: rules.some((r) => isRuleOfLevel(r, role, mod, companyId)),
         locked: role === "OWNER" && OWNER_LOCKED_MODULES.includes(mod),
@@ -83,4 +83,43 @@ export function buildMatrix(rules: readonly PermissionRuleData[], companyId: str
 /** Qué hacer al fijar un valor: guardar una regla, o quitarla si coincide con lo heredado. */
 export function ruleAction(allowed: boolean, inherited: boolean): "set" | "remove" {
   return allowed === inherited ? "remove" : "set"
+}
+
+export interface UserMatrix {
+  scope: "USER"
+  userId: string
+  role: string
+  companyId: string | null
+  modules: { module: string; label: string }[]
+  cells: Record<string, MatrixCell>
+}
+
+/**
+ * Lo mismo para una sola persona: el valor efectivo con sus reglas personales aplicadas encima de las de su
+ * empresa y las globales. `rules` debe traer las globales y de empresa de su rol y las suyas.
+ */
+export function buildUserMatrix(
+  rules: readonly PermissionRuleData[],
+  subject: { userId: string; role: string; companyId: string | null }
+): UserMatrix {
+  const isOwn = (r: PermissionRuleData, mod: string) => r.scope === "USER" && r.userId === subject.userId && r.module === mod
+  const cells: UserMatrix["cells"] = {}
+  for (const mod of CONFIGURABLE_MODULES) {
+    const effective = resolveAccess(subject, mod, rules)
+    cells[mod] = {
+      allowed: effective.allowed,
+      source: effective.source === "none" || effective.source === "god" || effective.source === "platform" ? "default" : effective.source,
+      inherited: resolveAccess(subject, mod, rules.filter((r) => !isOwn(r, mod))).allowed,
+      overridden: rules.some((r) => isOwn(r, mod)),
+      locked: subject.role === "OWNER" && OWNER_LOCKED_MODULES.includes(mod),
+    }
+  }
+  return {
+    scope: "USER",
+    userId: subject.userId,
+    role: subject.role,
+    companyId: subject.companyId,
+    modules: CONFIGURABLE_MODULES.map((mod) => ({ module: mod, label: MODULE_LABELS[mod] ?? mod })),
+    cells,
+  }
 }

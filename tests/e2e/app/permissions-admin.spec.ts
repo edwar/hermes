@@ -94,4 +94,74 @@ test.describe("Permisos por rol (solo GOD)", () => {
     }
     await god.context.close()
   })
+  test("las reglas por persona ganan a las de su rol y no afectan a nadie más", async ({ browser }) => {
+    test.setTimeout(150_000)
+    const god = await as(browser, "god@hermes.com", "god123")
+    const api = god.context.request
+    const people = (await (await api.get("/api/users")).json()) as { id: string; email: string; role: string }[]
+    const cashier = people.find((p) => p.email === "cajero@hermes.com")!
+    const owner = people.find((p) => p.role === "OWNER")
+    const session = await as(browser, "cajero@hermes.com", "cajero123")
+    const put = (data: Record<string, unknown>) => api.put("/api/god/permissions", { data })
+    try {
+      // Validación
+      expect((await put({ userId: "no-existe", module: "/reports", allowed: true })).status()).toBe(400)
+      expect((await put({ userId: cashier.id, module: "/god-dashboard", allowed: true })).status()).toBe(400)
+      expect((await put({ userId: cashier.id, module: "/no-existe", allowed: true })).status()).toBe(400)
+      if (owner) expect((await put({ userId: owner.id, module: "/users", allowed: false })).status()).toBe(400)
+      expect((await api.get("/api/god/permissions?userId=no-existe")).status()).toBe(404)
+
+      // El cajero gana Reportes solo para él
+      await session.page.goto("/reports")
+      await expect(session.page).toHaveURL(/\/dashboard/)
+      const set = await put({ userId: cashier.id, module: "/reports", allowed: true })
+      expect(set.status()).toBe(200)
+      expect((await set.json()).matrix.cells["/reports"]).toMatchObject({ allowed: true, source: "user", overridden: true, inherited: false })
+      await session.page.goto("/reports")
+      await expect(session.page).toHaveURL(/\/reports/)
+      const others = people.filter((p) => p.role === "CASHIER" && p.id !== cashier.id)
+      for (const other of others) {
+        const m = await (await api.get(`/api/god/permissions?userId=${other.id}`)).json()
+        expect(m.cells["/reports"].allowed, other.email).toBe(false)
+      }
+
+      // Una regla personal le quita lo que su rol sí tiene
+      const deny = await put({ userId: cashier.id, module: "/pos", allowed: false })
+      expect(deny.status()).toBe(200)
+      await session.page.goto("/pos")
+      await expect(session.page).toHaveURL(/\/dashboard/)
+    } finally {
+      await api.delete(`/api/god/permissions?userId=${cashier.id}`)
+    }
+    await session.page.goto("/reports")
+    await expect(session.page).toHaveURL(/\/dashboard/)
+    await session.page.goto("/pos")
+    await expect(session.page).toHaveURL(/\/pos/)
+    await session.context.close()
+    await god.context.close()
+  })
+
+  test("la pestaña Por persona permite cambiar y restablecer", async ({ browser }) => {
+    test.setTimeout(150_000)
+    const god = await as(browser, "god@hermes.com", "god123")
+    const { page } = god
+    const people = (await (await god.context.request.get("/api/users")).json()) as { id: string; email: string }[]
+    const cashier = people.find((p) => p.email === "cajero@hermes.com")!
+    try {
+      await page.goto("/system-settings")
+      await page.getByRole("tab", { name: "Por persona" }).click()
+      await page.getByRole("combobox", { name: "Persona" }).click()
+      await page.getByRole("option", { name: /Cajero Principal/ }).click()
+      const toggle = page.getByRole("switch", { name: "Reportes para Cajero Principal" })
+      await expect(toggle).not.toBeChecked()
+      await toggle.click()
+      await expect(toggle).toBeChecked()
+      await expect(page.getByText("1 cambio personal")).toBeVisible()
+      await page.getByRole("button", { name: "Restablecer", exact: true }).click()
+      await expect(toggle).not.toBeChecked()
+    } finally {
+      await god.context.request.delete(`/api/god/permissions?userId=${cashier.id}`)
+    }
+    await god.context.close()
+  })
 })
