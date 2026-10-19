@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -29,7 +29,6 @@ async function fetchReport(id: string) {
 
 export function SessionReport({ sessionId, open, onOpenChange }: SessionReportProps) {
   const [isPrinting, setIsPrinting] = useState(false)
-  const hasPrintedRef = useRef(false)
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["session-report", sessionId],
@@ -38,20 +37,6 @@ export function SessionReport({ sessionId, open, onOpenChange }: SessionReportPr
     retry: 2,
     refetchOnMount: true,
   })
-
-  useEffect(() => {
-    hasPrintedRef.current = false
-  }, [sessionId])
-
-  useEffect(() => {
-    if (data && data.session && !hasPrintedRef.current) {
-      hasPrintedRef.current = true
-      const timer = setTimeout(() => {
-        window.print()
-      }, 500)
-      return () => clearTimeout(timer)
-    }
-  }, [data])
 
   if (!open) return null
 
