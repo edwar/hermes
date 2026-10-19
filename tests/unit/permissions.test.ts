@@ -32,6 +32,8 @@ describe("sin reglas guardadas, nada cambia", () => {
     for (const mod of KNOWN_MODULES) expect(resolveAccess(as("GOD"), mod, []).allowed).toBe(true)
     expect(resolveAccess(as("OWNER"), "/no-existe", []).allowed).toBe(false)
     expect(resolveAccess(as(""), "/pos", []).allowed).toBe(false)
+    // Un rol que no existe no accede a nada, ni siquiera al perfil
+    expect(resolveAccess(as("HACKER"), "/profile", []).allowed).toBe(false)
   })
 })
 
@@ -65,6 +67,16 @@ describe("capas: usuario → empresa → global → defecto", () => {
   it("una empresa sin id no recibe reglas de empresa", () => {
     const r = rule({ scope: "COMPANY", companyId: "c1" })
     expect(resolveAccess(as("CASHIER", { companyId: null }), "/reports", [r]).allowed).toBe(false)
+  })
+})
+
+describe("el perfil siempre está permitido", () => {
+  it("todos los roles de la aplicación abren /profile y no se les puede quitar", () => {
+    for (const role of ALL_ROLES) {
+      const deny = rule({ role: role === "GOD" ? "ADMIN" : role, module: "/profile", allowed: false })
+      expect(resolveAccess(as(role), "/profile", [deny]).allowed, role).toBe(true)
+    }
+    expect(validateRule(rule({ module: "/profile", allowed: false }))).not.toBeNull()
   })
 })
 

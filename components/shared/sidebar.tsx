@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -28,7 +27,7 @@ import {
   Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { canAccess } from "@/lib/navigation"
+import { useCanSee } from "@/components/shared/allowed-modules"
 
 interface NavItem {
   href: string
@@ -69,11 +68,10 @@ interface SidebarProps {
 
 export function Sidebar({ open, onOpenChange }: SidebarProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
-  const role = session?.user?.role
+  const canSee = useCanSee()
 
-  // Los roles de cada módulo viven en lib/navigation.ts (los comparte la guía de uso).
-  const visibleItems = navItems.filter((item) => canAccess(item.href, role))
+  // Los módulos permitidos los resuelve el servidor (lib/permissions): reglas guardadas y valores por defecto.
+  const visibleItems = navItems.filter((item) => canSee(item.href))
 
   return (
     <>

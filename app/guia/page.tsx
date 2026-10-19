@@ -5,7 +5,8 @@ import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Wordmark } from "@/components/shared/wordmark"
 import { buttonVariants } from "@/components/ui/button"
 import { auth } from "@/lib/auth"
-import { groupBySection, guidesFor, ROLE_LABELS, type GuideSection } from "@/lib/guide/content"
+import { groupBySection, guidesForModules, ROLE_LABELS, type GuideSection } from "@/lib/guide/content"
+import { modulesFor } from "@/lib/permissions"
 import media from "@/lib/guide/media.json"
 import type { Role } from "@/lib/navigation"
 
@@ -39,7 +40,10 @@ export default async function GuidePage() {
   // Sin sesión se ve la guía de negocio; con sesión, solo lo que el rol puede usar; el GOD ve todo.
   const session = await auth()
   const role = session?.user?.role ?? null
-  const videos = guidesFor(role).filter((v) => mediaBySlug[v.slug])
+  const modules = session?.user
+    ? await modulesFor({ userId: session.user.id, role: session.user.role, companyId: session.user.companyId })
+    : []
+  const videos = guidesForModules(role, modules).filter((v) => mediaBySlug[v.slug])
   const groups = groupBySection(videos)
   const totalSeconds = videos.reduce((n, v) => n + mediaBySlug[v.slug].duration, 0)
   const roleLabel = role ? (ROLE_LABELS[role as Role] ?? role) : null

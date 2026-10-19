@@ -6,6 +6,7 @@
  * así lo que se ve en el video, lo que se lee y lo que cada usuario puede usar nunca se desfasan.
  */
 import { ALL_ROLES, rolesFor, type Role } from "../navigation"
+import { allowedModules } from "../permissions/resolve"
 
 export type GuideSection = "PRIMEROS PASOS" | "OPERACIÓN" | "CATÁLOGO" | "CONTROL" | "PLATAFORMA"
 
@@ -529,13 +530,19 @@ export function rolesOf(video: GuideVideo): readonly Role[] {
 }
 
 /**
- * Videos de una persona. El administrador de plataforma (GOD) ve todos; sin sesión se ve la guía de
- * negocio (todo menos la sección de plataforma); con sesión, solo lo que el rol puede usar.
+ * Videos de una persona, según los módulos que puede usar (ya resueltos con las reglas guardadas).
+ * El administrador de plataforma (GOD) ve todos; sin sesión se ve la guía de negocio (todo menos Plataforma).
  */
-export function guidesFor(role: string | null | undefined): GuideVideo[] {
+export function guidesForModules(role: string | null | undefined, modules: readonly string[]): GuideVideo[] {
   if (role === "GOD") return [...GUIDE_VIDEOS]
   if (!role) return GUIDE_VIDEOS.filter((v) => v.section !== "PLATAFORMA")
-  return GUIDE_VIDEOS.filter((v) => (rolesOf(v) as readonly string[]).includes(role))
+  const allowed = new Set(modules)
+  return GUIDE_VIDEOS.filter((v) => v.href === null || allowed.has(v.href))
+}
+
+/** Lo mismo con los accesos por defecto de cada rol (sin reglas guardadas). */
+export function guidesFor(role: string | null | undefined): GuideVideo[] {
+  return guidesForModules(role, role ? allowedModules({ userId: "", role, companyId: null }, []) : [])
 }
 
 /** Los videos de plataforma no se publican con un nombre de archivo predecible. */

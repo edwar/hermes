@@ -1,13 +1,7 @@
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
 import { PurchaseOrdersTable } from "@/components/purchase-orders/purchase-orders-table"
 
 export default async function PurchaseOrdersPage() {
-  const session = await auth()
-  if (!session?.user) redirect("/login")
-  if (session.user.role !== "OWNER" && session.user.role !== "ADMIN" && session.user.role !== "MANAGER") {
-    redirect("/dashboard")
-  }
+  // El acceso lo decide el layout del módulo (requireModule): aquí no se repite la comprobación de rol.
   return (
     <div className="space-y-6">
       <div>

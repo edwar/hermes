@@ -6,7 +6,7 @@
 // Esta lógica no importa Prisma a propósito, para poder probarla sin DATABASE_URL (como en CI).
 // =============================================================================
 
-import { NAV_ACCESS, rolesFor, type Role } from "../navigation"
+import { ALL_ROLES, NAV_ACCESS, rolesFor, type Role } from "../navigation"
 
 export type PermissionScope = "GLOBAL" | "COMPANY" | "USER"
 
@@ -35,6 +35,9 @@ export const PLATFORM_MODULES: readonly string[] = Object.entries(NAV_ACCESS)
 /** El dueño nunca pierde estos módulos, para que nadie se quede sin forma de corregir los permisos. */
 export const OWNER_LOCKED_MODULES: readonly string[] = ["/users", "/settings"]
 
+/** Todos los roles de la aplicación pueden abrir su perfil: es el destino seguro si no tienen acceso a nada más. */
+export const ALWAYS_ALLOWED_MODULES: readonly string[] = ["/profile"]
+
 export const KNOWN_MODULES: readonly string[] = Object.keys(NAV_ACCESS)
 
 export function isKnownModule(module: string): boolean {
@@ -55,6 +58,7 @@ export function validateRule(rule: PermissionRuleData): string | null {
   if (rule.scope === "COMPANY" && (!rule.role || !rule.companyId || rule.userId)) return "Una regla de empresa necesita empresa y rol"
   if (rule.scope === "USER" && (!rule.userId || rule.role || rule.companyId)) return "Una regla de usuario necesita solo el usuario"
   if (rule.role === "GOD") return "Las reglas no aplican al administrador de plataforma"
+  if (!rule.allowed && ALWAYS_ALLOWED_MODULES.includes(rule.module)) return "No se puede quitar el acceso al perfil"
   if (rule.allowed && PLATFORM_MODULES.includes(rule.module)) return "Los módulos de plataforma son solo del administrador de plataforma"
   if (!rule.allowed && rule.role === "OWNER" && OWNER_LOCKED_MODULES.includes(rule.module)) {
     return "No se puede quitar este módulo al dueño"
@@ -68,9 +72,10 @@ export function resolveAccess(
   rules: readonly PermissionRuleData[]
 ): { allowed: boolean; source: AccessSource } {
   const role = subject.role as Role | null | undefined
-  if (!role) return { allowed: false, source: "none" }
+  if (!role || !(ALL_ROLES as readonly string[]).includes(role)) return { allowed: false, source: "none" }
   if (role === "GOD") return { allowed: true, source: "god" }
   if (!isKnownModule(module)) return { allowed: false, source: "none" }
+  if (ALWAYS_ALLOWED_MODULES.includes(module)) return { allowed: true, source: "default" }
   if (PLATFORM_MODULES.includes(module)) return { allowed: false, source: "platform" }
   if (role === "OWNER" && OWNER_LOCKED_MODULES.includes(module)) return { allowed: true, source: "owner" }
 
