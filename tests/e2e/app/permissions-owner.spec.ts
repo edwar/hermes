@@ -112,4 +112,26 @@ test.describe("Permisos del equipo (solo el dueño)", () => {
     }
     await owner.context.close()
   })
+  test("las pantallas muestran lo que el módulo de cada pestaña permite, no un rol fijo", async ({ browser, page }) => {
+    test.setTimeout(150_000)
+    // Administrador: Inventario con sus dos pestañas
+    await page.goto("/inventory")
+    await expect(page.getByRole("tab", { name: "Movimientos" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Productos" })).toBeVisible()
+
+    // Un cajero al que el dueño le da Inventario ve los productos, pero no el historial de movimientos
+    const owner = await as(browser, OWNER.email, OWNER.password)
+    const cashier = await as(browser, "cajero@hermes.com", "cajero123")
+    try {
+      expect((await owner.context.request.put("/api/permissions", { data: { role: "CASHIER", module: "/inventory", allowed: true } })).status()).toBe(200)
+      await cashier.page.goto("/inventory")
+      await expect(cashier.page).toHaveURL(/\/inventory/)
+      await expect(cashier.page.getByRole("button", { name: /Agregar Producto/ })).toBeVisible()
+      await expect(cashier.page.getByRole("tab", { name: "Movimientos" })).toHaveCount(0)
+    } finally {
+      await owner.context.request.delete("/api/permissions?role=CASHIER")
+    }
+    await cashier.context.close()
+    await owner.context.close()
+  })
 })

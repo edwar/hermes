@@ -1,5 +1,6 @@
 "use client"
 
+import { canApproveCashMovements } from "@/lib/permissions/cash-approval"
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { apiFetch } from "@/lib/api-client"
 import { Loader2, ShieldCheck } from "lucide-react"
-import { USER_ROLE, STOCK_MOVEMENT_TYPE } from "@/lib/constants"
+import { STOCK_MOVEMENT_TYPE } from "@/lib/constants"
 
 interface CashMovementFormProps {
   open: boolean
@@ -25,7 +26,8 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
   const { data: session } = useSession()
   const queryClient = useQueryClient()
   const toast = useToast()
-  const isCashier = session?.user?.role === USER_ROLE.CASHIER
+  // Quien no puede aprobar por sí mismo necesita la contraseña de un administrador (igual que en el servidor).
+  const needsAdminAuth = !canApproveCashMovements(session?.user?.role)
   const [type, setType] = useState<"IN" | "OUT">(STOCK_MOVEMENT_TYPE.OUT)
   const [amount, setAmount] = useState("")
   const [reason, setReason] = useState("")
@@ -82,7 +84,7 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
       amount: parsedAmount,
       reason: reason.trim(),
       sessionId,
-      ...(isCashier && { adminPassword }),
+      ...(needsAdminAuth && { adminPassword }),
     })
   }
 
@@ -168,7 +170,7 @@ export function CashMovementForm({ open, onOpenChange, sessionId, onSuccess }: C
                 />
               </div>
 
-              {isCashier && (
+              {needsAdminAuth && (
                 <div className="rounded-lg border border-dashed border-muted p-3">
                   <p className="text-xs text-muted-foreground">
                     <ShieldCheck className="mr-1 inline size-3" />

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useCanSee } from "@/components/shared/allowed-modules"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -56,9 +56,8 @@ function formatCOP(value: number | string) {
 }
 
 export function ElectronicInvoicesTable() {
-  const { data: session } = useSession()
-  const role = session?.user?.role
-  const canManage = role === "GOD" || role === "ADMIN"
+  // Reenviar, limpiar y enviar por correo exigen el mismo módulo que la API (antes la pantalla excluía al dueño y al gestor).
+  const canManage = useCanSee()("/electronic-invoices/manage")
 
   const [invoices, setInvoices] = useState<any[]>([])
   const [total, setTotal] = useState(0)

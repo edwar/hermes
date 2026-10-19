@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useSession } from "next-auth/react"
+import { useCanSee } from "@/components/shared/allowed-modules"
 import { CashRegistersList } from "@/components/cajas/cash-registers-list"
 import { SessionsList } from "@/components/cajas/sessions-list"
 import { OpenSessionDialog } from "@/components/cajas/open-session-dialog"
@@ -21,8 +21,8 @@ async function fetchActiveSession() {
 }
 
 export default function CajasPage() {
-  const { data: sessionData } = useSession()
-  const isAdmin = sessionData?.user?.role === "OWNER" || sessionData?.user?.role === "ADMIN"
+  // Administrar las cajas registradoras depende del módulo Cajas, no de un rol fijo.
+  const canManageRegisters = useCanSee()("/cajas")
   const [openDialog, setOpenDialog] = useState(false)
   const [closeDialog, setCloseDialog] = useState(false)
   const [movementDialog, setMovementDialog] = useState(false)
@@ -105,7 +105,7 @@ export default function CajasPage() {
 
       <SessionsList refreshKey={refreshKey} />
 
-      {isAdmin && (
+      {canManageRegisters && (
         <div className="rounded-xl border bg-card p-6 shadow-sm">
           <CashRegistersList />
         </div>

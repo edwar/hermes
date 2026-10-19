@@ -4,17 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductTable } from "@/components/inventory/product-table"
 import { StockMovementsTable } from "@/components/inventory/stock-movements-table"
 import { Package, ArrowLeftRight } from "lucide-react"
+import { useCanSee } from "@/components/shared/allowed-modules"
 
-interface InventoryTabsProps {
-  role: string
-}
+export function InventoryTabs() {
+  // Cada pestaña exige el módulo de su API: Inventario para los productos y Movimientos de stock para el historial.
+  const canSee = useCanSee()
+  const showProducts = canSee("/inventory")
+  const showMovements = canSee("/stock-movements")
 
-export function InventoryTabs({ role }: InventoryTabsProps) {
-  const isCashier = role === "CASHIER"
-
-  if (isCashier) {
-    return <StockMovementsTable />
-  }
+  if (!showProducts) return showMovements ? <StockMovementsTable /> : null
+  if (!showMovements) return <ProductTable />
 
   return (
     <Tabs defaultValue="products" className="space-y-4">

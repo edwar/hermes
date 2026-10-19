@@ -7,7 +7,5 @@ export default async function InventoryPage() {
   if (!session?.user) redirect("/login")
   if (session.user.role === "GOD") redirect("/god-dashboard")
 
-  const role = session.user.role
-
-  return <InventoryTabs role={role} />
+  return <InventoryTabs />
 }
