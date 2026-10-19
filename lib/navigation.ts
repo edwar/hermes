@@ -45,6 +45,33 @@ export const NAV_ACCESS: Readonly<Record<string, readonly Role[]>> = {
   "/profile": [GOD, OWNER, ADMIN, MANAGER, CASHIER],
 }
 
+/** Nombre de cada módulo para las pantallas de administración de permisos. */
+export const MODULE_LABELS: Readonly<Record<string, string>> = {
+  "/dashboard": "Dashboard",
+  "/pos": "Punto de venta",
+  "/sales": "Historial de ventas",
+  "/electronic-invoices": "Facturas electrónicas (consultar)",
+  "/electronic-invoices/manage": "Facturas electrónicas (emitir y gestionar)",
+  "/inventory": "Inventario",
+  "/categories": "Categorías",
+  "/reports": "Reportes",
+  "/customers": "Clientes",
+  "/suppliers": "Proveedores",
+  "/purchase-orders": "Compras",
+  "/cajas": "Cajas",
+  "/settings": "Configuración de la empresa",
+  "/god-dashboard": "Panel GOD",
+  "/system-settings": "Configuración del sistema",
+  "/factus/transactions": "Transacciones Factus",
+  "/audit-log": "Auditoría",
+  "/notifications": "Notificaciones",
+  "/users": "Usuarios",
+  "/invites": "Invitaciones",
+  "/companies": "Empresas",
+  "/stock-movements": "Movimientos de stock",
+  "/profile": "Mi perfil",
+}
+
 export function rolesFor(href: string): readonly Role[] {
   return NAV_ACCESS[href] ?? []
 }

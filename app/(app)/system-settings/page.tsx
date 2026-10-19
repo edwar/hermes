@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { Loader2 } from "lucide-react"
 import { SystemConfigSettings } from "@/components/settings/system-config-settings"
 import { FactusPlatformSettings } from "@/components/settings/factus-platform-settings"
+import { PermissionsMatrix } from "@/components/settings/permissions-matrix"
 
 export default function SystemSettingsPage() {
   const { data: session } = useSession()
@@ -36,6 +37,8 @@ export default function SystemSettingsPage() {
         <h1 className="text-2xl font-bold">Configuración del Sistema</h1>
         <p className="text-sm text-muted-foreground">Ajustes globales para el sistema Hermes</p>
       </div>
+
+      <PermissionsMatrix />
 
       <FactusPlatformSettings />
 

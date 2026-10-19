@@ -58,6 +58,7 @@ export const ROUTE_ACCESS: Record<string, RouteAccess> = {
   "god/companies/[id]": { kind: "god" },
   "god/factus-config": { kind: "god" },
   "god/overview": { kind: "god" },
+  "god/permissions": { kind: "god" },
   invites: { kind: "god" },
   "invoicing/retry": { kind: "module", modules: ["/electronic-invoices/manage"], note: "El cron entra con CRON_SECRET, sin sesión" },
   notifications: { kind: "session", note: "Solo las notificaciones de la propia persona" },

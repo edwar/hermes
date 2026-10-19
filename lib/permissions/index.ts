@@ -12,8 +12,12 @@ import {
 
 export * from "@/lib/permissions/resolve"
 
-const CACHE_TTL_MS = 60_000
-const cache = new Map<string, { at: number; rules: PermissionRuleData[] }>()
+// Caché corta por persona: cada pantalla y cada llamada a la API consulta los permisos. Vive en globalThis
+// para que el API que guarda una regla y las pantallas del mismo proceso compartan (y limpien) la misma.
+// En producción cada instancia serverless tiene la suya: un cambio se ve en todas en, como mucho, CACHE_TTL_MS.
+export const CACHE_TTL_MS = 15_000
+const globalCache = globalThis as unknown as { __permissionRulesCache?: Map<string, { at: number; rules: PermissionRuleData[] }> }
+const cache = (globalCache.__permissionRulesCache ??= new Map())
 
 export function clearPermissionCache() {
   cache.clear()
