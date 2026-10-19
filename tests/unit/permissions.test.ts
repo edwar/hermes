@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { ALL_ROLES, NAV_ACCESS } from "@/lib/navigation"
 import {
   allowedModules,
+  menuModules,
   KNOWN_MODULES,
   OWNER_LOCKED_MODULES,
   OWNER_ONLY_MODULES,
@@ -157,5 +158,23 @@ describe("permisos que son solo del dueño", () => {
   it("ninguna regla puede nombrarlos", () => {
     expect(validateRule(rule({ module: "/permissions", allowed: true }))).not.toBeNull()
     expect(validateRule(rule({ role: "OWNER", module: "/permissions", allowed: false }))).not.toBeNull()
+  })
+})
+
+describe("módulos del menú", () => {
+  it("el GOD solo ve en el menú lo que le corresponde por defecto", () => {
+    const all = allowedModules(as("GOD"), [])
+    expect(all).toContain("/inventory") // pasa todos los guards...
+    const menu = menuModules("GOD", all)
+    expect(menu).toEqual(expect.arrayContaining(["/god-dashboard", "/system-settings", "/companies", "/audit-log", "/notifications"]))
+    for (const business of ["/pos", "/inventory", "/sales", "/cajas", "/users", "/settings", "/reports"]) {
+      expect(menu, business).not.toContain(business) // ...pero no tiene empresa
+    }
+  })
+
+  it("para los demás roles el menú es lo que pueden usar", () => {
+    const cashier = allowedModules(as("CASHIER"), [])
+    expect(menuModules("CASHIER", cashier)).toEqual(cashier)
+    expect(menuModules(null, ["/pos"])).toEqual(["/pos"])
   })
 })

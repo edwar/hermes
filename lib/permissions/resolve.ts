@@ -97,6 +97,16 @@ export function resolveAccess(
   return { allowed: (rolesFor(module) as readonly string[]).includes(role), source: "default" }
 }
 
+/**
+ * Módulos que muestra el menú. El GOD pasa todos los guards, pero no tiene empresa: las pantallas de
+ * empresa (POS, Inventario, Ventas…) no tienen datos para él y lo devuelven a su panel, así que su menú
+ * solo trae lo que le corresponde por defecto (Plataforma y Notificaciones).
+ */
+export function menuModules(role: string | null | undefined, allowed: readonly string[]): string[] {
+  if (role !== "GOD") return [...allowed]
+  return allowed.filter((m) => (rolesFor(m) as readonly string[]).includes("GOD"))
+}
+
 /** Todos los módulos que la persona puede usar. */
 export function allowedModules(subject: PermissionSubject, rules: readonly PermissionRuleData[]): string[] {
   return KNOWN_MODULES.filter((m) => resolveAccess(subject, m, rules).allowed)
