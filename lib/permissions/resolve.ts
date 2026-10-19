@@ -35,6 +35,9 @@ export const PLATFORM_MODULES: readonly string[] = Object.entries(NAV_ACCESS)
 /** El dueño nunca pierde estos módulos, para que nadie se quede sin forma de corregir los permisos. */
 export const OWNER_LOCKED_MODULES: readonly string[] = ["/users", "/settings"]
 
+/** Solo el dueño (y el GOD) los usan; ninguna regla los concede a otro rol ni a otra persona. */
+export const OWNER_ONLY_MODULES: readonly string[] = ["/permissions"]
+
 /** Todos los roles de la aplicación pueden abrir su perfil: es el destino seguro si no tienen acceso a nada más. */
 export const ALWAYS_ALLOWED_MODULES: readonly string[] = ["/profile"]
 
@@ -58,6 +61,7 @@ export function validateRule(rule: PermissionRuleData): string | null {
   if (rule.scope === "COMPANY" && (!rule.role || !rule.companyId || rule.userId)) return "Una regla de empresa necesita empresa y rol"
   if (rule.scope === "USER" && (!rule.userId || rule.role || rule.companyId)) return "Una regla de usuario necesita solo el usuario"
   if (rule.role === "GOD") return "Las reglas no aplican al administrador de plataforma"
+  if (OWNER_ONLY_MODULES.includes(rule.module)) return "Ese permiso es solo del dueño"
   if (!rule.allowed && ALWAYS_ALLOWED_MODULES.includes(rule.module)) return "No se puede quitar el acceso al perfil"
   if (rule.allowed && PLATFORM_MODULES.includes(rule.module)) return "Los módulos de plataforma son solo del administrador de plataforma"
   if (!rule.allowed && rule.role === "OWNER" && OWNER_LOCKED_MODULES.includes(rule.module)) {
@@ -77,6 +81,7 @@ export function resolveAccess(
   if (!isKnownModule(module)) return { allowed: false, source: "none" }
   if (ALWAYS_ALLOWED_MODULES.includes(module)) return { allowed: true, source: "default" }
   if (PLATFORM_MODULES.includes(module)) return { allowed: false, source: "platform" }
+  if (OWNER_ONLY_MODULES.includes(module)) return { allowed: role === "OWNER", source: "owner" }
   if (role === "OWNER" && OWNER_LOCKED_MODULES.includes(module)) return { allowed: true, source: "owner" }
 
   const forModule = rules.filter((r) => r.module === module)

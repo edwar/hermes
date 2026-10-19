@@ -42,6 +42,8 @@ export const NAV_ACCESS: Readonly<Record<string, readonly Role[]>> = {
   "/stock-movements": [OWNER, ADMIN, MANAGER],
   // Emitir, reenviar y limpiar facturas electrónicas (el cajero solo las consulta)
   "/electronic-invoices/manage": [OWNER, ADMIN, MANAGER],
+  // Administrar los permisos del equipo de la propia empresa: solo el dueño
+  "/permissions": [OWNER],
   "/profile": [GOD, OWNER, ADMIN, MANAGER, CASHIER],
 }
 
@@ -69,6 +71,7 @@ export const MODULE_LABELS: Readonly<Record<string, string>> = {
   "/invites": "Invitaciones",
   "/companies": "Empresas",
   "/stock-movements": "Movimientos de stock",
+  "/permissions": "Permisos del equipo",
   "/profile": "Mi perfil",
 }
 

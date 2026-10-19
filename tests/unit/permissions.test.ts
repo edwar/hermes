@@ -4,6 +4,7 @@ import {
   allowedModules,
   KNOWN_MODULES,
   OWNER_LOCKED_MODULES,
+  OWNER_ONLY_MODULES,
   PLATFORM_MODULES,
   resolveAccess,
   subjectKey,
@@ -133,5 +134,28 @@ describe("claves y validación de reglas", () => {
       ["quitar Usuarios al dueño", rule({ role: "OWNER", module: "/users", allowed: false })],
     ]
     for (const [name, r] of bad) expect(validateRule(r), name).not.toBeNull()
+  })
+})
+
+describe("permisos que son solo del dueño", () => {
+  it("solo el dueño y el GOD los usan, aunque haya reglas que los concedan", () => {
+    expect(OWNER_ONLY_MODULES).toContain("/permissions")
+    for (const mod of OWNER_ONLY_MODULES) {
+      expect(resolveAccess(as("OWNER"), mod, []).allowed).toBe(true)
+      expect(resolveAccess(as("GOD"), mod, []).allowed).toBe(true)
+      for (const role of ["ADMIN", "MANAGER", "CASHIER"]) {
+        const grants = [
+          rule({ role: role as PermissionRuleData["role"], module: mod, allowed: true }),
+          rule({ scope: "COMPANY", companyId: "c1", role: role as PermissionRuleData["role"], module: mod, allowed: true }),
+          rule({ scope: "USER", role: null, userId: "u1", module: mod, allowed: true }),
+        ]
+        expect(resolveAccess(as(role), mod, grants).allowed, `${role} ${mod}`).toBe(false)
+      }
+    }
+  })
+
+  it("ninguna regla puede nombrarlos", () => {
+    expect(validateRule(rule({ module: "/permissions", allowed: true }))).not.toBeNull()
+    expect(validateRule(rule({ role: "OWNER", module: "/permissions", allowed: false }))).not.toBeNull()
   })
 })

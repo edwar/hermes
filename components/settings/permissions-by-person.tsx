@@ -18,18 +18,21 @@ type PersonOption = { id: string; name: string; email: string; role: string; com
 const SOURCE_TEXT = { default: "Por defecto", global: "Global", company: "Empresa", user: "Personal", owner: "Fijo" } as const
 
 /** Permisos de una sola persona, por encima de los de su rol: para casos puntuales ("este cajero también ve Inventario"). */
-export function PermissionsByPerson() {
+export function PermissionsByPerson({ mode = "god" }: { mode?: "god" | "owner" }) {
+  const apiBase = mode === "owner" ? "/api/permissions" : "/api/god/permissions"
   const queryClient = useQueryClient()
   const [userId, setUserId] = useState<string | null>(null)
   const [pending, setPending] = useState<string | null>(null)
-  const queryKey = ["permissions-person", userId]
+  const queryKey = ["permissions-person", mode, userId]
 
   const { data: people = [] } = useQuery<PersonOption[]>({
-    queryKey: ["permissions-people"],
+    queryKey: ["permissions-people", mode],
     queryFn: async () => {
       const res = await fetch("/api/users")
       if (!res.ok) throw new Error()
-      return res.json()
+      const all = (await res.json()) as PersonOption[]
+      // El dueño no configura su propio rol: solo a su equipo.
+      return mode === "owner" ? all.filter((p) => p.role !== "OWNER") : all
     },
   })
 
@@ -37,7 +40,7 @@ export function PermissionsByPerson() {
     queryKey,
     enabled: !!userId,
     queryFn: async () => {
-      const res = await fetch(`/api/god/permissions?userId=${encodeURIComponent(userId!)}`)
+      const res = await fetch(`${apiBase}?userId=${encodeURIComponent(userId!)}`)
       if (!res.ok) throw new Error("No se pudieron cargar los permisos")
       return res.json()
     },
@@ -50,7 +53,7 @@ export function PermissionsByPerson() {
   async function toggle(module: string, allowed: boolean) {
     setPending(module)
     try {
-      const res = await fetch("/api/god/permissions", {
+      const res = await fetch(apiBase, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, module, allowed }),
@@ -70,7 +73,7 @@ export function PermissionsByPerson() {
 
   async function reset() {
     try {
-      const res = await fetch(`/api/god/permissions?userId=${encodeURIComponent(userId!)}`, { method: "DELETE" })
+      const res = await fetch(`${apiBase}?userId=${encodeURIComponent(userId!)}`, { method: "DELETE" })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         sileo.error({ title: data.error ?? "No se pudo restablecer" })
