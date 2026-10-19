@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { guardModule } from "@/lib/permissions/guard"
+import { canApproveCashMovements } from "@/lib/permissions/cash-approval"
 import { prisma, withPrismaRetry } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 import { logAudit } from "@/lib/audit"
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (session.user.role === USER_ROLE.GOD) {
     // GOD puede hacer cualquier cosa
-  } else if (session.user.role === USER_ROLE.OWNER || session.user.role === USER_ROLE.ADMIN) {
+  } else if (canApproveCashMovements(session.user.role)) {
     // OWNER/ADMIN solo puede hacer movimientos en su empresa
     if (cashSession.cashRegister.companyId !== session.user.companyId) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
