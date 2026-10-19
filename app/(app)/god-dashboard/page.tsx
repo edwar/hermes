@@ -141,6 +141,13 @@ export default function GodDashboardPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
+              {companies.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                    Aún no hay empresas registradas. Crea una invitación en Invitaciones para que se registre la primera.
+                  </TableCell>
+                </TableRow>
+              )}
               {companies.map((c: any) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.name}</TableCell>
