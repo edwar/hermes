@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { MODULE_LABELS, NAV_ACCESS } from "@/lib/navigation"
-import { buildMatrix, CONFIGURABLE_MODULES, ruleAction } from "@/lib/permissions/matrix"
+import { buildMatrix, buildUserMatrix, CONFIGURABLE_MODULES, ruleAction } from "@/lib/permissions/matrix"
 import { PLATFORM_MODULES, type PermissionRuleData } from "@/lib/permissions/resolve"
 
 const rule = (over: Partial<PermissionRuleData>): PermissionRuleData => ({
@@ -58,5 +58,41 @@ describe("matriz de permisos", () => {
     expect(ruleAction(false, true)).toBe("set")
     expect(ruleAction(true, true)).toBe("remove")
     expect(ruleAction(false, false)).toBe("remove")
+  })
+})
+
+describe("matriz de una persona", () => {
+  const me = { userId: "u1", role: "CASHIER", companyId: "c1" }
+  const own = (over: Partial<PermissionRuleData>): PermissionRuleData => rule({ scope: "USER", role: null, userId: "u1", ...over })
+
+  it("sin reglas muestra los valores de su rol", () => {
+    const m = buildUserMatrix([], me)
+    expect(m.scope).toBe("USER")
+    for (const { module } of m.modules) {
+      expect(m.cells[module].allowed, module).toBe((NAV_ACCESS[module] as readonly string[]).includes("CASHIER"))
+      expect(m.cells[module].overridden).toBe(false)
+    }
+  })
+
+  it("una regla personal gana a las de su empresa y recuerda a qué vuelve al quitarla", () => {
+    const rules = [rule({ scope: "COMPANY", companyId: "c1", module: "/inventory", allowed: false }), own({ module: "/inventory", allowed: true })]
+    expect(buildUserMatrix(rules, me).cells["/inventory"]).toMatchObject({ allowed: true, source: "user", overridden: true, inherited: false })
+  })
+
+  it("las reglas de otra persona no cuentan", () => {
+    const m = buildUserMatrix([own({ userId: "u2", module: "/inventory", allowed: true })], me)
+    expect(m.cells["/inventory"]).toMatchObject({ allowed: false, overridden: false })
+  })
+
+  it("lo heredado de la empresa o lo global se ve con su origen", () => {
+    const m = buildUserMatrix([rule({ module: "/reports", allowed: true })], me)
+    expect(m.cells["/reports"]).toMatchObject({ allowed: true, source: "global", overridden: false })
+  })
+
+  it("al dueño no se le pueden quitar Usuarios ni Configuración, ni a título personal", () => {
+    const m = buildUserMatrix([], { userId: "o1", role: "OWNER", companyId: "c1" })
+    expect(m.cells["/users"].locked).toBe(true)
+    expect(m.cells["/settings"].locked).toBe(true)
+    expect(m.cells["/inventory"].locked).toBe(false)
   })
 })

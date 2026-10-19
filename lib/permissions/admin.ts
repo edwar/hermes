@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import type { Role } from "@/lib/navigation"
-import { buildMatrix, ruleAction } from "@/lib/permissions/matrix"
+import { buildMatrix, buildUserMatrix, ruleAction } from "@/lib/permissions/matrix"
 import { clearPermissionCache } from "@/lib/permissions"
 import { subjectKey, validateRule, type PermissionRuleData } from "@/lib/permissions/resolve"
 
@@ -76,6 +76,73 @@ export async function resetRole(input: { companyId: string | null; role: string 
     ? { scope: "COMPANY" as const, companyId: input.companyId, role: input.role as Role }
     : { scope: "GLOBAL" as const, role: input.role as Role }
   const { count } = await prisma.permissionRule.deleteMany({ where })
+  clearPermissionCache()
+  return count
+}
+
+// --- Reglas por persona ---
+
+async function findTarget(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, companyId: true } })
+  if (!user) return { ok: false, error: "La persona no existe" } as const
+  if (user.role === "GOD") return { ok: false, error: "Los permisos del administrador de plataforma no se configuran" } as const
+  return { ok: true, user } as const
+}
+
+async function rulesForUser(user: { id: string; role: string; companyId: string | null }) {
+  const role = user.role as Role
+  const rows = await prisma.permissionRule.findMany({
+    where: {
+      OR: [
+        { scope: "GLOBAL", role },
+        ...(user.companyId ? [{ scope: "COMPANY" as const, companyId: user.companyId, role }] : []),
+        { scope: "USER", userId: user.id },
+      ],
+    },
+  })
+  return rows.map(toData)
+}
+
+export async function getUserMatrix(userId: string) {
+  const found = await findTarget(userId)
+  if (!found.ok) return { ok: false as const, error: found.error }
+  const { user } = found
+  return { ok: true as const, matrix: buildUserMatrix(await rulesForUser(user), { userId: user.id, role: user.role, companyId: user.companyId }) }
+}
+
+/** Fija si una persona puede usar un módulo, por encima de las reglas de su rol. Si coincide con lo heredado, quita la regla. */
+export async function setUserRule(input: { userId: string; module: string; allowed: boolean }): Promise<SetRuleResult> {
+  const candidate: PermissionRuleData = {
+    scope: "USER", role: null, companyId: null, userId: input.userId, module: input.module, allowed: input.allowed,
+  }
+  const invalid = validateRule(candidate)
+  if (invalid) return { ok: false, error: invalid }
+
+  const found = await findTarget(input.userId)
+  if (!found.ok) return { ok: false, error: found.error }
+  const { user } = found
+
+  const cell = buildUserMatrix(await rulesForUser(user), { userId: user.id, role: user.role, companyId: user.companyId }).cells[input.module]
+  if (!cell) return { ok: false, error: "Ese módulo no se puede configurar" }
+  if (cell.locked) return { ok: false, error: "Este permiso está bloqueado" }
+
+  const subject = subjectKey(candidate)
+  const action = ruleAction(input.allowed, cell.inherited)
+  if (action === "remove") {
+    await prisma.permissionRule.deleteMany({ where: { subject, module: input.module } })
+  } else {
+    await prisma.permissionRule.upsert({
+      where: { subject_module: { subject, module: input.module } },
+      update: { allowed: input.allowed },
+      create: { scope: "USER", subject, userId: input.userId, module: input.module, allowed: input.allowed },
+    })
+  }
+  clearPermissionCache()
+  return { ok: true, action }
+}
+
+export async function resetUser(userId: string): Promise<number> {
+  const { count } = await prisma.permissionRule.deleteMany({ where: { scope: "USER", userId } })
   clearPermissionCache()
   return count
 }
