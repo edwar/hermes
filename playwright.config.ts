@@ -12,6 +12,7 @@ const BASE_URL = process.env.E2E_BASE_URL ?? `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   // Las pruebas comparten una base de datos y una caja abierta: se ejecutan en serie.
   fullyParallel: false,
   workers: 1,

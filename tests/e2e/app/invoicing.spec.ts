@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { ensureSampleInvoice, removeSampleInvoice } from "../invoice-fixture"
 
 // Las pruebas de credenciales usan datos falsos y modifican la empresa de la base de PRUEBAS:
 // dejan la facturación electrónica desactivada. No las apuntes a una base real.
@@ -10,6 +11,10 @@ const CRED = {
 }
 
 test.describe("Facturas electrónicas", () => {
+  // La tabla necesita al menos un documento; en una base recién sembrada no hay ninguno.
+  test.beforeAll(async () => { await ensureSampleInvoice() })
+  test.afterAll(async () => { await removeSampleInvoice() })
+
   test("la tabla de documentos carga con sus columnas y filtros", async ({ page }) => {
     await page.goto("/electronic-invoices")
     await expect(page.getByRole("main").getByRole("heading", { name: "Facturas Electrónicas" })).toBeVisible()
