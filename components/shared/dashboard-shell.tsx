@@ -6,8 +6,9 @@ import { Sidebar } from "@/components/shared/sidebar"
 import { Header } from "@/components/shared/header"
 import { BottomNav } from "@/components/shared/bottom-nav"
 import { Toaster } from "sileo"
+import { AllowedModulesProvider } from "@/components/shared/allowed-modules"
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, modules }: { children: React.ReactNode; modules: string[] }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
 
@@ -25,6 +26,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, [sidebarOpen])
 
   return (
+    <AllowedModulesProvider modules={modules}>
     <div className="flex h-screen overflow-hidden">
       <Sidebar open={sidebarOpen} onOpenChange={setSidebarOpen} />
       <div className="flex flex-1 flex-col min-w-0">
@@ -40,5 +42,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <BottomNav onMoreClick={() => setSidebarOpen(true)} />
       <Toaster position="top-right" />
     </div>
+    </AllowedModulesProvider>
   )
 }

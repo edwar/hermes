@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useSession } from "next-auth/react"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -27,36 +26,35 @@ import {
   Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { USER_ROLE } from "@/lib/constants"
+import { useCanSee } from "@/components/shared/allowed-modules"
 
 interface NavItem {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string }>
-  roles?: string[]
 }
 
 const allItems: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
-  { href: "/pos", label: "POS", icon: ShoppingCart, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/sales", label: "Ventas", icon: Receipt, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/inventory", label: "Inventario", icon: Package, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/categories", label: "Categorías", icon: Tags, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/reports", label: "Reportes", icon: BarChart3, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/customers", label: "Clientes", icon: CircleUser, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.CASHIER] },
-  { href: "/suppliers", label: "Proveedores", icon: Truck, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/purchase-orders", label: "Compras", icon: PackageSearch, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER] },
-  { href: "/cajas", label: "Cajas", icon: Wallet, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/settings", label: "Configuración", icon: Settings, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/god-dashboard", label: "Panel GOD", icon: Eye, roles: [USER_ROLE.GOD] },
-  { href: "/system-settings", label: "Config. Sistema", icon: Settings2, roles: [USER_ROLE.GOD] },
-  { href: "/factus/transactions", label: "Transacciones Factus", icon: Coins, roles: [USER_ROLE.GOD] },
-  { href: "/audit-log", label: "Auditoría", icon: History, roles: [USER_ROLE.GOD] },
-  { href: "/notifications", label: "Notificaciones", icon: Bell, roles: [USER_ROLE.GOD, USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/users", label: "Usuarios", icon: Users, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN] },
-  { href: "/invites", label: "Invitaciones", icon: Mail, roles: [USER_ROLE.GOD] },
-  { href: "/companies", label: "Empresas", icon: Building2, roles: [USER_ROLE.GOD] },
-  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap, roles: [USER_ROLE.OWNER, USER_ROLE.ADMIN, USER_ROLE.MANAGER, USER_ROLE.CASHIER] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pos", label: "POS", icon: ShoppingCart },
+  { href: "/sales", label: "Ventas", icon: Receipt },
+  { href: "/inventory", label: "Inventario", icon: Package },
+  { href: "/categories", label: "Categorías", icon: Tags },
+  { href: "/reports", label: "Reportes", icon: BarChart3 },
+  { href: "/customers", label: "Clientes", icon: CircleUser },
+  { href: "/suppliers", label: "Proveedores", icon: Truck },
+  { href: "/purchase-orders", label: "Compras", icon: PackageSearch },
+  { href: "/cajas", label: "Cajas", icon: Wallet },
+  { href: "/settings", label: "Configuración", icon: Settings },
+  { href: "/god-dashboard", label: "Panel GOD", icon: Eye },
+  { href: "/system-settings", label: "Config. Sistema", icon: Settings2 },
+  { href: "/factus/transactions", label: "Transacciones Factus", icon: Coins },
+  { href: "/audit-log", label: "Auditoría", icon: History },
+  { href: "/notifications", label: "Notificaciones", icon: Bell },
+  { href: "/users", label: "Usuarios", icon: Users },
+  { href: "/invites", label: "Invitaciones", icon: Mail },
+  { href: "/companies", label: "Empresas", icon: Building2 },
+  { href: "/electronic-invoices", label: "Fact. Electrónicas", icon: Zap },
 ]
 
 interface BottomNavProps {
@@ -67,13 +65,9 @@ const primaryHrefs = ["/pos", "/sales", "/inventory"]
 
 export function BottomNav({ onMoreClick }: BottomNavProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
-  const role = session?.user?.role
+  const canSee = useCanSee()
 
-  const visibleItems = allItems.filter((item) => {
-    if (!item.roles) return true
-    return role && item.roles.includes(role)
-  })
+  const visibleItems = allItems.filter((item) => canSee(item.href))
 
   const primaryItems = primaryHrefs
     .map((href) => visibleItems.find((item) => item.href === href))

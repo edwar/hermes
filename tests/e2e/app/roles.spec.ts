@@ -241,4 +241,48 @@ test.describe("Permisos por rol", () => {
     expect((await manager.request.put("/api/factus/settings", { data: { credentials: { clientId: "a", clientSecret: "b", username: "c", password: "d" } } })).status()).toBe(403)
     await manager.close()
   })
+
+  test("las pantallas que un rol no puede usar lo devuelven a su inicio, aunque escriba la dirección", async ({ browser, page }) => {
+    // Recorre muchas pantallas y en modo desarrollo cada primera visita compila: necesita más que los 45 s por defecto.
+    test.setTimeout(180_000)
+    // Administrador: no entra a las pantallas de plataforma
+    await page.goto("/god-dashboard")
+    await expect(page).toHaveURL(/\/dashboard/)
+    await page.goto("/system-settings")
+    await expect(page).toHaveURL(/\/dashboard/)
+    await page.goto("/inventory")
+    await expect(page).toHaveURL(/\/inventory/)
+
+    const as = async (email: string, password: string) => {
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
+      const p = await context.newPage()
+      await login(p, email, password)
+      await expect(p).toHaveURL(/\/dashboard/)
+      return { context, p }
+    }
+
+    // Cajero: ni inventario, ni usuarios, ni configuración, ni cajas; sí el POS
+    const cashier = await as("cajero@hermes.com", "cajero123")
+    for (const path of ["/inventory", "/users", "/settings", "/cajas", "/purchase-orders", "/suppliers", "/reports", "/god-dashboard"]) {
+      await cashier.p.goto(path)
+      await expect(cashier.p, `cajero ${path}`).toHaveURL(/\/dashboard/)
+    }
+    await cashier.p.goto("/pos")
+    await expect(cashier.p).toHaveURL(/\/pos/)
+    await cashier.context.close()
+
+    // Gestor: inventario y compras sí; POS, ventas y clientes no
+    const manager = await as("gerente@hermes.com", "gerente123")
+    for (const path of ["/pos", "/sales", "/customers", "/users", "/cajas"]) {
+      await manager.p.goto(path)
+      await expect(manager.p, `gestor ${path}`).toHaveURL(/\/dashboard/)
+    }
+    await manager.p.goto("/purchase-orders")
+    await expect(manager.p).toHaveURL(/\/purchase-orders/)
+    // El menú lateral muestra exactamente lo mismo que el guard permite
+    const nav = manager.p.getByRole("navigation", { name: "Secciones" })
+    await expect(nav.getByRole("link", { name: "Compras", exact: true })).toBeVisible()
+    await expect(nav.getByRole("link", { name: "POS", exact: true })).toHaveCount(0)
+    await manager.context.close()
+  })
 })
