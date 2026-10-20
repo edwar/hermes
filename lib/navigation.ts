@@ -38,6 +38,8 @@ export const NAV_ACCESS: Readonly<Record<string, readonly Role[]>> = {
   "/users": [OWNER, ADMIN],
   "/invites": [GOD],
   "/companies": [GOD],
+  // Documento interno (docs/primer-cliente.md): sin enlace en el menú, solo se llega escribiendo la dirección
+  "/primer-cliente": [GOD],
   // Rutas que no están en el menú pero pertenecen a un módulo
   "/stock-movements": [OWNER, ADMIN, MANAGER],
   // Emitir, reenviar y limpiar facturas electrónicas (el cajero solo las consulta)
@@ -72,6 +74,7 @@ export const MODULE_LABELS: Readonly<Record<string, string>> = {
   "/companies": "Empresas",
   "/stock-movements": "Movimientos de stock",
   "/permissions": "Permisos del equipo",
+  "/primer-cliente": "Primer cliente (documento)",
   "/profile": "Mi perfil",
 }
 
