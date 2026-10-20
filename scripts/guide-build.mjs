@@ -42,7 +42,8 @@ mkdirSync(OUT_VIDEOS, { recursive: true })
 mkdirSync(OUT_POSTERS, { recursive: true })
 
 const previous = existsSync(MEDIA_JSON) ? JSON.parse(readFileSync(MEDIA_JSON, "utf8")) : {}
-const media = {}
+// Parte de lo publicado: una regrabación parcial (solo algunos videos) no debe borrar los demás del catálogo.
+const media = { ...previous }
 
 function metaOf(slug) {
   const path = join(META_DIR, `${slug}.json`)
@@ -94,4 +95,4 @@ for (const file of files) {
 
 writeFileSync(MEDIA_JSON, JSON.stringify(media, null, 2) + "\n")
 const total = Object.values(media).reduce((n, m) => n + m.bytes, 0)
-console.log(`\n${files.length} videos, ${(total / 1024 / 1024).toFixed(1)} MB en total → ${OUT_VIDEOS}`)
+console.log(`\n${files.length} convertidos; ${Object.keys(media).length} videos, ${(total / 1024 / 1024).toFixed(1)} MB en total → ${OUT_VIDEOS}`)

@@ -29,13 +29,13 @@
     "bytes": 572401
   },
   "configuracion-del-sistema": {
-    "duration": 42,
-    "bytes": 479610,
+    "duration": 34,
+    "bytes": 377384,
     "file": "configuracion-del-sistema-7efcf8c6d5"
   },
   "configuracion-facturacion": {
-    "duration": 52,
-    "bytes": 601729
+    "duration": 57,
+    "bytes": 610461
   },
   "configuracion": {
     "duration": 49,
@@ -124,5 +124,19 @@
   "vender-y-cobrar": {
     "duration": 62,
     "bytes": 956892
+  },
+  "factus-de-la-plataforma": {
+    "duration": 51,
+    "bytes": 581538,
+    "file": "factus-de-la-plataforma-6c646a0ec5"
+  },
+  "permisos-de-plataforma": {
+    "duration": 46,
+    "bytes": 703677,
+    "file": "permisos-de-plataforma-7dfd268a52"
+  },
+  "permisos-del-equipo": {
+    "duration": 45,
+    "bytes": 540254
   }
 }

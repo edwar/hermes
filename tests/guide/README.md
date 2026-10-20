@@ -44,3 +44,17 @@ archivo con sufijo aleatorio (no es control de acceso, solo evita que se adivine
 - `tests/guide/NN-*.guide.ts`: un test por video, agrupados por sección (venta, operación, catálogo, control, plataforma).
 
 Los videos no llevan audio: se entienden sin sonido, que es lo que funciona en una tienda con ruido.
+
+## Datos y sesiones de la grabación
+
+- **Base de datos.** Los videos se graban contra la rama `guia` de Neon (copia de la que se usó para los
+  videos originales: empresa "Tienda Doña Rosa", usuarios de ejemplo). Nunca contra producción.
+- **Servidor.** Graba contra un servidor de producción (`next build` + `next start`) con `AUTH_URL`,
+  `ENCRYPTION_KEY` y `CRON_SECRET` bien definidos; con `next dev` los diálogos van muy lentos.
+- **Sesiones.** `00 preparación` guarda tres: administrador (`admin@hermes.com`), GOD y dueño
+  (`dueno@hermes.com`, "Marta Rosa", que crea si no existe). El video de permisos del equipo usa la del dueño.
+- **Limpieza.** Los videos que cambian permisos o la configuración de Factus de la plataforma
+  (`46`, `56`, `57`) dejan la base como estaba; `43` parte de una empresa sin credenciales de Factus.
+- **Regrabar solo algunos.** `pnpm guide:build` mezcla lo convertido con el catálogo anterior, así que se
+  puede grabar un solo video (`--grep "00 prep|46 perm"`, ya que `00` prepara las sesiones) sin perder los demás.
+

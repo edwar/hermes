@@ -134,4 +134,16 @@ test.describe("Permisos del equipo (solo el dueño)", () => {
     await cashier.context.close()
     await owner.context.close()
   })
+  test("la guía del dueño trae Permisos del equipo y la del administrador no", async ({ browser, page }) => {
+    // Administrador (la sesión por defecto de este proyecto)
+    await page.goto("/guia")
+    await expect(page.getByTestId("guide-audience")).toContainText("Gerente")
+    await expect(page.locator("#permisos-del-equipo")).toHaveCount(0)
+
+    const owner = await as(browser, OWNER.email, OWNER.password)
+    await owner.page.goto("/guia")
+    await expect(owner.page.getByTestId("guide-audience")).toContainText("Dueño")
+    await expect(owner.page.locator("#permisos-del-equipo")).toHaveCount(1)
+    await owner.context.close()
+  })
 })
