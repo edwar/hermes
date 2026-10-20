@@ -8,6 +8,7 @@ Lo marcado con 🔎 no se ha podido comprobar desde el desarrollo (producción r
 
 ### Producción y despliegue
 
+- [ ] 🔎 Borra la demo de producción antes del primer cliente real: los usuarios `demo.god@hermes.com`, `demo.dueno@hermes.com` y `demo.cajero@hermes.com` y la empresa «DEMO – Tienda Doña Rosa» con sus datos. Alternativa: restaura el snapshot de Neon `production-solo-god-antes-de-la-demo`. Las contraseñas de la demo no van en el repositorio.
 - [ ] Los PR #60 al #73 están desplegados. Prioridad: **#60 y #62**, que cierran dos brechas de seguridad (la configuración de Factus legible con cualquier sesión, y un ADMIN que podía darse el rol GOD).
 - [ ] 🔎 En Vercel existen `ENCRYPTION_KEY` (sin ella no se pueden guardar ni leer credenciales de Factus), `CRON_SECRET`, el secreto de sesión y `DATABASE_URL` apuntando a la rama `production`. **Nunca cambies `ENCRYPTION_KEY`** después de guardar credenciales: dejarían de poder descifrarse.
 - [ ] Borra las 5 variables viejas de Factus (`FACTUS_API_URL`, `FACTUS_CLIENT_ID`, `FACTUS_CLIENT_SECRET`, `FACTUS_USERNAME`, `FACTUS_PASSWORD`) y haz un redeploy.
