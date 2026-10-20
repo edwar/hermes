@@ -9,6 +9,7 @@ export const META_DIR = "guide-videos/meta"
 export const AUTH_FILES = {
   admin: "tests/guide/.auth/admin.json",
   god: "tests/guide/.auth/god.json",
+  owner: "tests/guide/.auth/owner.json",
 } as const
 export const AUTH_FILE = AUTH_FILES.admin
 /** Con quién se graba el video: administrador de la empresa, administrador de plataforma o sin sesión. */

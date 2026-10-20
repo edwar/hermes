@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { recordGuide } from "./lib/recorder"
-import { adminApi, restoreFactusSandbox, video } from "./lib/fixtures"
+import { adminApi, clearPermissionRules, restoreFactusSandbox, video } from "./lib/fixtures"
 
 test.describe.configure({ mode: "serial" })
 
@@ -108,6 +108,8 @@ test("42 configuracion", async ({ browser }) => {
 })
 
 test("43 configuracion-facturacion", async ({ browser }) => {
+  // Parte de una empresa sin credenciales: el video cuenta cómo conectarla por primera vez
+  await restoreFactusSandbox()
   await recordGuide(browser, video("configuracion-facturacion"), async (g) => {
     const { page } = g
     await page.goto("/settings")
@@ -128,6 +130,14 @@ test("43 configuracion-facturacion", async ({ browser }) => {
       await g.click(page.getByRole("button", { name: "Guardar credenciales" }))
       await expect(page.getByText("Configuradas", { exact: true })).toBeVisible({ timeout: 20_000 })
     })
+    await g.step(async () => {
+      // Con credenciales de ejemplo, Factus las rechaza y la pantalla lo avisa
+      // El aviso de "Credenciales guardadas" debe haberse ido: con dos avisos a la vez, el del resultado no se ve
+      await expect(page.getByText(/Credenciales guardadas/i)).toBeHidden({ timeout: 15_000 })
+      await g.click(page.getByRole("button", { name: "Probar conexión" }))
+      await expect(page.getByText(/Error de Factus/i)).toBeVisible({ timeout: 15_000 })
+      await g.pause(2500)
+    })
     await g.step(async () => g.point(page.getByRole("switch").first()))
     await g.step(async () => {
       const credits = page.getByText(/créditos/i).last()
@@ -136,6 +146,42 @@ test("43 configuracion-facturacion", async ({ browser }) => {
     })
   })
   await restoreFactusSandbox()
+})
+
+test("46 permisos-del-equipo", async ({ browser }) => {
+  await clearPermissionRules()
+  await recordGuide(
+    browser,
+    video("permisos-del-equipo"),
+    async (g) => {
+      const { page } = g
+      await page.goto("/settings")
+      const title = page.getByText("Permisos del equipo", { exact: true }).first()
+      await expect(title).toBeVisible({ timeout: 30_000 })
+      await g.step(async () => {
+        await title.scrollIntoViewIfNeeded()
+        await g.point(title)
+      })
+      await g.step(async () => g.point(page.getByRole("columnheader", { name: /Cajero/ })))
+      await g.step(async () => g.click(page.getByRole("switch", { name: "Reportes para Cajero" })))
+      await g.step(async () => {
+        await expect(page.getByRole("row", { name: /Reportes/ }).getByText("Empresa")).toBeVisible()
+        await g.point(page.getByRole("row", { name: /Reportes/ }).getByText("Empresa"))
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("tab", { name: "Por persona" }))
+        await g.click(page.getByRole("combobox", { name: "Persona" }))
+        await g.click(page.getByRole("option", { name: /Cajero Principal/ }))
+        await g.click(page.getByRole("switch", { name: "Inventario para Cajero Principal" }))
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("button", { name: "Restablecer", exact: true }))
+        await g.pause(1200)
+      })
+    },
+    { auth: "owner" }
+  )
+  await clearPermissionRules()
 })
 
 test("44 usuarios", async ({ browser }) => {

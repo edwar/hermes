@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { recordGuide } from "./lib/recorder"
-import { restoreFactusSandbox, video } from "./lib/fixtures"
+import { clearPermissionRules, clearPlatformFactusConfig, restoreFactusSandbox, video } from "./lib/fixtures"
 
 test.describe.configure({ mode: "serial" })
 
@@ -183,10 +183,88 @@ test("55 configuracion-del-sistema", async ({ browser }) => {
         await g.point(page.locator("#thresholdHigh"))
       })
       await g.step(async () => {
-        await g.click(page.getByRole("button", { name: /Guardar/ }))
+        await g.click(page.getByRole("button", { name: "Guardar Todo" }))
         await g.pause(1500)
       })
     },
     { auth: "god" }
   )
+})
+
+test("56 factus-de-la-plataforma", async ({ browser }) => {
+  await clearPlatformFactusConfig()
+  await recordGuide(
+    browser,
+    video("factus-de-la-plataforma"),
+    async (g) => {
+      const { page } = g
+      await page.goto("/god-dashboard")
+      await g.step(async () => {
+        await g.click(link(page, "Config. Sistema"))
+        const title = page.getByText("Factus de la plataforma", { exact: true }).first()
+        await expect(title).toBeVisible({ timeout: 30_000 })
+        await title.scrollIntoViewIfNeeded()
+        await g.point(page.locator("#factus-api-url"))
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("button", { name: "Producción", exact: true }))
+        await g.pause(500)
+      })
+      await g.step(async () => {
+        await g.point(page.getByText(/Al cambiar de API se descartan los tokens/).first())
+        // Se vuelve a Sandbox sin guardar: esto es solo una demostración
+        await g.click(page.getByRole("button", { name: "Sandbox", exact: true }))
+      })
+      await g.step(async () => {
+        await g.type(page.locator("#platform-client-id"), "ejemplo-client-id")
+        await g.type(page.locator("#platform-client-secret"), "ejemplo-secreto")
+        await g.type(page.locator("#platform-username"), "cuenta-de-pruebas@correo.co")
+        await g.type(page.locator("#platform-password"), "ejemplo-clave")
+        await g.click(page.getByRole("button", { name: "Guardar credenciales" }))
+        await expect(page.getByText("Configurada", { exact: true })).toBeVisible({ timeout: 20_000 })
+      })
+      await g.step(async () => g.point(page.getByRole("button", { name: "Probar conexión" })))
+    },
+    { auth: "god" }
+  )
+  await clearPlatformFactusConfig()
+})
+
+test("57 permisos-de-plataforma", async ({ browser }) => {
+  await clearPermissionRules()
+  await recordGuide(
+    browser,
+    video("permisos-de-plataforma"),
+    async (g) => {
+      const { page } = g
+      await page.goto("/god-dashboard")
+      await g.step(async () => {
+        await g.click(link(page, "Config. Sistema"))
+        const title = page.getByText("Permisos por rol", { exact: true }).first()
+        await expect(title).toBeVisible({ timeout: 30_000 })
+        await g.point(title)
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("combobox", { name: "Aplicar a" }))
+        await g.click(page.getByRole("option", { name: "Tienda Doña Rosa" }))
+      })
+      await g.step(async () => g.click(page.getByRole("switch", { name: "Reportes para Cajero" })))
+      await g.step(async () => {
+        await expect(page.getByRole("row", { name: /Reportes/ }).getByText("Empresa")).toBeVisible()
+        await g.point(page.getByRole("row", { name: /Reportes/ }).getByText("Empresa"))
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("tab", { name: "Por persona" }))
+        await g.click(page.getByRole("combobox", { name: "Persona" }))
+        await g.click(page.getByRole("option", { name: /Cajero Principal/ }))
+        await g.click(page.getByRole("switch", { name: "Inventario para Cajero Principal" }))
+      })
+      await g.step(async () => {
+        await g.click(page.getByRole("button", { name: "Restablecer", exact: true }))
+        await g.pause(1200)
+      })
+    },
+    { auth: "god" }
+  )
+  await clearPermissionRules()
 })

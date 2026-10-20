@@ -92,3 +92,47 @@ export async function cleanDemoData() {
     await prisma.$disconnect()
   }
 }
+
+// --- Dueño de la empresa de ejemplo y permisos ---
+
+/** El dueño con el que se graba la guía de "Permisos del equipo" (la empresa de ejemplo no trae uno). */
+export const GUIDE_OWNER = { email: "dueno@hermes.com", password: "dueno123", name: "Marta Rosa" }
+
+async function withPrisma<T>(run: (prisma: import("@prisma/client").PrismaClient) => Promise<T>): Promise<T> {
+  const url = process.env.E2E_DATABASE_URL
+  if (!url) throw new Error("Define E2E_DATABASE_URL para preparar los datos de la guía")
+  const { PrismaClient } = await import("@prisma/client")
+  const prisma = new PrismaClient({ datasources: { db: { url } } })
+  try {
+    return await run(prisma)
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+export async function ensureGuideOwner() {
+  const bcrypt = (await import("bcryptjs")).default
+  await withPrisma(async (prisma) => {
+    const passwordHash = await bcrypt.hash(GUIDE_OWNER.password, 10)
+    const existing = await prisma.user.findFirst({ where: { email: GUIDE_OWNER.email, companyId: "default-company" } })
+    if (existing) {
+      await prisma.user.update({ where: { id: existing.id }, data: { role: "OWNER", isActive: true, name: GUIDE_OWNER.name, passwordHash } })
+    } else {
+      await prisma.user.create({ data: { email: GUIDE_OWNER.email, name: GUIDE_OWNER.name, passwordHash, role: "OWNER", companyId: "default-company" } })
+    }
+  })
+}
+
+/** Quita las reglas de permisos que dejó una grabación, para que la siguiente parta de los valores por defecto. */
+export async function clearPermissionRules() {
+  await withPrisma(async (prisma) => {
+    await prisma.permissionRule.deleteMany({})
+  })
+}
+
+/** Deja la configuración de Factus de la plataforma sin rellenar: el video muestra la tarjeta como nueva y no expone ninguna cuenta. */
+export async function clearPlatformFactusConfig() {
+  await withPrisma(async (prisma) => {
+    await prisma.systemConfig.deleteMany({ where: { category: "factus" } })
+  })
+}

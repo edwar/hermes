@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs"
 import { dirname } from "node:path"
 import { test, expect } from "@playwright/test"
 import { AUTH_FILES } from "./lib/recorder"
-import { CUSTOMER, WEIGHT_PRODUCT, cleanDemoData } from "./lib/fixtures"
+import { CUSTOMER, WEIGHT_PRODUCT, cleanDemoData, clearPermissionRules, clearPlatformFactusConfig, ensureGuideOwner, GUIDE_OWNER } from "./lib/fixtures"
 
 /**
  * Prepara la base de pruebas y guarda las sesiones con las que se graba. Corre siempre primero:
@@ -32,8 +32,23 @@ test("00 preparación (sin grabar)", async ({ page, browser }) => {
   await godContext.storageState({ path: AUTH_FILES.god })
   await godContext.close()
 
+  // Sesión del dueño de la empresa (para la guía de permisos del equipo)
+  await ensureGuideOwner()
+  const ownerContext = await browser.newContext({ baseURL: test.info().project.use.baseURL })
+  const ownerPage = await ownerContext.newPage()
+  await ownerPage.goto("/login")
+  await ownerPage.waitForLoadState("networkidle")
+  await ownerPage.locator("#email").fill(GUIDE_OWNER.email)
+  await ownerPage.locator("#password").fill(GUIDE_OWNER.password)
+  await ownerPage.getByRole("button", { name: "Iniciar sesión" }).click()
+  await expect(ownerPage).not.toHaveURL(/\/login/)
+  await ownerContext.storageState({ path: AUTH_FILES.owner })
+  await ownerContext.close()
+
   const api = page.request
   await cleanDemoData()
+  await clearPermissionRules()
+  await clearPlatformFactusConfig()
 
   // Partir sin caja abierta
   const active = await api.get("/api/cash-sessions/active")
