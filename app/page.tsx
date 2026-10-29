@@ -4,7 +4,7 @@
  * OWN-WORLD: grafito #0D1117 / panel #151A22, líneas de 1px, Geist + Geist Mono, un solo azul de
  *   acción, verde/ámbar solo como estado. Sin sombras ni degradados.
  * STORY: Un dueño de tienda entiende en segundos que el POS es gratis y que solo paga por factura
- *   electrónica; ve el ticket y el estado de la factura; pulsa "Comenzar gratis".
+ *   electrónica; ve el ticket y el estado de la factura; pulsa "Quiero que me avisen".
  * FIRST VIEWPORT: titular a la izquierda con la oferta y dos botones; a la derecha el POS de ejemplo
  *   (catálogo + ticket con total grande y estado de la factura), etiquetado como ejemplo.
  * FORM: consola de turno (DESIGN.md), versión Persuade.
@@ -195,6 +195,19 @@ function CounterPreview() {
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
+      <div role="status" className="border-b border-border bg-card">
+        <p className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 text-[13px] text-muted-foreground sm:px-6">
+          <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
+          <span>
+            <span className="font-mono text-[11px] font-medium tracking-[0.08em] text-warning uppercase">
+              En desarrollo
+            </span>
+            <span className="ml-2">
+              Hermes aún no está disponible al público. Escríbenos por WhatsApp y te avisamos cuando abramos.
+            </span>
+          </span>
+        </p>
+      </div>
       <header className="sticky top-0 z-20 border-b border-border bg-background">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link href="/" aria-label="Hermes, inicio">
@@ -236,7 +249,7 @@ export default function LandingPage() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href={WHATSAPP_URL} target="_blank" className={buttonVariants({ size: "lg" })}>
-                  Comenzar gratis
+                  Quiero que me avisen
                   <ArrowRight className="size-4" />
                 </Link>
                 <Link href="#features" className={buttonVariants({ variant: "ghost", size: "lg" })}>
@@ -254,7 +267,7 @@ export default function LandingPage() {
               { label: "Core del negocio", value: "Gratis", detail: "POS, inventario, cajas y reportes" },
               { label: "Conexión", value: "Offline", detail: "Funciona sin internet y sincroniza después" },
               { label: "Facturación", value: "DIAN", detail: "Electrónica, por créditos" },
-              { label: "Puesta en marcha", value: "1 clic", detail: "Sin instalación" },
+              { label: "Estado", value: "Pronto", detail: "En desarrollo, te avisamos al abrir" },
             ]}
           />
         </section>
@@ -390,13 +403,13 @@ export default function LandingPage() {
         <section className="border-t border-border">
           <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-14 sm:px-6 md:flex-row md:items-center">
             <div className="max-w-xl">
-              <h2 className="text-3xl font-semibold tracking-tight text-balance">Abre tu primera caja hoy</h2>
+              <h2 className="text-3xl font-semibold tracking-tight text-balance">Sé de los primeros en abrir caja</h2>
               <p className="mt-2 text-muted-foreground">
-                Únete a los negocios que ya confían en Hermes para gestionar sus ventas, inventario y facturación electrónica.
+                Hermes está en desarrollo. Déjanos tu contacto por WhatsApp y te avisamos cuando esté listo para tu negocio.
               </p>
             </div>
             <Link href={WHATSAPP_URL} target="_blank" className={buttonVariants({ size: "lg" })}>
-              Comenzar ahora
+              Quiero que me avisen
               <ArrowRight className="size-4" />
             </Link>
           </div>
