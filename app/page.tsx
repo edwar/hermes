@@ -88,7 +88,7 @@ const steps = [
 
 // Datos sintéticos de la vista de ejemplo del primer viewport.
 const sampleProducts = [
-  { name: "Leche Entera 1L", price: "$ 4.200", stock: "3 BAJO", low: true, qty: 2 },
+  { name: "Leche Entera 1L", price: "$ 4.200", stock: "3 u", low: true, qty: 2 },
   { name: "Pan Tajado Grande", price: "$ 6.200", stock: "18 u", qty: 1 },
   { name: "Jugo Hit Tropical 400ml", price: "$ 2.992", stock: "50 u", qty: 3 },
   { name: "Agua Cristal 500ml", price: "$ 1.500", stock: "80 u" },
@@ -114,6 +114,7 @@ function CounterPreview() {
   return (
     <figure
       aria-label="Vista de ejemplo del punto de venta"
+      data-ui
       className="overflow-hidden rounded-lg border border-border bg-card"
     >
       <figcaption className="flex items-center justify-between border-b border-border px-4 py-2.5">
@@ -121,7 +122,7 @@ function CounterPreview() {
           <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
           <PanelLabel>Caja abierta</PanelLabel>
         </span>
-        <span className="rounded-sm bg-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-faint">
+        <span className="rounded-sm bg-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-[0.08em] text-muted-foreground">
           EJEMPLO
         </span>
       </figcaption>
@@ -142,7 +143,7 @@ function CounterPreview() {
                 )}
               </div>
               <div className="flex items-end justify-between gap-2">
-                <span className="font-mono text-base leading-none font-semibold tabular-nums">{p.price}</span>
+                <span className="font-mono text-sm leading-none font-semibold whitespace-nowrap tabular-nums">{p.price}</span>
                 <span className={`flex items-center gap-1 font-mono text-[10px] whitespace-nowrap ${p.low ? "text-warning" : "text-muted-foreground"}`}>
                   {p.low && <span className="size-1.5 rounded-full bg-warning" aria-hidden="true" />}
                   {p.stock}
@@ -234,18 +235,14 @@ export default function LandingPage() {
       <main id="main-content">
         {/* Primer viewport: la oferta y el producto trabajando */}
         <section className="border-b border-border">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-14 lg:py-20">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:py-20">
             <div>
-              <p className="mb-5 inline-flex items-center gap-2 rounded-sm border border-border bg-card px-2.5 py-1 font-mono text-[11px] tracking-[0.08em] text-muted-foreground uppercase">
-                <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
-                POS para negocios de Colombia
-              </p>
-              <h1 className="text-[40px] leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-[56px]">
-                El POS de tu negocio es gratis. Pagas solo si facturas electrónicamente.
+              <h1 className="text-[44px] leading-[1.02] font-semibold tracking-tight text-balance sm:text-6xl lg:text-[60px]">
+                POS gratis. Pagas solo si facturas.
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-                Ventas, inventario, cajas y reportes sin mensualidad. Funciona sin internet y emite factura
-                electrónica DIAN cuando la necesites.
+              <p className="mt-6 max-w-[56ch] text-lg leading-relaxed text-foreground">
+                Para negocios de Colombia: ventas, inventario, cajas y reportes sin mensualidad. Funciona sin
+                internet y emite factura electrónica DIAN cuando la necesites.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link href={WHATSAPP_URL} target="_blank" className={buttonVariants({ size: "lg" })}>
