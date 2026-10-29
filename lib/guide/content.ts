@@ -10,7 +10,7 @@ import { allowedModules } from "../permissions/resolve"
 
 export type GuideSection = "PRIMEROS PASOS" | "OPERACIÓN" | "CATÁLOGO" | "CONTROL" | "PLATAFORMA"
 
-export const GUIDE_SECTIONS: readonly GuideSection[] = ["PRIMEROS PASOS", "OPERACIÓN", "CATÁLOGO", "CONTROL", "PLATAFORMA"]
+export const GUIDE_SECTIONS: readonly GuideSection[] = ["PRIMEROS PASOS", "CATÁLOGO", "OPERACIÓN", "CONTROL", "PLATAFORMA"]
 
 /** Nombres de rol tal como los muestra la aplicación (Usuarios y Perfil). */
 export const ROLE_LABELS: Readonly<Record<Role, string>> = {
@@ -234,6 +234,21 @@ export const GUIDE_VIDEOS: GuideVideo[] = [
   // CATÁLOGO
   // ---------------------------------------------------------------------------------------------
   {
+    slug: "categorias",
+    title: "Organizar los productos en categorías",
+    summary: "Las categorías ordenan el catálogo y facilitan los filtros del inventario.",
+    section: "CATÁLOGO",
+    href: "/categories",
+    contextual: true,
+    steps: [
+      "Entra a Categorías desde el menú",
+      "Cada categoría muestra cuántos productos tiene",
+      "Pulsa Nueva Categoría",
+      "Escribe el nombre y, si quieres, una descripción",
+      "Guarda: ya puedes asignarla a tus productos",
+    ],
+  },
+  {
     slug: "inventario",
     title: "Administrar el inventario",
     summary: "Busca, agrega, edita y elimina productos; Hermes calcula el precio de venta con tu ganancia.",
@@ -262,37 +277,6 @@ export const GUIDE_VIDEOS: GuideVideo[] = [
       "Pulsa Registrar Movimiento",
       "Elige el producto, el tipo de movimiento y la cantidad",
       "Escribe el motivo y guarda: el stock del producto se actualiza",
-    ],
-  },
-  {
-    slug: "categorias",
-    title: "Organizar los productos en categorías",
-    summary: "Las categorías ordenan el catálogo y facilitan los filtros del inventario.",
-    section: "CATÁLOGO",
-    href: "/categories",
-    contextual: true,
-    steps: [
-      "Entra a Categorías desde el menú",
-      "Cada categoría muestra cuántos productos tiene",
-      "Pulsa Nueva Categoría",
-      "Escribe el nombre y, si quieres, una descripción",
-      "Guarda: ya puedes asignarla a tus productos",
-    ],
-  },
-  {
-    slug: "clientes",
-    title: "Registrar y buscar clientes",
-    summary: "Con la cédula o el NIT del cliente puedes facturarle electrónicamente desde el punto de venta.",
-    section: "CATÁLOGO",
-    href: "/customers",
-    contextual: true,
-    steps: [
-      "Entra a Clientes desde el menú",
-      "Busca por nombre, correo o teléfono",
-      "Pulsa Nuevo Cliente",
-      "Escribe el nombre, la cédula o NIT y el correo",
-      "Guarda: ya puedes facturarle desde el punto de venta",
-      "Edita o elimina con los iconos de su fila",
     ],
   },
   {
@@ -325,6 +309,22 @@ export const GUIDE_VIDEOS: GuideVideo[] = [
       "Revisa el total y pulsa Crear Pedido",
       "Cuando llegue la mercancía, pulsa Recibir e ingresa la cantidad recibida",
       "Confirma la recepción: el stock de los productos sube solo",
+    ],
+  },
+  {
+    slug: "clientes",
+    title: "Registrar y buscar clientes",
+    summary: "Con la cédula o el NIT del cliente puedes facturarle electrónicamente desde el punto de venta.",
+    section: "CATÁLOGO",
+    href: "/customers",
+    contextual: true,
+    steps: [
+      "Entra a Clientes desde el menú",
+      "Busca por nombre, correo o teléfono",
+      "Pulsa Nuevo Cliente",
+      "Escribe el nombre, la cédula o NIT y el correo",
+      "Guarda: ya puedes facturarle desde el punto de venta",
+      "Edita o elimina con los iconos de su fila",
     ],
   },
 
