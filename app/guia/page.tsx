@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { ThemeToggle } from "@/components/shared/theme-toggle"
 import { Wordmark } from "@/components/shared/wordmark"
+import { GuideIndex } from "@/components/docs/guide-index"
 import { buttonVariants } from "@/components/ui/button"
 import { auth } from "@/lib/auth"
 import { groupBySection, guidesForModules, ROLE_LABELS, type GuideSection } from "@/lib/guide/content"
@@ -55,26 +56,12 @@ export default async function GuidePage() {
   }))
 
   const index = (
-    <ol className="space-y-5">
-      {numbered.map((g) => (
-        <li key={g.section}>
-          <p className="px-4 pb-1.5 font-mono text-[10px] font-medium tracking-[0.1em] text-faint">{g.section}</p>
-          <ul className="border-l border-border">
-            {g.videos.map(({ video, n }) => (
-              <li key={video.slug}>
-                <a
-                  href={`#${video.slug}`}
-                  className="flex items-baseline gap-3 px-4 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-elevated hover:text-foreground"
-                >
-                  <span className="w-5 font-mono text-xs text-faint">{n}</span>
-                  <span>{video.title}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ol>
+    <GuideIndex
+      groups={numbered.map((g) => ({
+        section: g.section,
+        videos: g.videos.map(({ video, n }) => ({ slug: video.slug, title: video.title, n })),
+      }))}
+    />
   )
 
   return (
@@ -132,7 +119,7 @@ export default async function GuidePage() {
                 {index}
               </nav>
             </details>
-            <nav aria-label="Videos de la guía" className="hidden lg:sticky lg:top-24 lg:block lg:self-start">
+            <nav aria-label="Videos de la guía" className="hidden lg:sticky lg:top-24 lg:block lg:max-h-[calc(100dvh-7rem)] lg:self-start lg:overflow-y-auto">
               {index}
             </nav>
           </div>
